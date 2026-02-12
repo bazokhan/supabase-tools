@@ -28,17 +28,10 @@ import { depgraphStyles } from "./atlas/styles.js";
 // ---------------------------------------------------------------------------
 
 function resolvePaths(ctx: PluginContext) {
-  // ctx.docsOutput is already an absolute path from buildPluginContext
-  const docsDir = ctx.docsOutput;
+  const docsDir = ctx.paths.docsOutput;
   const atlasDataPath = path.join(docsDir, "backend-atlas-data.json");
-  const snapshotDir = path.resolve(ctx.projectRoot, "supabase", "current");
-  const typesFilePath = path.resolve(
-    ctx.projectRoot,
-    "src",
-    "integrations",
-    "supabase",
-    "types.ts",
-  );
+  const snapshotDir = ctx.paths.snapshot;
+  const typesFilePath = ctx.paths.typesOutput;
   const htmlOutput = path.join(docsDir, "dependency-graph.html");
   const mermaidOutput = path.join(docsDir, "dependency-graph.md");
 

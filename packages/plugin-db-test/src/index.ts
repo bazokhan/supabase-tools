@@ -13,10 +13,8 @@ const plugin: SbtPlugin = {
       name: "test",
       description: "Run database tests (pgTAP). Use --mem for in-memory PGlite mode.",
       async run(args: string[], ctx: PluginContext): Promise<void> {
-        const testsDir = (ctx.pluginConfig.testsDir as string) ??
-          path.join(ctx.projectRoot, "supabase", "tests");
-        const migrationsDir = (ctx.pluginConfig.migrationsDir as string) ??
-          path.join(ctx.projectRoot, "supabase", "migrations");
+        const testsDir = (ctx.pluginConfig.testsDir as string) ?? ctx.paths.tests;
+        const migrationsDir = (ctx.pluginConfig.migrationsDir as string) ?? ctx.paths.migrations;
 
         const useMem = hasFlag(args, "--mem") || hasFlag(args, "--memory");
 

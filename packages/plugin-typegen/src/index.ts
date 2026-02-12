@@ -12,8 +12,7 @@ const plugin: SbtPlugin = {
       name: "generate-types",
       description: "Generate TypeScript types from the running Supabase instance",
       async run(_args: string[], ctx: PluginContext): Promise<void> {
-        const typesOutput = (ctx.pluginConfig.typesOutput as string) ??
-          path.join(ctx.projectRoot, "src", "integrations", "supabase", "types.ts");
+        const typesOutput = (ctx.pluginConfig.typesOutput as string) ?? ctx.paths.typesOutput;
         const OUT_PATH = path.isAbsolute(typesOutput)
           ? typesOutput
           : path.resolve(ctx.projectRoot, typesOutput);

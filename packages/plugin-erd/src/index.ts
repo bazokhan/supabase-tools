@@ -18,8 +18,7 @@ const plugin: SbtPlugin = {
         const displayColumns = (ctx.pluginConfig.displayColumns as string[]) ?? [
           "name", "email", "full_name", "slug", "title",
         ];
-        const erdOutput = (ctx.pluginConfig.erdOutput as string) ??
-          path.join(ctx.projectRoot, "docs", "entity-relations");
+        const erdOutput = (ctx.pluginConfig.erdOutput as string) ?? ctx.paths.erdOutput;
         const OUT_DIR = path.isAbsolute(erdOutput)
           ? erdOutput
           : path.resolve(ctx.projectRoot, erdOutput);
