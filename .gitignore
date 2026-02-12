@@ -11,4 +11,5 @@ Thumbs.db
 .idea/
 .vscode/
 *.tgz
+docs/.vitepress/cache
 docs/.vitepress/dist
