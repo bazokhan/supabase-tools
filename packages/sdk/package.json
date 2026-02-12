@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Plugin SDK for supabase-tools — shared types, interfaces, and utilities.",
   "type": "module",
   "exports": {
@@ -11,15 +11,22 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bazokhan/supabase-tools.git",
     "directory": "packages/sdk"
   },
-  "engines": { "node": ">=18" },
-  "keywords": ["supabase", "tools"],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "supabase",
+    "tools"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "clean": "rimraf dist"

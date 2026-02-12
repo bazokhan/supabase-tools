@@ -1,9 +1,11 @@
 {
   "name": "@sbtools/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core CLI orchestrator for supabase-tools — config, plugins, snapshot pipeline.",
   "type": "module",
-  "bin": { "sbt": "./dist/cli.js" },
+  "bin": {
+    "sbt": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/cli.d.ts",
@@ -12,15 +14,26 @@
   },
   "main": "./dist/cli.js",
   "types": "./dist/cli.d.ts",
-  "files": ["dist", "docker", "docker-compose.db.yml", "docker-compose.api-docs.yml", "nginx-docs.conf"],
+  "files": [
+    "dist",
+    "docker",
+    "docker-compose.db.yml",
+    "docker-compose.api-docs.yml",
+    "nginx-docs.conf"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bazokhan/supabase-tools.git",
     "directory": "packages/core"
   },
-  "engines": { "node": ">=18" },
-  "keywords": ["supabase", "tools"],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "supabase",
+    "tools"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "clean": "rimraf dist",
@@ -28,7 +41,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@sbtools/sdk": "^0.1.0",
+    "@sbtools/sdk": "^0.2.0",
     "dotenv": "^16.4.0",
     "pg": "^8.13.0",
     "zod": "^3.24.2"
