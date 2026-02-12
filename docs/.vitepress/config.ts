@@ -5,6 +5,9 @@ export default defineConfig({
   title: "supabase-tools",
   description: "Portable toolkit for local Supabase development",
   themeConfig: {
+    socialLinks: [
+      { icon: "github", link: "https://github.com/bazokhan/supabase-tools" },
+    ],
     nav: [
       { text: "Home", link: "/" },
       { text: "Getting Started", link: "/getting-started" },
