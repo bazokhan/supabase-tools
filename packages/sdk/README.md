@@ -23,4 +23,4 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 - **Error classes** — `ConfigError`, `DatabaseError`, `SnapshotError`, `PluginError`, `SbtError`
 - **Helpers** — `ensureDir`, `readText`, `writeFileInDir`, `safeName`, `safeFileName`, `hasFlag`, `getArg`, `extractComposeKey`
 
-See [SDK docs](https://supabase-tools.github.io/supabase-tools/sdk/) for full reference.
+See [SDK docs](https://bazokhan.github.io/supabase-tools/sdk/) for full reference.

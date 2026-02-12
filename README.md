@@ -59,7 +59,7 @@ Structured errors with codes: `ConfigError`, `DatabaseError`, `SnapshotError`, `
 
 ## Documentation
 
-Full docs: [docs site](https://supabase-tools.github.io/supabase-tools/) (or run `npm run docs:dev` for local dev).
+Full docs: [docs site](https://bazokhan.github.io/supabase-tools/) (or run `npm run docs:dev` for local dev).
 
 ## Plugins
 

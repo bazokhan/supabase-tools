@@ -15,7 +15,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/supabase-tools/supabase-tools",
+    "url": "https://github.com/bazokhan/supabase-tools",
     "directory": "packages/plugin-erd"
   },
   "engines": { "node": ">=18" },

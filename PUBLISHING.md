@@ -19,6 +19,13 @@
    - `npx changeset version` — bumps package versions and updates CHANGELOGs
    - `npm run release` — builds and publishes all changed packages
 
+## Commit Messages
+
+Changesets don’t require a particular format; the changeset files hold the changelog. For consistency:
+
+- **Adding a changeset:** `chore: add changeset for <brief description>`
+- **Version bump:** `chore: release` or `chore: version packages`
+
 ## Notes
 
 - All packages are linked: version bumps propagate across `@sbtools/*`

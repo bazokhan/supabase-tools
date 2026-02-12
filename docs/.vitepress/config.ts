@@ -1,6 +1,7 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
+  base: "/supabase-tools/",
   title: "supabase-tools",
   description: "Portable toolkit for local Supabase development",
   themeConfig: {
