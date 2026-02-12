@@ -15,7 +15,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bazokhan/supabase-tools",
+    "url": "git+https://github.com/bazokhan/supabase-tools.git",
     "directory": "packages/plugin-frontend-usage"
   },
   "engines": { "node": ">=18" },
