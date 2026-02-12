@@ -34,6 +34,9 @@
     "supabase",
     "tools"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "clean": "rimraf dist",
