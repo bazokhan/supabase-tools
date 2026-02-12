@@ -1,33 +1,44 @@
 # Publishing Guide
 
-## Prerequisites
+## CI/CD (Automated)
 
-1. Create the `@sbtools` organization on [npmjs.com](https://www.npmjs.com) (free for public packages)
-2. `npm login` to authenticate
+Releases are automated via GitHub Actions using [npm Trusted Publishing](https://docs.npmjs.com/generating-provenance-statements) (OIDC — no tokens needed).
 
-## First-Time Publish
+### One-time setup
 
-1. `npm run build` — compile all packages
-2. `npx changeset publish` — publishes all packages at 0.1.0
+For each `@sbtools/*` package on [npmjs.com](https://www.npmjs.com) → Settings → Trusted Publishing → Add:
 
-## Subsequent Releases
+| Field | Value |
+|---|---|
+| Publisher | GitHub Actions |
+| Organization or user | `bazokhan` |
+| Repository | `supabase-tools` |
+| Workflow filename | `release.yml` |
+| Environment name | _(leave empty)_ |
 
-1. Make your changes
-2. `npx changeset` — interactively create a changeset describing what changed
-3. Commit the changeset file (e.g. `.changeset/cool-feature.md`) with your PR
-4. When ready to release:
-   - `npx changeset version` — bumps package versions and updates CHANGELOGs
-   - `npm run release` — builds and publishes all changed packages
+### How it works
 
-## Commit Messages
+1. Make changes on a feature branch
+2. Run `npx changeset` — describe what changed and the semver bump type
+3. Commit the generated `.changeset/*.md` file with your PR
+4. Merge to `main` — the release workflow will:
+   - Open a "Version Packages" PR (bumps versions + updates CHANGELOGs)
+   - When that PR is merged, it publishes all changed packages to npm with provenance
 
-Changesets don’t require a particular format; the changeset files hold the changelog. For consistency:
+## Manual Publishing (Local)
 
-- **Adding a changeset:** `chore: add changeset for <brief description>`
-- **Version bump:** `chore: release` or `chore: version packages`
+For one-off or first-time publishes:
+
+```bash
+npm login
+npm run build
+npm publish -w packages/sdk --access public
+npm publish -w packages/core --access public
+# ...repeat for each plugin, one at a time (avoids OTP rate limiting)
+```
 
 ## Notes
 
-- All packages are linked: version bumps propagate across `@sbtools/*`
-- `access: "public"` is required for scoped packages (npm defaults scoped to restricted)
-- `NPM_TOKEN` secret is required for CI/CD publishing
+- All `@sbtools/*` packages are version-linked — bumps propagate across the scope
+- Starting version: `0.1.0` (pre-stable, semver 0.x)
+- Packages are published with `access: public` (configured in `.changeset/config.json`)
