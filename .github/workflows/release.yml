@@ -36,8 +36,9 @@ jobs:
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:
-          publish: npx changeset publish --no-git-tag
+          publish: npx changeset publish
           version: npx changeset version
+          createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
