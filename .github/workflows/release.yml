@@ -29,6 +29,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      # npm trusted publishing requires npm 11.5.1+ (Node 22 ships with npm 10.x)
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:
