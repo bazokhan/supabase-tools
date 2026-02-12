@@ -8,11 +8,8 @@ All fields in `supabase-tools.config.json` are optional. Defaults work out of th
 {
   "paths": {
     "migrations": "supabase/migrations",
-    "tests": "supabase/tests",
     "snapshot": "supabase/current",
     "docsOutput": "docs",
-    "erdOutput": "docs/entity-relations",
-    "typesOutput": "src/integrations/supabase/types.ts",
     "functions": "supabase/functions"
   },
   "db": {
@@ -24,15 +21,13 @@ All fields in `supabase-tools.config.json` are optional. Defaults work out of th
     "studioUrl": "http://localhost:54323",
     "inbucketUrl": "http://localhost:54324"
   },
-  "erd": {
-    "displayColumns": ["name", "email", "full_name", "slug", "title"]
-  },
   "project": {
     "name": "your-project-name"
   },
   "plugins": [
-    { "path": "@sbtools/plugin-erd", "config": {} },
-    { "path": "@sbtools/plugin-logs", "enabled": true, "config": {} }
+    { "path": "@sbtools/plugin-erd", "config": { "displayColumns": ["name", "email"] } },
+    { "path": "@sbtools/plugin-typegen", "config": { "typesOutput": "src/types/supabase.ts" } },
+    { "path": "@sbtools/plugin-db-test", "config": { "testsDir": "supabase/tests" } }
   ]
 }
 ```
@@ -43,7 +38,7 @@ All fields in `supabase-tools.config.json` are optional. Defaults work out of th
 
 **External Supabase** — Set `api.url` to your instance (e.g. `https://your-project.supabase.co`).
 
-**Plugin config** — Each plugin can have its own `config` object. Set `enabled: false` to disable without removing the entry.
+**Plugin config** — Each plugin has its own `config` object for plugin-specific settings (output paths, feature flags, etc.). Set `enabled: false` to disable without removing the entry. See individual plugin docs for available config keys.
 
 ## Validation
 

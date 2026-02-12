@@ -100,8 +100,12 @@ export function buildPluginContext(
     sbtDataDir: config.sbtDataDir,
     pluginConfig: loaded.pluginConfig,
     apiUrl: config.api.url,
-    functionsPath: resolve(config.paths.functions),
-    docsOutput: resolve(config.paths.docsOutput),
+    paths: {
+      migrations: resolve(config.paths.migrations),
+      snapshot: resolve(config.paths.snapshot),
+      docsOutput: resolve(config.paths.docsOutput),
+      functions: resolve(config.paths.functions),
+    },
     siblingPlugins: allLoaded
       ?.filter((l) => l.plugin.name !== loaded.plugin.name)
       .map((l) => l.plugin),

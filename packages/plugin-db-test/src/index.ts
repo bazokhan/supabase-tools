@@ -4,6 +4,15 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { runLiveTests } from "./runner-live.js";
 import { runMemTests } from "./runner-mem.js";
 
+/** Resolve test and migration directories from plugin context. */
+export function resolveTestPaths(ctx: PluginContext): { testsDir: string; migrationsDir: string } {
+  const testsDir = (ctx.pluginConfig.testsDir as string) ??
+    path.join(ctx.projectRoot, "supabase", "tests");
+  const migrationsDir = (ctx.pluginConfig.migrationsDir as string) ??
+    ctx.paths.migrations;
+  return { testsDir, migrationsDir };
+}
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-db-test",
   version: "1.0.0",
@@ -13,10 +22,7 @@ const plugin: SbtPlugin = {
       name: "test",
       description: "Run database tests (pgTAP). Use --mem for in-memory PGlite mode.",
       async run(args: string[], ctx: PluginContext): Promise<void> {
-        const testsDir = (ctx.pluginConfig.testsDir as string) ??
-          path.join(ctx.projectRoot, "supabase", "tests");
-        const migrationsDir = (ctx.pluginConfig.migrationsDir as string) ??
-          path.join(ctx.projectRoot, "supabase", "migrations");
+        const { testsDir, migrationsDir } = resolveTestPaths(ctx);
 
         const useMem = hasFlag(args, "--mem") || hasFlag(args, "--memory");
 

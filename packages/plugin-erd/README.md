@@ -18,20 +18,24 @@ npm run sbt -- generate-erd
 
 ## Configuration
 
-Add to `supabase-tools.config.json`:
+Plugin config goes in `plugins[].config`:
 
 ```json
 {
-  "erd": {
-    "displayColumns": ["name", "email", "full_name", "slug", "title"]
-  }
+  "plugins": [{
+    "path": "@sbtools/plugin-erd",
+    "config": {
+      "erdOutput": "docs/development/entity-relations",
+      "displayColumns": ["name", "email", "full_name", "slug", "title"]
+    }
+  }]
 }
 ```
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `erdOutput` | `docs/entity-relations` | Output directory for .md files |
-| `displayColumns` | See package | Column names to display on referenced entities |
+| `erdOutput` | `<docsOutput>/entity-relations` | Output directory for .md files |
+| `displayColumns` | `["name", "email", "full_name", "slug", "title"]` | Column names to display on referenced entities |
 
 ## Project Structure
 

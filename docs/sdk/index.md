@@ -11,8 +11,14 @@ npm install @sbtools/sdk
 ## Core Types
 
 - **SbtPlugin** — Plugin contract with `name`, `version`, `commands`, and optional hooks
-- **PluginContext** — Runtime context: `projectRoot`, `toolsDir`, `sbtDataDir`, `pluginConfig`, etc.
-- **PluginContextCommand** — Command definition with `name`, `description`, `run`
+- **PluginContext** — Runtime context passed to every plugin hook:
+  - `projectRoot`, `toolsDir`, `sbtDataDir` — absolute directory paths
+  - `apiUrl` — Supabase API URL
+  - `paths` — shared config paths resolved to absolute: `migrations`, `tests`, `snapshot`, `docsOutput`, `functions`
+  - `pluginConfig` — plugin-specific config from `plugins[].config`
+  - `siblingPlugins` — other loaded plugins for cross-plugin collaboration
+- **ResolvedPaths** — Type for `ctx.paths`
+- **SbtPluginCommand** — Command definition with `name`, `description`, `run`
 
 ## UI Utilities
 

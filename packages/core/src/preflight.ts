@@ -58,13 +58,6 @@ const migrationsDir = (): Check => ({
   kind: "dir",
 });
 
-const testsDir = (): Check => ({
-  path: resolve(config.paths.tests),
-  label: "Tests directory",
-  fix: `Create the directory at ${config.paths.tests} and add .sql test files.`,
-  kind: "dir",
-});
-
 // ---------------------------------------------------------------------------
 // Command → checks mapping
 // ---------------------------------------------------------------------------
@@ -87,17 +80,8 @@ function checksForCommand(command: string, args: string[]): Check[] {
     case "generate-types":
       return [composeDb()];
 
-    case "generate-erd":
-      return [];
-
     case "generate-atlas":
       return [snapshotMeta()];
-
-    case "test":
-      if (args.includes("--mem")) {
-        return [testsDir()];
-      }
-      return [testsDir()];
 
     case "docs":
       if (args.includes("stop")) return [];

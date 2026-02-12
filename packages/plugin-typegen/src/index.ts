@@ -3,6 +3,15 @@ import path from "node:path";
 import { ui, SbtError, extractComposeKey } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 
+/** Resolve the types output file path from plugin context. */
+export function resolveTypesOutput(ctx: PluginContext): string {
+  const typesOutput = (ctx.pluginConfig.typesOutput as string) ??
+    path.join(ctx.projectRoot, "src", "integrations", "supabase", "types.ts");
+  return path.isAbsolute(typesOutput)
+    ? typesOutput
+    : path.resolve(ctx.projectRoot, typesOutput);
+}
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-typegen",
   version: "1.0.0",
@@ -12,11 +21,7 @@ const plugin: SbtPlugin = {
       name: "generate-types",
       description: "Generate TypeScript types from the running Supabase instance",
       async run(_args: string[], ctx: PluginContext): Promise<void> {
-        const typesOutput = (ctx.pluginConfig.typesOutput as string) ??
-          path.join(ctx.projectRoot, "src", "integrations", "supabase", "types.ts");
-        const OUT_PATH = path.isAbsolute(typesOutput)
-          ? typesOutput
-          : path.resolve(ctx.projectRoot, typesOutput);
+        const OUT_PATH = resolveTypesOutput(ctx);
 
         const composePath = path.join(ctx.toolsDir, "docker-compose.db.yml");
 

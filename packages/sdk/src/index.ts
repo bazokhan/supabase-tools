@@ -33,6 +33,7 @@ export type {
     SbtPlugin,
     SbtPluginCommand,
     PluginContext,
+    ResolvedPaths,
     PluginAtlasData,
     PluginAtlasUI,
 } from "./plugin-api.js";

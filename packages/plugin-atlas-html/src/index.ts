@@ -20,7 +20,7 @@ const plugin: SbtPlugin = {
       name: "atlas-html",
       description: "Generate the Backend Atlas HTML visualization",
       async run(_args: string[], ctx: PluginContext): Promise<void> {
-        const OUT_DIR = ctx.docsOutput;
+        const OUT_DIR = ctx.paths.docsOutput;
         const OUT_FILE = path.join(OUT_DIR, "backend-atlas.html");
         ensureDir(OUT_DIR);
 

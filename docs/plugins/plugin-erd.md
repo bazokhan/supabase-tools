@@ -25,15 +25,23 @@ npx sbt generate-erd
 
 ## Configuration
 
+Plugin config goes in `plugins[].config`:
+
 ```json
 {
-  "erd": {
-    "displayColumns": ["name", "email", "full_name", "slug", "title"]
-  }
+  "plugins": [{
+    "path": "@sbtools/plugin-erd",
+    "config": {
+      "erdOutput": "docs/development/entity-relations",
+      "displayColumns": ["name", "email", "full_name", "slug", "title"]
+    }
+  }]
 }
 ```
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `erdOutput` | `docs/entity-relations` | Output directory |
-| `displayColumns` | (see package) | Columns to display on references |
+| `erdOutput` | `<docsOutput>/entity-relations` | Output directory (derives from root `paths.docsOutput`) |
+| `displayColumns` | `["name", "email", "full_name", "slug", "title"]` | Columns to display on referenced entities |
+
+Global ERD display columns can also be set at the root level under `erd.displayColumns`.

@@ -6,6 +6,15 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { buildMermaid, updateMarkdown, mapType } from "./builder.js";
 import type { ColumnInfo, ForeignKeyInfo, ReferencedColumn } from "./builder.js";
 
+/** Resolve the ERD output directory from plugin context. */
+export function resolveErdOutput(ctx: PluginContext): string {
+  const erdOutput = (ctx.pluginConfig.erdOutput as string) ??
+    path.join(ctx.paths.docsOutput, "entity-relations");
+  return path.isAbsolute(erdOutput)
+    ? erdOutput
+    : path.resolve(ctx.projectRoot, erdOutput);
+}
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-erd",
   version: "1.0.0",
@@ -18,11 +27,7 @@ const plugin: SbtPlugin = {
         const displayColumns = (ctx.pluginConfig.displayColumns as string[]) ?? [
           "name", "email", "full_name", "slug", "title",
         ];
-        const erdOutput = (ctx.pluginConfig.erdOutput as string) ??
-          path.join(ctx.projectRoot, "docs", "entity-relations");
-        const OUT_DIR = path.isAbsolute(erdOutput)
-          ? erdOutput
-          : path.resolve(ctx.projectRoot, erdOutput);
+        const OUT_DIR = resolveErdOutput(ctx);
 
         ui.step("Generating ERD diagrams...\n");
 

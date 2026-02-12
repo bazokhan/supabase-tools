@@ -62,6 +62,14 @@ export interface SbtPluginCommand {
 // Context passed to plugin hooks
 // ---------------------------------------------------------------------------
 
+/** Shared config paths resolved to absolute paths. */
+export interface ResolvedPaths {
+  migrations: string;
+  snapshot: string;
+  docsOutput: string;
+  functions: string;
+}
+
 /** Read-only context the main package passes to every plugin hook. */
 export interface PluginContext {
   /** Absolute path to the project root. */
@@ -79,11 +87,8 @@ export interface PluginContext {
   /** Supabase API URL, e.g. "http://localhost:54321". */
   apiUrl: string;
 
-  /** Resolved absolute path to the edge-functions directory. */
-  functionsPath: string;
-
-  /** Resolved absolute path to the docs output directory. */
-  docsOutput: string;
+  /** Shared config paths resolved to absolute paths. */
+  paths: ResolvedPaths;
 
   /** All other loaded plugins — available for cross-plugin collaboration. */
   siblingPlugins?: SbtPlugin[];
