@@ -1,4 +1,10 @@
+---
+description: Run database tests using pgTAP. Supports live PostgreSQL (Docker) or in-memory PGlite mode.
+---
+
 # @sbtools/plugin-db-test
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-db-test.svg)](https://www.npmjs.com/package/@sbtools/plugin-db-test)
 
 Plugin that runs database tests using pgTAP. Supports live database mode (Docker) or in-memory PGlite mode.
 

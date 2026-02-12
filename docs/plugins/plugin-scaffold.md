@@ -1,4 +1,10 @@
+---
+description: Scaffold new supabase-tools plugins with consistent boilerplate and SDK integration.
+---
+
 # @sbtools/plugin-scaffold
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-scaffold.svg)](https://www.npmjs.com/package/@sbtools/plugin-scaffold)
 
 Plugin that scaffolds new supabase-tools plugins with consistent boilerplate.
 

@@ -1,3 +1,7 @@
+---
+description: How to publish @sbtools packages to npm using changesets and CI.
+---
+
 # Version and Release Guide
 
 ## Prerequisites

@@ -1,4 +1,10 @@
+---
+description: Generate Mermaid ERD diagrams for each public table. Connects to DB to introspect columns, keys, and relationships.
+---
+
 # @sbtools/plugin-erd
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-erd.svg)](https://www.npmjs.com/package/@sbtools/plugin-erd)
 
 Plugin that generates Mermaid ERD diagrams for each public table. Connects to the database to introspect columns, primary keys, and foreign keys.
 

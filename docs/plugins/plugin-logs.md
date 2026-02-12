@@ -1,4 +1,10 @@
+---
+description: Live Docker log tailing, pg_stat_statements query monitoring, and standalone HTML log viewer.
+---
+
 # @sbtools/plugin-logs
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-logs.svg)](https://www.npmjs.com/package/@sbtools/plugin-logs)
 
 Plugin that adds live Docker log tailing, `pg_stat_statements` query monitoring, and a standalone HTML log viewer.
 

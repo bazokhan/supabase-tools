@@ -1,4 +1,10 @@
+---
+description: Document Supabase Edge Functions by statically analysing TypeScript source files.
+---
+
 # @sbtools/plugin-deno-functions
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-deno-functions.svg)](https://www.npmjs.com/package/@sbtools/plugin-deno-functions)
 
 Plugin that documents Supabase Edge Functions by statically analysing TypeScript source files.
 

@@ -1,3 +1,7 @@
+---
+description: Portable toolkit for local Supabase development — Docker services, migrations, typegen, ERD, tests, and docs. CLI via npx sbt.
+---
+
 # supabase-tools
 
 Portable toolkit for local Supabase development without the Supabase CLI.
@@ -15,6 +19,8 @@ npm install @sbtools/plugin-erd
 # Run commands
 npx sbt help
 ```
+
+**Packages:** [@sbtools/core](https://www.npmjs.com/package/@sbtools/core) · [All packages on npm](https://www.npmjs.com/org/sbtools)
 
 ## What's Included
 

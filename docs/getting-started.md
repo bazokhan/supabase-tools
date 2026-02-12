@@ -1,3 +1,7 @@
+---
+description: Install @sbtools/core and plugins, create supabase-tools.config.json, and run your first commands.
+---
+
 # Getting Started
 
 ## Installation
@@ -11,6 +15,8 @@ npm install @sbtools/plugin-erd
 npm install @sbtools/plugin-deno-functions
 npm install @sbtools/plugin-logs
 ```
+
+**npm:** [@sbtools/core](https://www.npmjs.com/package/@sbtools/core) · [@sbtools/sdk](https://www.npmjs.com/package/@sbtools/sdk) · [All packages](https://www.npmjs.com/org/sbtools)
 
 ## Configuration
 

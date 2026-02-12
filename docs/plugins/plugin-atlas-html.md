@@ -1,4 +1,10 @@
+---
+description: Generate Backend Atlas HTML visualization. Aggregates data from core extractors and sibling plugins.
+---
+
 # @sbtools/plugin-atlas-html
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-atlas-html.svg)](https://www.npmjs.com/package/@sbtools/plugin-atlas-html)
 
 Plugin that generates the Backend Atlas HTML visualization. Aggregates data from core extractors and sibling plugins into a single interactive HTML document.
 

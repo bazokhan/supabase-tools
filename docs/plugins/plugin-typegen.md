@@ -1,4 +1,10 @@
+---
+description: Generate TypeScript types from the running Supabase instance using the PostgREST types endpoint.
+---
+
 # @sbtools/plugin-typegen
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-typegen.svg)](https://www.npmjs.com/package/@sbtools/plugin-typegen)
 
 Plugin that generates TypeScript types from the running Supabase instance using the PostgREST types endpoint.
 

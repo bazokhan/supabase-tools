@@ -1,4 +1,10 @@
+---
+description: Visualize backend dependency relationships as interactive HTML graph and Mermaid diagrams.
+---
+
 # @sbtools/plugin-depgraph
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-depgraph.svg)](https://www.npmjs.com/package/@sbtools/plugin-depgraph)
 
 Plugin that visualizes backend dependency relationships (tables, functions, triggers, policies, views, enums) as an interactive HTML graph and Mermaid diagrams.
 

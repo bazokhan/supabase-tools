@@ -1,4 +1,10 @@
+---
+description: Scan frontend .ts/.tsx/.js/.jsx files for Supabase SDK usage and generate interactive HTML report.
+---
+
 # @sbtools/plugin-frontend-usage
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-frontend-usage.svg)](https://www.npmjs.com/package/@sbtools/plugin-frontend-usage)
 
 Plugin that scans frontend `.ts/.tsx/.js/.jsx` files for Supabase SDK usage and generates an interactive HTML report.
 

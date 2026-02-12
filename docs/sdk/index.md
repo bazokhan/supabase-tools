@@ -1,3 +1,7 @@
+---
+description: SDK types, PluginContext, UI utilities, error classes, and helpers for building plugins.
+---
+
 # SDK API Reference
 
 The `@sbtools/sdk` package provides shared types, interfaces, and utilities for supabase-tools plugins.

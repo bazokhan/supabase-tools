@@ -1,4 +1,10 @@
+---
+description: Start API documentation services — Swagger UI, ReDoc, and Backend Atlas via Docker Compose.
+---
+
 # @sbtools/plugin-docs-server
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-docs-server.svg)](https://www.npmjs.com/package/@sbtools/plugin-docs-server)
 
 Plugin that starts API documentation services: Swagger UI, ReDoc, and Backend Atlas via Docker Compose.
 

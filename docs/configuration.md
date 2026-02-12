@@ -1,3 +1,7 @@
+---
+description: Full reference for supabase-tools.config.json — paths, db, api, plugins, and validation.
+---
+
 # Configuration
 
 All fields in `supabase-tools.config.json` are optional. Defaults work out of the box.
