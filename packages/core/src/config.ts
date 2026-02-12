@@ -39,7 +39,7 @@ export const pathsSchema = z.object({
   snapshot: z.string().min(1).optional(),
   docsOutput: z.string().min(1).optional(),
   functions: z.string().min(1).optional(),
-});
+}).strict("Unknown key in paths. Plugin-specific paths (erdOutput, typesOutput, tests) belong in plugins[].config.");
 
 export const dbSchema = z.object({
   url: z.string().url("db.url must be a valid URL").optional(),

@@ -27,7 +27,7 @@ import { depgraphStyles } from "./atlas/styles.js";
 // Resolved paths
 // ---------------------------------------------------------------------------
 
-function resolvePaths(ctx: PluginContext) {
+export function resolvePaths(ctx: PluginContext) {
   const docsDir = ctx.paths.docsOutput;
   const atlasDataPath = path.join(docsDir, "backend-atlas-data.json");
   const snapshotDir = ctx.paths.snapshot;
