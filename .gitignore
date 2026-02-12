@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+schemaspy-out/
+openapi-spec.json
+plan.md
+.sbt/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.tgz

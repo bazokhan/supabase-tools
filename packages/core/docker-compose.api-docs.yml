@@ -1,0 +1,65 @@
+# API documentation services: Swagger UI, ReDoc, nginx (Atlas + SchemaSpy).
+# Requires SBT_PREFIX, SBT_DOCS_DIR, SBT_OPENAPI_SPEC, SBT_SCHEMASPY_OUT from env.
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: ${SBT_PREFIX}-swagger-ui
+    ports:
+      - "8081:8080"
+    volumes:
+      - ${SBT_OPENAPI_SPEC}:/usr/share/nginx/html/openapi.json:ro
+    environment:
+      - URL=/openapi.json
+    restart: unless-stopped
+
+  redoc:
+    image: redocly/redoc:latest
+    container_name: ${SBT_PREFIX}-redoc
+    ports:
+      - "8082:80"
+    volumes:
+      - ${SBT_OPENAPI_SPEC}:/usr/share/nginx/html/openapi.json:ro
+    environment:
+      - SPEC_URL=/openapi.json
+    restart: unless-stopped
+
+  docs-server:
+    image: nginx:alpine
+    container_name: ${SBT_PREFIX}-docs-server
+    ports:
+      - "8083:80"
+    volumes:
+      - ./nginx-docs.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${SBT_DOCS_DIR}:/srv/atlas:ro
+      - ${SBT_SCHEMASPY_OUT}:/srv/schemaspy:ro
+    restart: unless-stopped
+
+  schemaspy:
+    image: schemaspy/schemaspy:7.0.2
+    container_name: ${SBT_PREFIX}-schemaspy
+    volumes:
+      - ${SBT_SCHEMASPY_OUT}:/output
+    networks:
+      - default
+      - supabase-net
+    command:
+      - -t
+      - pgsql
+      - -host
+      - ${SBT_PREFIX}-supabase-db
+      - -port
+      - "5432"
+      - -db
+      - postgres
+      - -u
+      - postgres
+      - -p
+      - postgres
+      - -s
+      - public
+    restart: "no"
+
+networks:
+  supabase-net:
+    name: ${SBT_PREFIX}-supabase_default
+    external: true

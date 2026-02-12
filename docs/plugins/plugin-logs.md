@@ -1,0 +1,40 @@
+# @sbtools/plugin-logs
+
+Plugin that adds live Docker log tailing, `pg_stat_statements` query monitoring, and a standalone HTML log viewer.
+
+## Quick Start
+
+```bash
+npm install @sbtools/plugin-logs
+```
+
+Add to config: `{ "path": "@sbtools/plugin-logs" }`
+
+```bash
+# Tail all services
+npx sbt logs
+
+# Open log viewer
+npx sbt logs viewer
+# → http://localhost:3333
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `logs` | Tail all services (multiplexed) |
+| `logs <service>` | Tail single service |
+| `logs --list` | List services |
+| `logs pg-stats` | Top 20 queries by execution time |
+| `logs pg-stats --slow` | By mean execution time |
+| `logs pg-stats --frequent` | By call count |
+| `logs viewer` | Start HTML log viewer |
+
+## Configuration
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `viewerPort` | 3333 | Log viewer port |
+| `tailLines` | 100 | Initial tail lines |
+| `dbContainer` | supabase-db | DB container name |

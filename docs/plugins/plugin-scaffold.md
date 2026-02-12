@@ -1,0 +1,34 @@
+# @sbtools/plugin-scaffold
+
+Plugin that scaffolds new supabase-tools plugins with consistent boilerplate.
+
+## Quick Start
+
+```bash
+npm install @sbtools/plugin-scaffold
+```
+
+Add to config: `{ "path": "@sbtools/plugin-scaffold" }`
+
+```bash
+# Internal plugin (packages/plugin-<name>/)
+npx sbt scaffold-plugin analytics
+
+# External plugin (sibling directory)
+npx sbt scaffold-plugin my-feature --external
+
+# With Atlas hooks
+npx sbt scaffold-plugin dashboard --hooks
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `scaffold-plugin <name>` | Create internal plugin |
+| `scaffold-plugin <name> --external` | Create external plugin |
+| `scaffold-plugin <name> --hooks` | Include Atlas hook stubs |
+
+## Configuration
+
+No config required.

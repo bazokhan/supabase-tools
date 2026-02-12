@@ -1,0 +1,36 @@
+{
+  "name": "@sbtools/plugin-db-test",
+  "version": "0.1.0",
+  "description": "Database test runner plugin for supabase-tools (pgTAP + PGlite).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supabase-tools/supabase-tools",
+    "directory": "packages/plugin-db-test"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["supabase", "tools"],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sbtools/sdk": "^0.1.0",
+    "@electric-sql/pglite": "^0.2.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/pg": "^8.11.0"
+  }
+}
