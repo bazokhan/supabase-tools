@@ -28,7 +28,18 @@ npm run sbt -- test --mem
 
 ## Configuration
 
+Plugin config goes in `plugins[].config`:
+
+```json
+{
+  "plugins": [{
+    "path": "@sbtools/plugin-db-test",
+    "config": { "testsDir": "supabase/tests" }
+  }]
+}
+```
+
 | Key | Default | Description |
 |-----|---------|-------------|
 | `testsDir` | `supabase/tests` | Directory containing .sql test files |
-| `migrationsDir` | `supabase/migrations` | Migrations to apply in --mem mode |
+| `migrationsDir` | Root `paths.migrations` | Migrations to apply in --mem mode |

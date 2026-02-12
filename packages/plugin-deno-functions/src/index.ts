@@ -72,7 +72,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
 
         const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
         const items = extractEdgeFunctions({
-          functionsPath: ctx.functionsPath,
+          functionsPath: ctx.paths.functions,
           configTomlPath: resolveConfigTomlPath(ctx),
           baseUrl,
         });
@@ -146,7 +146,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
             apiUrl: ctx.apiUrl,
             baseUrl,
           });
-          const outPath = path.join(ctx.docsOutput, "edge-functions-openapi.json");
+          const outPath = path.join(ctx.paths.docsOutput, "edge-functions-openapi.json");
           fs.mkdirSync(path.dirname(outPath), { recursive: true });
           fs.writeFileSync(outPath, JSON.stringify(spec, null, 2) + "\n", "utf8");
           console.log(`\nOpenAPI spec written to: ${outPath}`);
@@ -160,7 +160,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   getAtlasData: async (ctx: PluginContext) => {
     const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
     const items = extractEdgeFunctions({
-      functionsPath: ctx.functionsPath,
+      functionsPath: ctx.paths.functions,
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
@@ -182,7 +182,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   getOpenApiSpec: async (ctx: PluginContext) => {
     const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
     const items = extractEdgeFunctions({
-      functionsPath: ctx.functionsPath,
+      functionsPath: ctx.paths.functions,
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
@@ -192,7 +192,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   getStatusLines: async (ctx: PluginContext) => {
     const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
     const items = extractEdgeFunctions({
-      functionsPath: ctx.functionsPath,
+      functionsPath: ctx.paths.functions,
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });

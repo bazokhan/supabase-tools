@@ -94,26 +94,18 @@ export function buildPluginContext(
   loaded: LoadedPlugin,
   allLoaded?: LoadedPlugin[],
 ): PluginContext {
-  const resolvedPaths = {
-    migrations: resolve(config.paths.migrations),
-    tests: resolve(config.paths.tests),
-    snapshot: resolve(config.paths.snapshot),
-    docsOutput: resolve(config.paths.docsOutput),
-    erdOutput: resolve(config.paths.erdOutput),
-    typesOutput: resolve(config.paths.typesOutput),
-    functions: resolve(config.paths.functions),
-  };
-
   return {
     projectRoot: config.projectRoot,
     toolsDir: config.toolsDir,
     sbtDataDir: config.sbtDataDir,
     pluginConfig: loaded.pluginConfig,
     apiUrl: config.api.url,
-    paths: resolvedPaths,
-    // Deprecated — kept for backward compatibility
-    functionsPath: resolvedPaths.functions,
-    docsOutput: resolvedPaths.docsOutput,
+    paths: {
+      migrations: resolve(config.paths.migrations),
+      snapshot: resolve(config.paths.snapshot),
+      docsOutput: resolve(config.paths.docsOutput),
+      functions: resolve(config.paths.functions),
+    },
     siblingPlugins: allLoaded
       ?.filter((l) => l.plugin.name !== loaded.plugin.name)
       .map((l) => l.plugin),

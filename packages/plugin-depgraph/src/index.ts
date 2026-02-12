@@ -31,7 +31,8 @@ function resolvePaths(ctx: PluginContext) {
   const docsDir = ctx.paths.docsOutput;
   const atlasDataPath = path.join(docsDir, "backend-atlas-data.json");
   const snapshotDir = ctx.paths.snapshot;
-  const typesFilePath = ctx.paths.typesOutput;
+  const typesFilePath = (ctx.pluginConfig.typesFilePath as string) ??
+    path.join(ctx.projectRoot, "src", "integrations", "supabase", "types.ts");
   const htmlOutput = path.join(docsDir, "dependency-graph.html");
   const mermaidOutput = path.join(docsDir, "dependency-graph.md");
 

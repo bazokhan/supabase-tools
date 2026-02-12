@@ -31,15 +31,7 @@ import {
   resetStats,
 } from "./pg-stats.js";
 
-// Re-use the PluginContext shape (duck-typed)
-interface PluginContext {
-  projectRoot: string;
-  toolsDir: string;
-  pluginConfig: Record<string, unknown>;
-  apiUrl: string;
-  functionsPath: string;
-  docsOutput: string;
-}
+import type { PluginContext } from "@sbtools/sdk";
 
 export async function startViewer(
   ctx: PluginContext,

@@ -11,11 +11,8 @@ describe("validateConfig", () => {
     const result = validateConfig({
       paths: {
         migrations: "supabase/migrations",
-        tests: "supabase/tests",
         snapshot: "supabase/current",
         docsOutput: "docs",
-        erdOutput: "docs/entity-relations",
-        typesOutput: "src/types.ts",
         functions: "supabase/functions",
       },
       db: {
@@ -27,7 +24,6 @@ describe("validateConfig", () => {
         studioUrl: "http://localhost:54323",
         inbucketUrl: "http://localhost:54324",
       },
-      erd: { displayColumns: ["name", "email"] },
       project: { name: "my-project" },
       plugins: [{ path: "my-plugin", enabled: true, config: { key: "value" } }],
     });
@@ -56,11 +52,6 @@ describe("validateConfig", () => {
     if (!result.success) {
       expect(result.error.message).toContain("db.url");
     }
-  });
-
-  it("rejects erd.displayColumns that is not an array", () => {
-    const result = validateConfig({ erd: { displayColumns: "name" } });
-    expect(result.success).toBe(false);
   });
 
   it("rejects unknown top-level keys (strict mode)", () => {

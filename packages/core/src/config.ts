@@ -36,11 +36,8 @@ export const pluginEntrySchema = z.object({
 
 export const pathsSchema = z.object({
   migrations: z.string().min(1).optional(),
-  tests: z.string().min(1).optional(),
   snapshot: z.string().min(1).optional(),
   docsOutput: z.string().min(1).optional(),
-  erdOutput: z.string().min(1).optional(),
-  typesOutput: z.string().min(1).optional(),
   functions: z.string().min(1).optional(),
 });
 
@@ -55,10 +52,6 @@ export const apiSchema = z.object({
   inbucketUrl: z.string().url("api.inbucketUrl must be a valid URL").optional(),
 });
 
-export const erdSchema = z.object({
-  displayColumns: z.array(z.string()).optional(),
-});
-
 export const projectSchema = z.object({
   name: z.string().min(1, "project.name must be a non-empty string").optional(),
 });
@@ -69,7 +62,6 @@ export const configFileSchema = z
     paths: pathsSchema.optional(),
     db: dbSchema.optional(),
     api: apiSchema.optional(),
-    erd: erdSchema.optional(),
     project: projectSchema.optional(),
     plugins: z.array(pluginEntrySchema).optional(),
   })
@@ -100,11 +92,8 @@ export interface SupabaseToolsConfig {
   sbtDataDir: string;
   paths: {
     migrations: string;
-    tests: string;
     snapshot: string;
     docsOutput: string;
-    erdOutput: string;
-    typesOutput: string;
     functions: string;
   };
   db: {
@@ -115,9 +104,6 @@ export interface SupabaseToolsConfig {
     url: string;
     studioUrl: string;
     inbucketUrl: string;
-  };
-  erd: {
-    displayColumns: string[];
   };
   project: {
     name: string;
@@ -169,11 +155,8 @@ export function validateConfig(
 const DEFAULTS: Omit<SupabaseToolsConfig, "projectRoot" | "toolsDir" | "sbtDataDir" | "plugins"> & { plugins: PluginEntry[] } = {
   paths: {
     migrations: "supabase/migrations",
-    tests: "supabase/tests",
     snapshot: "supabase/current",
     docsOutput: "docs",
-    erdOutput: "docs/entity-relations",
-    typesOutput: "src/integrations/supabase/types.ts",
     functions: "supabase/functions",
   },
   db: {
@@ -184,9 +167,6 @@ const DEFAULTS: Omit<SupabaseToolsConfig, "projectRoot" | "toolsDir" | "sbtDataD
     url: "http://localhost:54321",
     studioUrl: "http://localhost:54323",
     inbucketUrl: "http://localhost:54324",
-  },
-  erd: {
-    displayColumns: ["name", "email", "full_name", "slug", "title"],
   },
   project: {
     name: "supabase-project",
@@ -254,7 +234,6 @@ function buildConfig(): SupabaseToolsConfig {
     paths: { ...DEFAULTS.paths, ...overrides?.paths },
     db: { ...DEFAULTS.db, ...overrides?.db },
     api: { ...DEFAULTS.api, ...overrides?.api },
-    erd: { ...DEFAULTS.erd, ...overrides?.erd },
     project: { name: projectName },
     plugins: overrides?.plugins ?? DEFAULTS.plugins,
   };

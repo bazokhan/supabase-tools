@@ -24,7 +24,7 @@ function getScanPaths(ctx: PluginContext): string[] {
 }
 
 function getOutputPath(ctx: PluginContext): string {
-  return path.join(ctx.docsOutput, "frontend-usage.html");
+  return path.join(ctx.paths.docsOutput, "frontend-usage.html");
 }
 
 async function frontendUsageCommand(args: string[], ctx: PluginContext): Promise<void> {

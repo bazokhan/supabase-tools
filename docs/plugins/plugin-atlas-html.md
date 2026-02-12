@@ -23,4 +23,4 @@ npm run sbt -- atlas-html
 
 ## Configuration
 
-Configured via `supabase-tools.config.json` paths. No plugin-specific config required.
+Uses `paths.docsOutput` from root config for the output directory. No plugin-specific config required.

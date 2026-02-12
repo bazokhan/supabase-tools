@@ -62,14 +62,11 @@ export interface SbtPluginCommand {
 // Context passed to plugin hooks
 // ---------------------------------------------------------------------------
 
-/** All config paths resolved to absolute paths. */
+/** Shared config paths resolved to absolute paths. */
 export interface ResolvedPaths {
   migrations: string;
-  tests: string;
   snapshot: string;
   docsOutput: string;
-  erdOutput: string;
-  typesOutput: string;
   functions: string;
 }
 
@@ -90,14 +87,8 @@ export interface PluginContext {
   /** Supabase API URL, e.g. "http://localhost:54321". */
   apiUrl: string;
 
-  /** All config paths resolved to absolute paths. */
+  /** Shared config paths resolved to absolute paths. */
   paths: ResolvedPaths;
-
-  /** @deprecated Use `ctx.paths.functions` instead. */
-  functionsPath: string;
-
-  /** @deprecated Use `ctx.paths.docsOutput` instead. */
-  docsOutput: string;
 
   /** All other loaded plugins — available for cross-plugin collaboration. */
   siblingPlugins?: SbtPlugin[];

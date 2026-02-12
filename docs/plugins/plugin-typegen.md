@@ -25,6 +25,17 @@ npx sbt generate-types
 
 ## Configuration
 
+Plugin config goes in `plugins[].config`:
+
+```json
+{
+  "plugins": [{
+    "path": "@sbtools/plugin-typegen",
+    "config": { "typesOutput": "src/types/supabase.ts" }
+  }]
+}
+```
+
 | Key | Default | Description |
 |-----|---------|-------------|
 | `typesOutput` | `src/integrations/supabase/types.ts` | Output file path |

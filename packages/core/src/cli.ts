@@ -75,12 +75,10 @@ function init(): void {
     } catch { return path.basename(config.projectRoot); }
   })();
   const defaultConfig = {
-    paths: { migrations: "supabase/migrations", tests: "supabase/tests", snapshot: "supabase/current",
-      docsOutput: "docs", erdOutput: "docs/entity-relations",
-      typesOutput: "src/integrations/supabase/types.ts", functions: "supabase/functions" },
+    paths: { migrations: "supabase/migrations", snapshot: "supabase/current",
+      docsOutput: "docs", functions: "supabase/functions" },
     db: { url: "postgresql://postgres:postgres@localhost:54322/postgres", container: "supabase-db" },
     api: { url: "http://localhost:54321", studioUrl: "http://localhost:54323", inbucketUrl: "http://localhost:54324" },
-    erd: { displayColumns: ["name", "email", "full_name", "slug", "title"] },
     project: { name: projectName }, plugins: [],
   };
   fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2) + "\n", "utf8");
