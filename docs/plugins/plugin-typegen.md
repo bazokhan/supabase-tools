@@ -29,6 +29,13 @@ npx sbt generate-types
 |---------|-------------|
 | `generate-types` | Fetch types from PostgREST and write to file |
 
+```
+$ npx sbt generate-types
+
+Fetching types from http://localhost:54321/rest/v1/?apikey=...
+✓ Written to src/integrations/supabase/types.ts (248 tables, 12 views, 34 enums)
+```
+
 ## Configuration
 
 Plugin config goes in `plugins[].config`:

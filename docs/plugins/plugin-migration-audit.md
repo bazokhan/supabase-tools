@@ -23,6 +23,26 @@ npx sbt migration-audit
 # → CLI summary + open in browser
 ```
 
+```
+$ npx sbt migration-audit
+
+Migration Audit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Migrations Dir  supabase/migrations
+Database        Connected
+Tracking Table  Exists
+
+Total: 63  Applied: 63  Pending: 0  Missing: 0
+
+Migrations:
+  APPLIED  20251218135835_create_users.sql              (2026-02-12T11:43:40)
+  APPLIED  20251218135847_add_organizations.sql         (2026-02-12T11:43:40)
+  APPLIED  20251224154957_create_subscriptions.sql      (2026-02-12T11:43:40)
+  ...
+
+✓ HTML report → docs/migration-audit.html
+```
+
 ## Commands
 
 | Command | Description |
@@ -31,6 +51,9 @@ npx sbt migration-audit
 | `migration-audit --json` | Output raw audit JSON |
 | `migration-audit --html` | Generate HTML only |
 | `migration-audit --no-open` | Skip opening browser |
+
+![Migration audit HTML report](../images/plugin-migration-audit-html-output.jpg)
+*Migration audit HTML report*
 
 ## Issues Detected
 

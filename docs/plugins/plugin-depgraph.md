@@ -35,6 +35,9 @@ npx sbt depgraph
 | `depgraph --mermaid` | Mermaid only |
 | `depgraph --json` | Raw JSON output |
 
+![Dependency graph HTML report](../images/plugin-depgraph-html-output.jpg)
+*Dependency graph HTML report*
+
 ## Relationships
 
 Tracks: triggers→tables, policies→tables, functions→tables, views→tables, FK constraints, enum usage.

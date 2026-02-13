@@ -17,7 +17,8 @@
       "Bash(gh issue view:*)",
       "Bash(gh label list:*)",
       "Bash(npx vitest run:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(npm run docs:build:*)"
     ]
   }
 }

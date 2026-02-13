@@ -29,6 +29,26 @@ npx sbt generate-erd
 |---------|-------------|
 | `generate-erd` | Generate Mermaid ERD for all public tables |
 
+Sample generated ERD (`docs/entity-relations/users.md`):
+
+~~~
+```mermaid
+erDiagram
+    users {
+        uuid id PK
+        text email
+        text full_name
+        timestamptz created_at
+    }
+    organizations {
+        uuid id PK
+        text slug
+    }
+    users ||--o{ memberships : "has"
+    organizations ||--o{ memberships : "has"
+```
+~~~
+
 ## Configuration
 
 Plugin config goes in `plugins[].config`:

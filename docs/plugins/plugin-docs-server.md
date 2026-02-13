@@ -33,6 +33,18 @@ npx sbt docs stop         # Stop all docs containers
 | `docs schemaspy` | SchemaSpy (port 8083/schemaspy/) |
 | `docs stop` | Stop all documentation containers |
 
+![Swagger UI](../images/plugin-docs-swagger-output.jpg)
+*Swagger UI*
+
+![ReDoc](../images/plugin-docs-redoc-output.jpg)
+*ReDoc*
+
+![Backend Atlas](../images/plugin-docs-atlas-output.jpg)
+*Backend Atlas*
+
+![SchemaSpy](../images/plugin-docs-schemaspy-output.jpg)
+*SchemaSpy*
+
 ## Prerequisites by Subcommand
 
 | Subcommand | Needs |

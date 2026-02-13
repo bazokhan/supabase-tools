@@ -51,6 +51,17 @@ npx sbt migrate
 npx sbt generate-erd
 ```
 
+```
+$ npx sbt status
+
+Supabase Local Status
+----------------------
+API URL:              http://localhost:54321
+REST URL:             http://localhost:54321/rest/v1
+DB URL:               postgresql://postgres:postgres@localhost:54322/postgres
+Studio URL:           http://localhost:54323
+```
+
 ## Requirements
 
 - Node.js 18+

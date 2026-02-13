@@ -32,6 +32,24 @@ npm run sbt -- test --mem
 | `test --mem` | Run tests in-memory via PGlite |
 | `test --server` | Run tests against server |
 
+```
+$ npm run sbt -- test
+
+Running pgTAP tests from supabase/tests
+Mode: live (Docker)
+
+  supabase/tests/auth_policies.sql
+    ok 1 - anon cannot read profiles
+    ok 2 - authenticated user can read own profile
+    ok 3 - service_role bypasses RLS
+
+  supabase/tests/subscriptions.sql
+    ok 4 - active subscription required for premium
+    ok 5 - expired subscription denied
+
+5/5 tests passed
+```
+
 ## Configuration
 
 Plugin config goes in `plugins[].config`:

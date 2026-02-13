@@ -27,6 +27,17 @@ npm run sbt -- atlas-html
 |---------|-------------|
 | `atlas-html` | Generate `docs/backend-atlas.html` with all plugin contributions |
 
+```
+$ npx sbt atlas-html
+
+Collecting data from plugins...
+  ✓ erd (63 tables)
+  ✓ deno-functions (4 functions)
+  ✓ depgraph (142 relationships)
+
+✓ Written to docs/backend-atlas.html
+```
+
 ## Configuration
 
 Uses `paths.docsOutput` from root config for the output directory. No plugin-specific config required.

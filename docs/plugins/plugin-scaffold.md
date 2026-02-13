@@ -35,6 +35,18 @@ npx sbt scaffold-plugin dashboard --hooks
 | `scaffold-plugin <name> --external` | Create external plugin |
 | `scaffold-plugin <name> --hooks` | Include Atlas hook stubs |
 
+```
+$ npx sbt scaffold-plugin analytics
+
+Scaffolding plugin: analytics
+  ✓ packages/plugin-analytics/package.json
+  ✓ packages/plugin-analytics/tsconfig.json
+  ✓ packages/plugin-analytics/src/index.ts
+  ✓ packages/plugin-analytics/README.md
+
+Done — run `npm install` to link the new package.
+```
+
 ## Configuration
 
 No config required.

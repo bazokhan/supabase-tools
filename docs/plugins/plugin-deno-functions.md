@@ -43,6 +43,20 @@ npx sbt edge-functions
 | `edge-functions --json` | Output raw JSON |
 | `edge-functions --openapi` | Generate OpenAPI spec |
 
+```
+$ npx sbt edge-functions --brief
+
+Edge Functions (4 discovered)
+┌──────────────────┬────────┬─────────────────────────┐
+│ Function         │ Verify │ Endpoint                │
+├──────────────────┼────────┼─────────────────────────┤
+│ send-email       │ JWT    │ /functions/v1/send-email │
+│ process-payment  │ JWT    │ /functions/v1/process-…  │
+│ generate-report  │ JWT    │ /functions/v1/generate-… │
+│ health-check     │ none   │ /functions/v1/health-c…  │
+└──────────────────┴────────┴─────────────────────────┘
+```
+
 ## Configuration
 
 | Key | Default | Description |

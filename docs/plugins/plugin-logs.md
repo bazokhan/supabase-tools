@@ -37,6 +37,23 @@ npx sbt logs viewer
 | `logs pg-stats --frequent` | By call count |
 | `logs viewer` | Start HTML log viewer |
 
+```
+$ npx sbt logs --list
+
+Available services:
+  ✓ functions    (running)
+  ✓ db           (running)
+  ✓ rest         (running)
+  ✓ auth         (running)
+  ✓ kong         (running)
+  ✓ storage      (running)
+  ✓ realtime     (running)
+  ✓ studio       (running)
+```
+
+![Log viewer UI](../images/plugin-logs-viewer-html-output.jpg)
+*Log viewer UI*
+
 ## Configuration
 
 | Key | Default | Description |
