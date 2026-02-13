@@ -27,7 +27,6 @@ import {
   registerChild,
   killAllChildren,
   SERVICE_NAMES,
-  SERVICE_MAP,
 } from "./docker-logs.js";
 import { formatLogLine } from "./formatter.js";
 import {
@@ -111,9 +110,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
     console.log("\nSupabase Service Status\n");
     console.log(
       "  " +
-        "Service".padEnd(14) +
-        "Container".padEnd(40) +
-        "Status",
+      "Service".padEnd(14) +
+      "Container".padEnd(40) +
+      "Status",
     );
     console.log("  " + "-".repeat(70));
     for (const s of statuses) {
@@ -155,7 +154,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   if (running.length === 0) {
     console.error(
       "No running containers found for the requested services.\n" +
-        "Run `sbt start` first, or use `sbt logs --list` to check status.",
+      "Run `sbt start` first, or use `sbt logs --list` to check status.",
     );
     process.exit(1);
   }

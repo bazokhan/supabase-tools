@@ -2,8 +2,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { ui, SbtError, handleError } from "@sbtools/sdk";
-import type { SbtPluginCommand } from "@sbtools/sdk";
+import { ui, SbtError, handleError, sanitizeContainerPrefix } from "@sbtools/sdk";
 import { config, resolve } from "./config.js";
 import { loadPlugins, buildPluginContext } from "./plugin-loader.js";
 import { preflight } from "./preflight.js";
@@ -17,7 +16,6 @@ const command = process.argv[2];
 const args = process.argv.slice(3);
 
 const COMPOSE_DB = path.join(config.toolsDir, "docker-compose.db.yml");
-const COMPOSE_DOCS = path.join(config.toolsDir, "docker-compose.api-docs.yml");
 const SBT_ENV_FILE = path.join(config.sbtDataDir, ".env");
 
 function run(cmd: string): void {
@@ -45,8 +43,7 @@ function ensureProjectDirs(): void {
   fs.mkdirSync(docsAbsolute, { recursive: true });
   fs.mkdirSync(config.sbtDataDir, { recursive: true });
   fs.mkdirSync(path.join(config.sbtDataDir, "schemaspy-out"), { recursive: true });
-  const containerPrefix = config.project.name
-    .replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "sbt";
+  const containerPrefix = sanitizeContainerPrefix(config.project.name);
   const functionsAbs = path.resolve(config.projectRoot, config.paths.functions);
   const openapiSpec = path.join(config.sbtDataDir, "openapi-spec.json");
   const schemaspyOut = path.join(config.sbtDataDir, "schemaspy-out");
@@ -108,7 +105,6 @@ try {
     case "stop":
       ensureProjectDirs();
       run(`docker compose -f "${COMPOSE_DB}" --env-file "${SBT_ENV_FILE}" down`);
-      try { execSync(`docker compose -f "${COMPOSE_DOCS}" --env-file "${SBT_ENV_FILE}" down`, { stdio: "inherit", cwd: config.toolsDir }); } catch { /* ok */ }
       break;
 
     case "restart":
@@ -128,48 +124,8 @@ try {
       await runSnapshot();
       break;
 
-    case "generate-atlas": {
+    case "generate-atlas":
       await runGenerateData();
-      // Invoke atlas-html plugin if loaded
-      const atlasCmd = pluginCommands.find((pc) => pc.cmd.name === "atlas-html");
-      if (atlasCmd) {
-        const ctx = buildPluginContext(atlasCmd.loaded, loaded);
-        await atlasCmd.cmd.run(args, ctx);
-      }
-      break;
-    }
-
-    case "docs":
-      if (args.includes("stop")) {
-        ensureProjectDirs();
-        run(`docker compose -f "${COMPOSE_DOCS}" --env-file "${SBT_ENV_FILE}" down`);
-      } else {
-        ensureProjectDirs();
-        // Auto-generate snapshot if missing
-        const metaFile = path.join(resolve(config.paths.snapshot), "_meta", "snapshot.json");
-        if (!fs.existsSync(metaFile)) {
-          ui.step("📸 Snapshot not found. Generating DB snapshot first...\n");
-          try { await runSnapshot(); } catch { ui.warn("⚠️  Snapshot generation failed. Continuing...\n"); }
-        }
-        // Generate atlas data + HTML
-        ui.step("📊 Generating atlas visualization...\n");
-        try {
-          await runGenerateData();
-          const atlasCmd = pluginCommands.find((pc) => pc.cmd.name === "atlas-html");
-          if (atlasCmd) await atlasCmd.cmd.run([], buildPluginContext(atlasCmd.loaded, loaded));
-        } catch { ui.warn("⚠️  Atlas generation skipped.\n"); }
-        // Generate ERD
-        const erdCmd = pluginCommands.find((pc) => pc.cmd.name === "generate-erd");
-        if (erdCmd) {
-          ui.step("📐 Generating ERD diagrams...\n");
-          try { await erdCmd.cmd.run([], buildPluginContext(erdCmd.loaded, loaded)); } catch { ui.warn("⚠️  ERD generation skipped.\n"); }
-        }
-        // Start docs server
-        const docsCmd = pluginCommands.find((pc) => pc.cmd.name === "start-docs-server");
-        if (docsCmd) {
-          await docsCmd.cmd.run([], buildPluginContext(docsCmd.loaded, loaded));
-        }
-      }
       break;
 
     case "init":

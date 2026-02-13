@@ -62,7 +62,16 @@ export {
     readText,
     safeName,
     safeFileName,
+    sanitizeSlug,
+    sanitizeIdentifier,
 } from "./fs-utils.js";
 
 // Compose utilities
-export { extractComposeKey } from "./compose-utils.js";
+export { extractComposeKey, extractSupabaseKeys } from "./compose-utils.js";
+export type { SupabaseKeys } from "./compose-utils.js";
+
+// Container utilities
+export {
+  sanitizeContainerPrefix,
+  deriveContainerPrefix,
+} from "./container-utils.js";

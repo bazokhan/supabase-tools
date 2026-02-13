@@ -89,6 +89,14 @@ Place a `metadata.json` next to `index.ts` in any function directory to override
 | `baseUrl` | `/functions/v1` | URL prefix for edge function endpoints |
 | `configTomlPath` | `supabase/config.toml` | Path to Supabase config.toml (for `verify_jwt` settings) |
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Files | `supabase/functions` — edge function source directories must exist |
+
+No Docker or database required for listing. OpenAPI generation needs a running API for full spec.
+
 ## Requirements
 
 - Node.js 18+

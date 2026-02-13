@@ -37,13 +37,6 @@ const composeDb = (): Check => ({
   kind: "file",
 });
 
-const composeDocs = (): Check => ({
-  path: path.join(config.toolsDir, "docker-compose.api-docs.yml"),
-  label: "Docker Compose API-docs config",
-  fix: "This file ships with supabase-tools. Re-clone or restore it.",
-  kind: "file",
-});
-
 const snapshotMeta = (): Check => ({
   path: path.join(resolve(config.paths.snapshot), "_meta", "snapshot.json"),
   label: "DB snapshot metadata",
@@ -82,10 +75,6 @@ function checksForCommand(command: string, args: string[]): Check[] {
 
     case "generate-atlas":
       return [snapshotMeta()];
-
-    case "docs":
-      if (args.includes("stop")) return [];
-      return [composeDb(), composeDocs()];
 
     default:
       return [];

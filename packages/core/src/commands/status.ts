@@ -1,13 +1,12 @@
 import path from "node:path";
-import { ui, extractComposeKey } from "@sbtools/sdk";
+import { ui, extractComposeKey, extractSupabaseKeys } from "@sbtools/sdk";
 import { config } from "../config.js";
 import { loadPlugins, buildPluginContext } from "../plugin-loader.js";
 
 export async function runStatus(): Promise<void> {
   const composePath = path.join(config.toolsDir, "docker-compose.db.yml");
 
-  const anonKey = extractComposeKey(composePath, [/SUPABASE_ANON_KEY:\s*([^\s]+)/, /ANON_KEY:\s*([^\s]+)/]);
-  const serviceKey = extractComposeKey(composePath, [/SUPABASE_SERVICE_ROLE_KEY:\s*([^\s]+)/, /SUPABASE_SERVICE_KEY:\s*([^\s]+)/, /SERVICE_KEY:\s*([^\s]+)/]);
+  const { anonKey, serviceKey } = extractSupabaseKeys(composePath);
   const jwtSecret = extractComposeKey(composePath, [/JWT_SECRET:\s*([^\s]+)/, /AUTH_JWT_SECRET:\s*([^\s]+)/]);
 
   const api = config.api.url;

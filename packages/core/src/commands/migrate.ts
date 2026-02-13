@@ -1,14 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { ui } from "@sbtools/sdk";
+import { ui, sanitizeContainerPrefix } from "@sbtools/sdk";
 import { config, resolve } from "../config.js";
 
 export async function runMigrate(): Promise<void> {
   const MIGRATIONS_DIR = resolve(config.paths.migrations);
 
-  const prefix = config.project.name
-    .replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "sbt";
+  const prefix = sanitizeContainerPrefix(config.project.name);
   const DB_CONTAINER = `${prefix}-supabase-db`;
 
   const sleep = (ms: number): void => {

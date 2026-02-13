@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ui, ensureDir } from "@sbtools/sdk";
+import { ui, ensureDir, SbtError } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext, PluginAtlasUI } from "@sbtools/sdk";
 import { atlasStyles } from "./atlas/styles/base.js";
 import { cardStyles } from "./atlas/styles/cards.js";
@@ -20,6 +20,13 @@ const plugin: SbtPlugin = {
       name: "atlas-html",
       description: "Generate the Backend Atlas HTML visualization",
       async run(_args: string[], ctx: PluginContext): Promise<void> {
+        const dataFile = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
+        if (!fs.existsSync(dataFile)) {
+          throw new SbtError("PREFLIGHT_FAILED", "backend-atlas-data.json not found.", {
+            tips: ["Run `sbt generate-atlas` first to generate the atlas data."],
+          });
+        }
+
         const OUT_DIR = ctx.paths.docsOutput;
         const OUT_FILE = path.join(OUT_DIR, "backend-atlas.html");
         ensureDir(OUT_DIR);

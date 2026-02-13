@@ -71,11 +71,17 @@ Add to `supabase-tools.config.json`:
 
 No config fields needed — all paths are derived from the plugin context.
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Files | `docs/backend-atlas-data.json` must exist (run `sbt generate-atlas` first) |
+| Files | Snapshot dir (types, functions, etc.) for FK/enum detection — optional; works with atlas data only |
+
 ## Requirements
 
 - Node.js 18+
 - `tsx` (installed as devDependency in the parent project)
-- `docs/backend-atlas-data.json` must exist (run `sbt generate-atlas` first)
 - No additional npm dependencies
 
 ## Project Structure

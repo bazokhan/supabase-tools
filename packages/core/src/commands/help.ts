@@ -15,8 +15,7 @@ const CORE_COMMANDS: CommandMeta[] = [
   { name: "status", description: "Show service URLs, keys, and connection info", category: "Docker" },
   { name: "migrate", description: "Apply SQL migrations to running DB", category: "Database" },
   { name: "snapshot", description: "Export DB objects (functions, views, etc.) to filesystem", category: "Database" },
-  { name: "generate-atlas", description: "Generate the Backend Atlas HTML visualization", category: "Code Generation" },
-  { name: "docs", description: "Generate atlas + start Swagger UI, ReDoc, SchemaSpy", category: "Docs" },
+  { name: "generate-atlas", description: "Generate Backend Atlas data (JSON)", category: "Code Generation" },
   { name: "init", description: "Generate supabase-tools.config.json with defaults", category: "Setup" },
   { name: "help", description: "Show this help", category: "Setup" },
 ];
@@ -31,20 +30,9 @@ function inferCategory(cmdName: string): string {
 }
 
 export function showHelp(pluginCommands: { plugin: string; cmd: SbtPluginCommand }[]): void {
-  const pluginNames = new Set(pluginCommands.map((pc) => pc.cmd.name));
-
-  // Build category -> commands map (avoid duplicating core commands that are also plugin-provided)
   const byCategory = new Map<string, { name: string; description: string; source?: string }[]>();
 
   for (const meta of CORE_COMMANDS) {
-    // Skip core entries for commands that come from plugins (plugin wins for description)
-    if (meta.name === "generate-atlas" && pluginNames.has("atlas-html")) {
-      // generate-atlas is core-orchestrated, always show
-    }
-    if (pluginNames.has(meta.name) && meta.category !== "Docker" && meta.category !== "Database" && meta.category !== "Setup") {
-      // Prefer plugin's description
-      continue;
-    }
     const list = byCategory.get(meta.category) ?? [];
     list.push({ name: meta.name, description: meta.description });
     byCategory.set(meta.category, list);

@@ -13,7 +13,7 @@
     "build": "npm run build -w packages/sdk && npm run build --workspaces",
     "clean": "npm run clean --workspaces",
     "release": "npm run build && changeset publish",
-    "test": "vitest run --config packages/core/vitest.config.ts && vitest run --config packages/plugin-erd/vitest.config.ts && vitest run --config packages/plugin-typegen/vitest.config.ts && vitest run --config packages/plugin-db-test/vitest.config.ts && vitest run --config packages/plugin-depgraph/vitest.config.ts",
+    "test": "vitest run --config packages/sdk/vitest.config.ts && vitest run --config packages/core/vitest.config.ts && vitest run --config packages/plugin-erd/vitest.config.ts && vitest run --config packages/plugin-typegen/vitest.config.ts && vitest run --config packages/plugin-db-test/vitest.config.ts && vitest run --config packages/plugin-depgraph/vitest.config.ts",
     "test:watch": "vitest --config packages/core/vitest.config.ts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

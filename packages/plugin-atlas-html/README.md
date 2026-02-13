@@ -22,6 +22,12 @@ npm run sbt -- atlas-html
 
 Configured via `supabase-tools.config.json` paths. No plugin-specific config required.
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Files | `docs/backend-atlas-data.json` must exist (run `sbt generate-atlas` first) |
+
 ## Project Structure
 
 ```

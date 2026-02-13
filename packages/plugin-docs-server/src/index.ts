@@ -1,8 +1,291 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { ui, SbtError, extractComposeKey } from "@sbtools/sdk";
+import { ui, SbtError, extractSupabaseKeys } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+
+// ---------------------------------------------------------------------------
+// Subcommand types
+// ---------------------------------------------------------------------------
+
+type DocsSubcommand = "swagger" | "redoc" | "atlas" | "schemaspy" | "all" | "stop";
+
+const VALID_SUBCOMMANDS = new Set<string>(["swagger", "redoc", "atlas", "schemaspy", "all", "stop"]);
+
+const SERVICE_MAP: Record<string, string[]> = {
+  swagger:  ["swagger-ui"],
+  redoc:    ["redoc"],
+  atlas:    ["docs-server"],
+  schemaspy: ["schemaspy", "docs-server"],
+  all:      [],  // empty = start all services
+};
+
+const SERVICE_URLS: Record<string, [string, string]> = {
+  swagger:  ["Swagger UI",    "http://localhost:8081"],
+  redoc:    ["ReDoc",         "http://localhost:8082"],
+  atlas:    ["Backend Atlas", "http://localhost:8083/atlas/"],
+  schemaspy: ["SchemaSpy",     "http://localhost:8083/schemaspy/"],
+};
+
+// ---------------------------------------------------------------------------
+// Preflight helpers
+// ---------------------------------------------------------------------------
+
+function preflightOpenApi(
+  ctx: PluginContext,
+  specPath: string,
+  dbComposePath: string,
+): void {
+  // Ensure compose files exist
+  const composePath = path.join(ctx.toolsDir, "docker-compose.api-docs.yml");
+  if (!existsSync(composePath)) {
+    throw new SbtError("PREFLIGHT_FAILED", "docker-compose.api-docs.yml not found.", {
+      tips: ["This file ships with supabase-tools. Re-clone or restore it."],
+    });
+  }
+  if (!existsSync(path.join(ctx.sbtDataDir, ".env"))) {
+    throw new SbtError("PREFLIGHT_FAILED", ".env file not found in .sbt/.", {
+      tips: ["Run `sbt init` to create project directories and env file."],
+    });
+  }
+  // OpenAPI spec will be fetched or a placeholder created -- no hard fail needed
+}
+
+function preflightAtlas(ctx: PluginContext): void {
+  const dataFile = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
+  const htmlFile = path.join(ctx.paths.docsOutput, "backend-atlas.html");
+  const missing: string[] = [];
+  if (!existsSync(dataFile)) missing.push("backend-atlas-data.json");
+  if (!existsSync(htmlFile)) missing.push("backend-atlas.html");
+  if (missing.length > 0) {
+    throw new SbtError("PREFLIGHT_FAILED", `Atlas files missing: ${missing.join(", ")}`, {
+      tips: [
+        "Run `sbt generate-atlas` to generate the data file.",
+        "Run `sbt atlas-html` to generate the HTML page.",
+      ],
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// OpenAPI spec preparation (fetch + merge)
+// ---------------------------------------------------------------------------
+
+async function ensureOpenApiSpec(
+  ctx: PluginContext,
+  specPath: string,
+  dbComposePath: string,
+): Promise<void> {
+  ui.step("Preparing OpenAPI spec...\n");
+
+  const { anonKey, serviceKey } = extractSupabaseKeys(dbComposePath);
+  const key = serviceKey || anonKey;
+
+  let fetched = false;
+  if (key) {
+    try {
+      const res = await fetch(`${ctx.apiUrl}/rest/v1/`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+      });
+      if (res.ok) {
+        const spec = await res.json();
+        const pathCount = Object.keys(spec.paths || {}).length;
+        writeFileSync(specPath, JSON.stringify(spec, null, 2), "utf8");
+        ui.success(`OpenAPI spec fetched (${pathCount} endpoints).\n`);
+        fetched = true;
+      } else {
+        ui.warn(`Failed to fetch OpenAPI spec: ${res.status} ${res.statusText}`);
+      }
+    } catch {
+      ui.warn("Could not reach REST API to fetch OpenAPI spec (is the DB running?)");
+    }
+  } else {
+    ui.warn("Could not find API key in docker-compose.db.yml");
+  }
+
+  if (!fetched) {
+    if (!existsSync(specPath)) {
+      const placeholder = {
+        openapi: "3.0.0",
+        info: { title: "Supabase REST API", description: "Run 'sbt start' then 'sbt docs swagger' to generate the full spec.", version: "0.0.0" },
+        paths: {},
+      };
+      writeFileSync(specPath, JSON.stringify(placeholder, null, 2), "utf8");
+    }
+    ui.detail("   Using existing/placeholder spec. Re-run with DB running for full spec.\n");
+  }
+
+  // Merge plugin OpenAPI specs from siblings
+  const siblingPlugins = ctx.siblingPlugins ?? [];
+  const pluginsWithSpec = siblingPlugins.filter((p) => p.getOpenApiSpec);
+
+  if (pluginsWithSpec.length > 0) {
+    ui.step("Merging plugin OpenAPI specs...\n");
+
+    const spec = JSON.parse(readFileSync(specPath, "utf8")) as Record<string, unknown>;
+    const specPaths = (spec.paths ?? {}) as Record<string, unknown>;
+    const specComponents = (spec.components ?? {}) as Record<string, Record<string, unknown>>;
+    const specTags = (spec.tags ?? []) as { name: string; description?: string }[];
+
+    for (const sibling of pluginsWithSpec) {
+      try {
+        const pluginSpec = await sibling.getOpenApiSpec!(ctx);
+        const pPaths = (pluginSpec.paths ?? {}) as Record<string, unknown>;
+        Object.assign(specPaths, pPaths);
+
+        const pComponents = (pluginSpec.components ?? {}) as Record<string, Record<string, unknown>>;
+        for (const [section, entries] of Object.entries(pComponents)) {
+          if (!specComponents[section]) specComponents[section] = {};
+          Object.assign(specComponents[section], entries);
+        }
+
+        const pTags = (pluginSpec.tags ?? []) as { name: string; description?: string }[];
+        for (const tag of pTags) {
+          if (!specTags.some((t) => t.name === tag.name)) specTags.push(tag);
+        }
+
+        ui.detail(`   ${sibling.name}: ${Object.keys(pPaths).length} path(s) merged.`);
+      } catch (err) {
+        ui.warn(`   ${sibling.name} getOpenApiSpec failed: ${(err as Error).message}`);
+      }
+    }
+
+    spec.paths = specPaths;
+    spec.components = specComponents;
+    if (specTags.length > 0) spec.tags = specTags;
+
+    writeFileSync(specPath, JSON.stringify(spec, null, 2), "utf8");
+    ui.info(`\n   Combined spec: ${Object.keys(specPaths).length} total paths.\n`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Docker helpers
+// ---------------------------------------------------------------------------
+
+function composeUp(
+  composePath: string,
+  envFile: string,
+  toolsDir: string,
+  services: string[],
+): void {
+  const serviceArgs = services.length > 0 ? ` ${services.join(" ")}` : "";
+  execSync(
+    `docker compose -f "${composePath}" --env-file "${envFile}" up -d --force-recreate${serviceArgs}`,
+    { stdio: "inherit", cwd: toolsDir },
+  );
+}
+
+function composeDown(composePath: string, envFile: string, toolsDir: string): void {
+  execSync(
+    `docker compose -f "${composePath}" --env-file "${envFile}" down`,
+    { stdio: "inherit", cwd: toolsDir },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Help
+// ---------------------------------------------------------------------------
+
+function showDocsHelp(): void {
+  console.log(`
+docs — Start API documentation services
+
+Usage:
+  sbt docs [subcommand] [stop]
+
+Subcommands:
+  swagger    Swagger UI only (port 8081). Needs openapi-spec.
+  redoc      ReDoc only (port 8082). Needs openapi-spec.
+  atlas      Backend Atlas only (port 8083/atlas/). Needs sbt generate-atlas + sbt atlas-html.
+  schemaspy  SchemaSpy only (port 8083/schemaspy/). Needs DB running.
+  all        All services (default if no subcommand).
+  stop       Stop all docs containers.
+
+Options:
+  -h, --help  Show this help
+`);
+}
+
+// ---------------------------------------------------------------------------
+// Main command handler
+// ---------------------------------------------------------------------------
+
+async function docsCommand(args: string[], ctx: PluginContext): Promise<void> {
+  if (args.includes("--help") || args.includes("-h")) {
+    showDocsHelp();
+    return;
+  }
+
+  const composePath = path.join(ctx.toolsDir, "docker-compose.api-docs.yml");
+  const dbComposePath = path.join(ctx.toolsDir, "docker-compose.db.yml");
+  const specPath = path.join(ctx.sbtDataDir, "openapi-spec.json");
+  const envFile = path.join(ctx.sbtDataDir, ".env");
+
+  // Parse subcommand
+  const sub = args.find((a) => !a.startsWith("-")) as DocsSubcommand | undefined;
+  const subcommand: DocsSubcommand = sub && VALID_SUBCOMMANDS.has(sub) ? sub as DocsSubcommand : "all";
+
+  // Handle stop
+  if (subcommand === "stop" || args.includes("stop")) {
+    ui.step("Stopping documentation services...");
+    try {
+      composeDown(composePath, envFile, ctx.toolsDir);
+    } catch {
+      // Containers may not be running
+    }
+    ui.success("Documentation services stopped.");
+    return;
+  }
+
+  // Run preflight for the requested subcommand(s)
+  const needsOpenApi = subcommand === "swagger" || subcommand === "redoc" || subcommand === "all";
+  const needsAtlas = subcommand === "atlas" || subcommand === "all";
+
+  preflightOpenApi(ctx, specPath, dbComposePath);
+  if (needsAtlas) preflightAtlas(ctx);
+
+  // Prepare OpenAPI spec if needed
+  if (needsOpenApi) {
+    await ensureOpenApiSpec(ctx, specPath, dbComposePath);
+  }
+
+  // Start the requested services
+  const services = SERVICE_MAP[subcommand] ?? [];
+  ui.heading(`\nStarting docs services (${subcommand})...\n`);
+
+  try {
+    composeUp(composePath, envFile, ctx.toolsDir, services);
+
+    ui.info("\nWaiting for services to start...\n");
+    await new Promise((r) => setTimeout(r, 2000));
+
+    ui.success("\nDocumentation Services Started!\n");
+    ui.separator();
+    ui.heading("\nAvailable:\n");
+
+    const urlsToShow = subcommand === "all"
+      ? Object.values(SERVICE_URLS)
+      : subcommand === "schemaspy"
+        ? [SERVICE_URLS.schemaspy]
+        : [SERVICE_URLS[subcommand]];
+
+    ui.table(urlsToShow, 2);
+    ui.blank();
+    ui.separator();
+    ui.info(`\nTo stop: sbt docs stop\n`);
+  } catch (error) {
+    throw new SbtError(
+      "COMMAND_FAILED",
+      `Error starting documentation services: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error, tips: ["Ensure Docker is running: start Docker Desktop"] },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Plugin export
+// ---------------------------------------------------------------------------
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-docs-server",
@@ -10,148 +293,9 @@ const plugin: SbtPlugin = {
 
   commands: [
     {
-      name: "start-docs-server",
-      description: "Start API documentation services (Swagger UI, ReDoc, Backend Atlas)",
-      async run(args: string[], ctx: PluginContext): Promise<void> {
-        const composePath = path.join(ctx.toolsDir, "docker-compose.api-docs.yml");
-        const dbComposePath = path.join(ctx.toolsDir, "docker-compose.db.yml");
-        const specPath = path.join(ctx.sbtDataDir, "openapi-spec.json");
-        const envFile = path.join(ctx.sbtDataDir, ".env");
-
-        // Handle stop command
-        if (args.includes("stop")) {
-          ui.step("Stopping documentation services...");
-          execSync(`docker compose -f "${composePath}" --env-file "${envFile}" down`, {
-            stdio: "inherit",
-            cwd: ctx.toolsDir,
-          });
-          ui.success("Documentation services stopped.");
-          return;
-        }
-
-        ui.heading("\nStarting API documentation services...\n");
-
-        // Fetch OpenAPI spec
-        ui.step("Fetching OpenAPI spec from REST API...\n");
-
-        const serviceKey = extractComposeKey(dbComposePath, [
-          /SUPABASE_SERVICE_ROLE_KEY:\s*([^\s]+)/,
-          /SUPABASE_SERVICE_KEY:\s*([^\s]+)/,
-          /SERVICE_KEY:\s*([^\s]+)/,
-        ]);
-        const anonKey = extractComposeKey(dbComposePath, [
-          /SUPABASE_ANON_KEY:\s*([^\s]+)/,
-          /ANON_KEY:\s*([^\s]+)/,
-        ]);
-        const key = serviceKey || anonKey;
-
-        let fetched = false;
-        if (key) {
-          try {
-            const res = await fetch(`${ctx.apiUrl}/rest/v1/`, {
-              headers: { apikey: key, Authorization: `Bearer ${key}` },
-            });
-            if (res.ok) {
-              const spec = await res.json();
-              const pathCount = Object.keys(spec.paths || {}).length;
-              writeFileSync(specPath, JSON.stringify(spec, null, 2), "utf8");
-              ui.success(`OpenAPI spec fetched (${pathCount} endpoints).\n`);
-              fetched = true;
-            } else {
-              ui.warn(`Failed to fetch OpenAPI spec: ${res.status} ${res.statusText}`);
-            }
-          } catch {
-            ui.warn("Could not reach REST API to fetch OpenAPI spec (is the DB running?)");
-          }
-        } else {
-          ui.warn("Could not find API key in docker-compose.db.yml");
-        }
-
-        if (!fetched) {
-          if (!existsSync(specPath)) {
-            const placeholder = {
-              openapi: "3.0.0",
-              info: { title: "Supabase REST API", description: "Run 'sbt start' then 'sbt docs' to generate the full spec.", version: "0.0.0" },
-              paths: {},
-            };
-            writeFileSync(specPath, JSON.stringify(placeholder, null, 2), "utf8");
-          }
-          ui.detail("   Using placeholder spec. Re-run 'docs' with DB running for full spec.\n");
-        }
-
-        // Merge plugin OpenAPI specs from siblings
-        const siblingPlugins = ctx.siblingPlugins ?? [];
-        const pluginsWithSpec = siblingPlugins.filter((p) => p.getOpenApiSpec);
-
-        if (pluginsWithSpec.length > 0) {
-          ui.step("Merging plugin OpenAPI specs...\n");
-
-          const spec = JSON.parse(readFileSync(specPath, "utf8")) as Record<string, unknown>;
-          const specPaths = (spec.paths ?? {}) as Record<string, unknown>;
-          const specComponents = (spec.components ?? {}) as Record<string, Record<string, unknown>>;
-          const specTags = (spec.tags ?? []) as { name: string; description?: string }[];
-
-          for (const sibling of pluginsWithSpec) {
-            try {
-              const pluginSpec = await sibling.getOpenApiSpec!(ctx);
-              const pPaths = (pluginSpec.paths ?? {}) as Record<string, unknown>;
-              Object.assign(specPaths, pPaths);
-
-              const pComponents = (pluginSpec.components ?? {}) as Record<string, Record<string, unknown>>;
-              for (const [section, entries] of Object.entries(pComponents)) {
-                if (!specComponents[section]) specComponents[section] = {};
-                Object.assign(specComponents[section], entries);
-              }
-
-              const pTags = (pluginSpec.tags ?? []) as { name: string; description?: string }[];
-              for (const tag of pTags) {
-                if (!specTags.some((t) => t.name === tag.name)) specTags.push(tag);
-              }
-
-              ui.detail(`   ${sibling.name}: ${Object.keys(pPaths).length} path(s) merged.`);
-            } catch (err) {
-              ui.warn(`   ${sibling.name} getOpenApiSpec failed: ${(err as Error).message}`);
-            }
-          }
-
-          spec.paths = specPaths;
-          spec.components = specComponents;
-          if (specTags.length > 0) spec.tags = specTags;
-
-          writeFileSync(specPath, JSON.stringify(spec, null, 2), "utf8");
-          ui.info(`\n   Combined spec: ${Object.keys(specPaths).length} total paths.\n`);
-        }
-
-        try {
-          ui.step("Starting Docker containers...\n");
-          execSync(`docker compose -f "${composePath}" --env-file "${envFile}" up -d --force-recreate`, {
-            stdio: "inherit",
-            cwd: ctx.toolsDir,
-          });
-
-          ui.info("\nWaiting for services to start...\n");
-          await new Promise((r) => setTimeout(r, 2000));
-
-          ui.success("\nAPI Documentation Services Started!\n");
-          ui.separator();
-          ui.heading("\nAvailable Documentation:\n");
-          ui.table([
-            ["Swagger UI",    "http://localhost:8081"],
-            ["ReDoc",         "http://localhost:8082"],
-            ["Backend Atlas", "http://localhost:8083/atlas/"],
-            ["SchemaSpy",     "http://localhost:8083/schemaspy/"],
-          ], 2);
-          ui.blank();
-          ui.separator();
-          ui.info(`\nTo stop: sbt docs stop\n`);
-        } catch (error) {
-          throw new SbtError(
-            "COMMAND_FAILED",
-            `Error starting API documentation services: ${error instanceof Error ? error.message : String(error)}`,
-            { cause: error, tips: ["Ensure Docker is running: start Docker Desktop"] },
-          );
-        }
-      },
+      name: "docs",
+      description: "Start documentation services (swagger, redoc, atlas, schemaspy)",
+      run: docsCommand,
     },
   ],
 };
