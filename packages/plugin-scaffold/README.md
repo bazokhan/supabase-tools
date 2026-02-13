@@ -27,6 +27,10 @@ npm run sbt -- scaffold-plugin dashboard --hooks
 
 No config required.
 
+## Dependencies
+
+None — only requires config (`projectRoot`, `toolsDir` from context).
+
 ## Project Structure
 
 ```

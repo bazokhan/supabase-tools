@@ -37,6 +37,12 @@ Plugin config goes in `plugins[].config`:
 | `erdOutput` | `<docsOutput>/entity-relations` | Output directory for .md files |
 | `displayColumns` | `["name", "email", "full_name", "slug", "title"]` | Column names to display on referenced entities |
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Database | `DATABASE_URL` or `config.db.url`; DB must be running and accessible |
+
 ## Project Structure
 
 ```

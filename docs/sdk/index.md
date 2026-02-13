@@ -1,5 +1,5 @@
 ---
-description: SDK types, PluginContext, UI utilities, error classes, and helpers for building plugins.
+description: SDK types, PluginContext, UI utilities, error classes, container/compose utils, and helpers for building plugins.
 ---
 
 # SDK API Reference
@@ -49,16 +49,52 @@ ui.table([["a", "b"], ["1", "2"]], 2);
 
 Use `handleError(err)` for consistent error output.
 
-## Helpers
+## Filesystem Utilities
 
-- `ensureDir(path)` — Create directory
+- `ensureDir(path)` — Create directory recursively
 - `readText(path)` — Read file as UTF-8
 - `writeFileInDir(dir, filename, content)` — Write file in directory
-- `safeName(str)` — Sanitize for identifiers
-- `safeFileName(str)` — Sanitize for filenames
-- `hasFlag(args, name)` — Check for CLI flags
+- `safeName(str)` — Replace non-word chars with underscore (for filenames)
+- `safeFileName(baseName, maxLength?)` — Truncate long filenames with hash
+- `sanitizeSlug(str)` — Hyphenated slug (e.g. plugin names, directory names)
+- `sanitizeIdentifier(str)` — Alphanumeric + underscore (e.g. Mermaid node IDs)
+
+## Container Utilities
+
+For Docker Compose project naming (used by core and plugins that interact with containers):
+
+- `sanitizeContainerPrefix(projectName)` — Sanitize raw project name into valid Docker prefix
+- `deriveContainerPrefix(projectRoot)` — Read `supabase-tools.config.json` for `project.name`, fallback to basename, return sanitized prefix
+
+```ts
+import { deriveContainerPrefix, sanitizeContainerPrefix } from "@sbtools/sdk";
+
+const prefix = deriveContainerPrefix(ctx.projectRoot);
+const container = `${prefix}-supabase-db`;
+
+// Or when you already have the name:
+const prefix2 = sanitizeContainerPrefix(config.project.name);
+```
+
+## Compose Utilities
+
+Extract values from Docker Compose YAML files:
+
+- `extractComposeKey(composePath, patterns)` — First matching regex capture
+- `extractSupabaseKeys(composePath)` — Returns `{ anonKey, serviceKey }` in one read (see `SupabaseKeys` type)
+
+```ts
+import { extractComposeKey, extractSupabaseKeys } from "@sbtools/sdk";
+
+const { anonKey, serviceKey } = extractSupabaseKeys(path.join(ctx.toolsDir, "docker-compose.db.yml"));
+const jwtSecret = extractComposeKey(composePath, [/JWT_SECRET:\s*([^\s]+)/]);
+```
+
+## CLI Utilities
+
+- `hasFlag(args, ...names)` — Check for CLI flags (e.g. `--help`, `-h`)
 - `getArg(args, name)` — Get CLI argument value
-- `extractComposeKey(path, regexes)` — Extract keys from docker-compose
+- `openFile(path)` — Open file in default editor
 
 ## Building Plugins
 

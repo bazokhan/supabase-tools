@@ -51,6 +51,14 @@ npx tsx supabase-tools/cli.ts frontend-usage
 |-----|---------|-------------|
 | `scanPaths` | `["src/"]` | Directories to scan for frontend files |
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Files | Scan paths (default `src/`) must exist |
+
+No Docker or database required.
+
 ## Atlas Integration
 
 - **getAtlasData()**: Component → resource mapping as `frontend_usage` category

@@ -7,6 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { SbtError } from "@sbtools/sdk";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -284,10 +285,9 @@ export function buildGraph(
 
   // Load atlas data
   if (!fs.existsSync(atlasDataPath)) {
-    console.error(
-      `Atlas data not found at ${atlasDataPath}. Run 'sbt generate-atlas' first.`,
-    );
-    return { nodes: [], edges: [] };
+    throw new SbtError("PREFLIGHT_FAILED", `Atlas data not found at ${atlasDataPath}.`, {
+      tips: ["Run `sbt generate-atlas` first to generate the atlas data."],
+    });
   }
 
   const atlas: AtlasData = JSON.parse(

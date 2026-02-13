@@ -21,6 +21,13 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 - **PluginContext** — Runtime context (`projectRoot`, `toolsDir`, `pluginConfig`, etc.)
 - **ui** — CLI output helpers (`info`, `success`, `warn`, `step`, `table`, etc.)
 - **Error classes** — `ConfigError`, `DatabaseError`, `SnapshotError`, `PluginError`, `SbtError`
-- **Helpers** — `ensureDir`, `readText`, `writeFileInDir`, `safeName`, `safeFileName`, `hasFlag`, `getArg`, `extractComposeKey`
+- **Filesystem** — `ensureDir`, `readText`, `writeFileInDir`, `safeName`, `safeFileName`, `sanitizeSlug`, `sanitizeIdentifier`
+- **Container** — `sanitizeContainerPrefix`, `deriveContainerPrefix` — Docker project prefix from config
+- **Compose** — `extractComposeKey`, `extractSupabaseKeys` — Extract keys from docker-compose files
+- **CLI** — `hasFlag`, `getArg`, `openFile`
+
+## Dependencies
+
+None — pure utilities, no runtime dependencies.
 
 See [SDK docs](https://bazokhan.github.io/supabase-tools/sdk/) for full reference.

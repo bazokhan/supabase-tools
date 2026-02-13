@@ -35,6 +35,13 @@ Plugin config goes in `plugins[].config`:
 
 Environment: `SUPABASE_TYPES_SCHEMAS` to limit schemas (comma-separated).
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Docker | DB container must be running (PostgREST types endpoint) |
+| Files | `docker-compose.db.yml` in toolsDir (for key extraction) |
+
 ## Project Structure
 
 ```

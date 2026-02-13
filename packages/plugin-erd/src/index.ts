@@ -1,9 +1,8 @@
-import fs from "node:fs";
 import path from "node:path";
 import { Client } from "pg";
 import { ui, ensureDir } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { buildMermaid, updateMarkdown, mapType } from "./builder.js";
+import { buildMermaid, updateMarkdown } from "./builder.js";
 import type { ColumnInfo, ForeignKeyInfo, ReferencedColumn } from "./builder.js";
 
 /** Resolve the ERD output directory from plugin context. */

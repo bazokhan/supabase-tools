@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { ui, hasFlag } from "@sbtools/sdk";
+import { ui, hasFlag, sanitizeSlug } from "@sbtools/sdk";
 import { generatePackageJson } from "./templates/package-json.js";
 import { generateTsconfigJson } from "./templates/tsconfig-json.js";
 import { generateIndexTs } from "./templates/index-ts.js";
@@ -39,7 +39,7 @@ Examples:
     process.exit(1);
   }
 
-  const slug = name.replace(/[^a-z0-9-]/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const slug = sanitizeSlug(name);
   if (!slug) {
     ui.error("Invalid plugin name. Use alphanumeric and hyphens only.\n");
     process.exit(1);

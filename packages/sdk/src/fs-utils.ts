@@ -36,6 +36,25 @@ export function safeName(s: string): string {
 }
 
 /**
+ * Sanitizes a string into a hyphenated slug (e.g. plugin names, directory names).
+ * Keeps alphanumeric and hyphens, collapses runs of hyphens, trims.
+ */
+export function sanitizeSlug(s: string): string {
+  return s
+    .replace(/[^a-zA-Z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Sanitizes a string for use as an identifier (e.g. Mermaid node IDs).
+ * Keeps alphanumeric and underscores only.
+ */
+export function sanitizeIdentifier(s: string): string {
+  return s.replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
+/**
  * Truncates a filename to a maximum length and appends a short hash to avoid collisions.
  * Keeps extension intact.
  */

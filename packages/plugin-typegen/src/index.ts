@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ui, SbtError, extractComposeKey } from "@sbtools/sdk";
+import { ui, SbtError, extractSupabaseKeys } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 
 /** Resolve the types output file path from plugin context. */
@@ -31,11 +31,7 @@ const plugin: SbtPlugin = {
           });
         }
 
-        const serviceKey = extractComposeKey(composePath, [
-          /SUPABASE_SERVICE_ROLE_KEY:\s*([^\s]+)/,
-          /SUPABASE_SERVICE_KEY:\s*([^\s]+)/,
-          /SERVICE_KEY:\s*([^\s]+)/,
-        ]);
+        const { serviceKey } = extractSupabaseKeys(composePath);
 
         if (!serviceKey) {
           throw new SbtError("COMMAND_FAILED", "Service role key not found in docker-compose.db.yml.", {

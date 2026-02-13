@@ -69,6 +69,13 @@ Add to `supabase-tools.config.json`:
 
 All config fields are optional and have sensible defaults.
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Docker | Must be running; containers discovered via `deriveContainerPrefix` |
+| Config | `project.name` in `supabase-tools.config.json` (or basename fallback) |
+
 ## Requirements
 
 - Docker (services must be running for log tailing)

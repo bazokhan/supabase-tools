@@ -6,6 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { sanitizeIdentifier } from "@sbtools/sdk";
 import type { DependencyGraph, GraphNode } from "./graph-builder.js";
 
 // ---------------------------------------------------------------------------
@@ -14,7 +15,7 @@ import type { DependencyGraph, GraphNode } from "./graph-builder.js";
 
 /** Sanitize a node id into a valid Mermaid identifier. */
 function mermaidId(id: string): string {
-  return id.replace(/[^a-zA-Z0-9_]/g, "_");
+  return sanitizeIdentifier(id);
 }
 
 /** Escape label text for Mermaid. */

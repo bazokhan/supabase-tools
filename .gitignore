@@ -13,3 +13,4 @@ Thumbs.db
 *.tgz
 docs/.vitepress/cache
 docs/.vitepress/dist
+.cursor/plans/

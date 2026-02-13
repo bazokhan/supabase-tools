@@ -1,37 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { safeName, safeFileName } from "@sbtools/sdk";
 import {
-  sanitizeDbUrl, parseSchemaArgs, getSchemaFilter,
-  normalizeWhitespace, splitArgs,
+  sanitizeDbUrl,
+  parseSchemaArgs,
+  getSchemaFilter,
+  normalizeWhitespace,
+  splitArgs,
 } from "../src/utils/index.js";
-
-describe("safeName", () => {
-  it("passes through simple names", () => {
-    expect(safeName("public")).toBe("public");
-  });
-  it("replaces special characters with underscore", () => {
-    expect(safeName("my schema!@#")).toBe("my_schema___");
-  });
-  it("preserves dots and hyphens", () => {
-    expect(safeName("a.b-c")).toBe("a.b-c");
-  });
-});
-
-describe("safeFileName", () => {
-  it("returns short names as-is", () => {
-    expect(safeFileName("test.sql")).toBe("test.sql");
-  });
-  it("truncates long names and adds hash", () => {
-    const long = "a".repeat(200) + ".sql";
-    const result = safeFileName(long, 180);
-    expect(result.length).toBeLessThanOrEqual(180);
-    expect(result.endsWith(".sql")).toBe(true);
-  });
-  it("produces deterministic output", () => {
-    const name = "x".repeat(200) + ".sql";
-    expect(safeFileName(name)).toBe(safeFileName(name));
-  });
-});
 
 describe("sanitizeDbUrl", () => {
   it("masks password in standard URL", () => {

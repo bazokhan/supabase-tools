@@ -13,9 +13,10 @@
  *     "config": {}
  *   }]
  */
+import fs from "node:fs";
 import path from "node:path";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { hasFlag, openFile } from "@sbtools/sdk";
+import { hasFlag, openFile, SbtError } from "@sbtools/sdk";
 import { buildGraph } from "./graph-builder.js";
 import { generateMermaid, writeMermaid } from "./mermaid-generator.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
@@ -69,6 +70,13 @@ and supabase/current/ snapshot files. No running database is required.
   }
 
   const paths = resolvePaths(ctx);
+
+  if (!fs.existsSync(paths.atlasDataPath)) {
+    throw new SbtError("PREFLIGHT_FAILED", `Atlas data not found at ${paths.atlasDataPath}.`, {
+      tips: ["Run `sbt generate-atlas` first to generate the atlas data."],
+    });
+  }
+
   const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
 
   if (graph.nodes.length === 0) {

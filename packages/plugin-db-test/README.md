@@ -26,6 +26,15 @@ npm run sbt -- test --mem
 | `testsDir` | `supabase/tests` | Directory containing .sql test files |
 | `migrationsDir` | `supabase/migrations` | Migrations to apply in --mem mode |
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Docker | Must be running for live mode (`sbt test`) |
+| Database | DB must be running and accessible for live mode |
+| Files | `supabase/tests` — test SQL files must exist |
+| Files | Migrations dir must exist for `--mem` mode (no Docker needed) |
+
 ## Project Structure
 
 ```

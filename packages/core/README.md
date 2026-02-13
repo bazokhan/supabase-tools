@@ -37,6 +37,15 @@ Then `npm run start`, etc.
 - Snapshot pipeline (export DB schema)
 - Pre-flight checks
 
+## Dependencies
+
+| Type | Requirement |
+|------|-------------|
+| Docker | Must be running for `start`, `stop`, `restart`, `status`, `snapshot`, `migrate` |
+| Compose files | `docker-compose.db.yml` in toolsDir |
+| Migrations dir | `config.paths.migrations` must exist for `migrate` |
+| Snapshot meta | `supabase/current/_meta/snapshot.json` must exist for `generate-atlas` (run `sbt snapshot` first) |
+
 ## Plugins
 
 Add plugins via config:

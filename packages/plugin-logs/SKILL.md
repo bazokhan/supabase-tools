@@ -79,7 +79,7 @@ If you see errors about the extension not being available, ensure:
 
 ### Docker
 
-All log tailing and container discovery requires Docker to be running. The plugin discovers containers by deriving the Docker Compose project prefix from `project.name` in `supabase-tools.config.json` (same logic as the main `cli.ts`).
+All log tailing and container discovery requires Docker to be running. The plugin discovers containers by deriving the Docker Compose project prefix from `project.name` in `supabase-tools.config.json` via `@sbtools/sdk`'s `deriveContainerPrefix`.
 
 Container name pattern: `{prefix}-supabase-{service}`
 
@@ -114,11 +114,7 @@ Queries the database via `docker exec <db-container> psql -U postgres -d postgre
 A Node.js HTTP server using only the built-in `http` module. The SSE endpoint spawns `docker logs -f` for each requested service and pipes parsed log lines as JSON events. The HTML page is a self-contained single-page app with inline CSS and JS.
 
 ### Container Discovery
-Reads `supabase-tools.config.json` to get `project.name`, then derives the Docker container prefix using the same sanitisation as `cli.ts`:
-
-```
-prefix = projectName.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase()
-```
+Reads `supabase-tools.config.json` to get `project.name`, then derives the Docker container prefix via `@sbtools/sdk` (`deriveContainerPrefix` or `sanitizeContainerPrefix`). Same logic used by core `cli.ts` and migrate.
 
 ## File Layout
 
