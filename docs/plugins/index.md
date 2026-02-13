@@ -18,6 +18,7 @@ Plugins extend supabase-tools with additional commands. Install a plugin via npm
 | [plugin-erd](/plugins/plugin-erd) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-erd.svg)](https://www.npmjs.com/package/@sbtools/plugin-erd) | Mermaid ERD diagram generation |
 | [plugin-frontend-usage](/plugins/plugin-frontend-usage) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-frontend-usage.svg)](https://www.npmjs.com/package/@sbtools/plugin-frontend-usage) | Frontend Supabase SDK usage scanner |
 | [plugin-logs](/plugins/plugin-logs) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-logs.svg)](https://www.npmjs.com/package/@sbtools/plugin-logs) | Docker logs, pg_stat_statements |
+| [plugin-migration-audit](/plugins/plugin-migration-audit) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-audit.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-audit) | Migration file vs DB tracking — drift detection |
 | [plugin-scaffold](/plugins/plugin-scaffold) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-scaffold.svg)](https://www.npmjs.com/package/@sbtools/plugin-scaffold) | Scaffold new plugins |
 | [plugin-typegen](/plugins/plugin-typegen) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-typegen.svg)](https://www.npmjs.com/package/@sbtools/plugin-typegen) | TypeScript type generation |
 

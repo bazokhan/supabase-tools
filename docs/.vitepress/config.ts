@@ -56,6 +56,7 @@ export default defineConfig({
           { text: "plugin-erd", link: "/plugins/plugin-erd" },
           { text: "plugin-frontend-usage", link: "/plugins/plugin-frontend-usage" },
           { text: "plugin-logs", link: "/plugins/plugin-logs" },
+          { text: "plugin-migration-audit", link: "/plugins/plugin-migration-audit" },
           { text: "plugin-scaffold", link: "/plugins/plugin-scaffold" },
           { text: "plugin-typegen", link: "/plugins/plugin-typegen" },
         ],
