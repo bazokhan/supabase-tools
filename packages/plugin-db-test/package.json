@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/plugin-db-test",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Database test runner plugin for supabase-tools (pgTAP + PGlite).",
   "type": "module",
   "exports": {
@@ -35,7 +35,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sbtools/sdk": "^0.2.0",
+    "@sbtools/sdk": "^0.3.0",
     "@electric-sql/pglite": "^0.2.0",
     "pg": "^8.13.0"
   },

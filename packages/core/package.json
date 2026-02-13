@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Core CLI orchestrator for supabase-tools — config, plugins, snapshot pipeline.",
   "type": "module",
   "bin": {
@@ -44,7 +44,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@sbtools/sdk": "^0.2.0",
+    "@sbtools/sdk": "^0.3.0",
     "dotenv": "^16.4.0",
     "pg": "^8.13.0",
     "zod": "^3.24.2"
