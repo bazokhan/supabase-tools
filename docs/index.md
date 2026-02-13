@@ -31,21 +31,21 @@ npx sbt help
 - **Tests** — pgTAP + PGlite in-memory runner
 - **Docs** — Swagger UI, ReDoc, SchemaSpy, Backend Atlas
 
-## Commands
+## Core Commands
 
 | Command | Description |
 |---------|-------------|
-| `start` | Start all Supabase Docker services |
-| `stop` | Stop all services |
+| `start` | Start Supabase stack (DB, API, etc.) |
+| `stop` | Stop Supabase stack |
+| `restart` | Restart Supabase stack |
 | `status` | Show service URLs and connection info |
 | `migrate` | Apply SQL migrations |
 | `snapshot` | Export DB objects to filesystem |
 | `generate-types` | Generate TypeScript types from DB |
-| `generate-erd` | Generate Mermaid ERD diagrams |
-| `generate-atlas` | Generate Backend Atlas HTML |
-| `test` | Run SQL tests (pgTAP) |
-| `docs` | Start API documentation services |
+| `generate-atlas` | Generate Backend Atlas data (JSON) |
 | `init` | Generate config file |
+
+Plugin commands (generate-erd, docs, atlas-html, test, etc.) — [Plugins](/plugins/).
 
 All commands: `npx sbt <command>`
 

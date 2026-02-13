@@ -54,7 +54,7 @@ Use `handleError(err)` for consistent error output.
 - `ensureDir(path)` — Create directory recursively
 - `readText(path)` — Read file as UTF-8
 - `writeFileInDir(dir, filename, content)` — Write file in directory
-- `safeName(str)` — Replace non-word chars with underscore (for filenames)
+- `safeName(str)` — Replace non-word chars with underscore (for identifiers; preserves dots and hyphens)
 - `safeFileName(baseName, maxLength?)` — Truncate long filenames with hash
 - `sanitizeSlug(str)` — Hyphenated slug (e.g. plugin names, directory names)
 - `sanitizeIdentifier(str)` — Alphanumeric + underscore (e.g. Mermaid node IDs)

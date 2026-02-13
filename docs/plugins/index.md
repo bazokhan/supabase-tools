@@ -4,7 +4,7 @@ description: List of available plugins, installation, and activation in supabase
 
 # Plugins
 
-Plugins extend supabase-tools with additional commands and integrations. Install via npm and add to `supabase-tools.config.json`.
+Plugins extend supabase-tools with additional commands. Install a plugin via npm and add it to `supabase-tools.config.json` to use its commands.
 
 ## Available Plugins
 
@@ -14,7 +14,7 @@ Plugins extend supabase-tools with additional commands and integrations. Install
 | [plugin-db-test](/plugins/plugin-db-test) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-db-test.svg)](https://www.npmjs.com/package/@sbtools/plugin-db-test) | pgTAP test runner (live + PGlite) |
 | [plugin-deno-functions](/plugins/plugin-deno-functions) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-deno-functions.svg)](https://www.npmjs.com/package/@sbtools/plugin-deno-functions) | Edge function documentation |
 | [plugin-depgraph](/plugins/plugin-depgraph) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-depgraph.svg)](https://www.npmjs.com/package/@sbtools/plugin-depgraph) | Dependency graph visualization |
-| [plugin-docs-server](/plugins/plugin-docs-server) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-docs-server.svg)](https://www.npmjs.com/package/@sbtools/plugin-docs-server) | Swagger UI, ReDoc, SchemaSpy |
+| [plugin-docs-server](/plugins/plugin-docs-server) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-docs-server.svg)](https://www.npmjs.com/package/@sbtools/plugin-docs-server) | Swagger UI, ReDoc, Backend Atlas, SchemaSpy |
 | [plugin-erd](/plugins/plugin-erd) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-erd.svg)](https://www.npmjs.com/package/@sbtools/plugin-erd) | Mermaid ERD diagram generation |
 | [plugin-frontend-usage](/plugins/plugin-frontend-usage) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-frontend-usage.svg)](https://www.npmjs.com/package/@sbtools/plugin-frontend-usage) | Frontend Supabase SDK usage scanner |
 | [plugin-logs](/plugins/plugin-logs) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-logs.svg)](https://www.npmjs.com/package/@sbtools/plugin-logs) | Docker logs, pg_stat_statements |

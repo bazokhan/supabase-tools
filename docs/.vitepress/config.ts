@@ -42,7 +42,7 @@ export default defineConfig({
     sidebar: [
       { text: "Getting Started", link: "/getting-started" },
       { text: "Configuration", link: "/configuration" },
-      { text: "Publishing", link: "/publishing" },
+      { text: "CLI Reference", link: "/cli-reference" },
       {
         text: "Plugins",
         collapsed: false,
@@ -60,6 +60,7 @@ export default defineConfig({
           { text: "plugin-typegen", link: "/plugins/plugin-typegen" },
         ],
       },
+      { text: "Writing Plugins", link: "/writing-plugins" },
       { text: "SDK API", link: "/sdk/" },
     ],
   },

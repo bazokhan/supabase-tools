@@ -33,9 +33,9 @@ Development: `npm run dev` or `tsx packages/core/src/cli.ts <command>`
 - `snapshot` — Export DB objects to snapshot directory
 - `generate-types` — Fetch types from PostgREST
 - `generate-erd` — Per-table Mermaid ERD
-- `generate-atlas` — Backend Atlas JSON + HTML
+- `generate-atlas` — Backend Atlas JSON (HTML via plugin-atlas-html)
 - `test` — pgTAP tests (live or `--mem` PGlite)
-- `docs` — Snapshot + Atlas + ERD + Swagger/ReDoc
+- `docs` — Start Swagger, ReDoc, Atlas, SchemaSpy (plugin-docs-server)
 - `init` — Generate config file
 
 ## Plugins

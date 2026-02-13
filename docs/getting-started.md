@@ -54,4 +54,4 @@ npx sbt generate-erd
 ## Requirements
 
 - Node.js 18+
-- Docker (for `start`, `migrate`, `docs`)
+- Docker (for `start`, `migrate`, and Docker-based plugins)
