@@ -4,6 +4,8 @@ Status: Draft plan (no code implementation in this document)
 Owner: Platform / Plugin architecture  
 Scope: Cross-plugin architecture hygiene + migration insights roadmap
 
+See also: `VERSIONED_ARTIFACTS_ADOPTION_PLAN.md` for the contract system and 13-package retrofit roadmap.
+
 ---
 
 ## 1) Purpose
