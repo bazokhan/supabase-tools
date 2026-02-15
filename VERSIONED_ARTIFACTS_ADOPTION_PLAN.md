@@ -64,6 +64,24 @@ Optional immutable snapshots:
 
 `.sbt/artifacts/<artifact-id>/<semver>/<timestamp-or-hash>.json`
 
+### Canonical identity + versioning rules
+
+To remove ambiguity, artifact versioning is defined as:
+
+1. `id` is stable and **never** includes version suffixes (`migration.analysis`, not `migration.analysis.v1`).
+2. `version` is the only schema compatibility marker and must be full semver (`MAJOR.MINOR.PATCH`).
+3. filesystem path mirrors the semver field: `.sbt/artifacts/<id>/<version>/latest.json`.
+
+Examples:
+
+- `id: "migration.analysis"`, `version: "1.2.0"` -> `.sbt/artifacts/migration.analysis/1.2.0/latest.json`
+- `id: "openapi.partial.deno-functions"`, `version: "1.0.0"` -> `.sbt/artifacts/openapi.partial.deno-functions/1.0.0/latest.json`
+
+Invalid patterns (prohibited):
+
+- `id: "migration.analysis.v1"` with `version: "1.0.0"` (double versioning)
+- path semver that does not match envelope semver
+
 ---
 
 ## 3) Contract lifecycle and compatibility policy
@@ -88,9 +106,9 @@ Optional immutable snapshots:
 
 ## Deprecation process
 
-1. dual-write old + new versions for one release window
-2. emit warning for old version consumers
-3. remove deprecated version after documented grace period
+1. publish new major artifact schema with migration notes
+2. block incompatible consumers in CI/integration tests
+3. remove deprecated major after documented cutover release
 
 ---
 
@@ -127,6 +145,19 @@ To avoid fragmented ad hoc artifacts:
 
 ---
 
+## 5.1) High-importance architecture contradictions to resolve early
+
+The following contradictions are currently present across packages and should be treated as early blockers for artifact trust:
+
+1. **Plugin version metadata drift**: several plugin `src/index.ts` versions diverge from package versions; artifact provenance cannot rely on inconsistent producer version fields.
+2. **Direct hook coupling for collaboration**: runtime behavior still relies on `siblingPlugins`, `getOpenApiSpec`, and global Atlas UI string merges in primary paths.
+3. **Collision ambiguity in merge hosts**: OpenAPI and Atlas merges currently need explicit conflict semantics to avoid silent overwrite behavior.
+4. **Scaffold-generated legacy patterns**: generated plugins must default to artifact-first collaboration so new packages do not reinforce old coupling.
+
+These must be addressed in Waves 0-3 before Tier B/C scale-out.
+
+---
+
 ## 6) Retrofit strategy by priority tier
 
 Not every package needs deep artifact adoption immediately. Apply where value is meaningful.
@@ -159,25 +190,25 @@ Not every package needs deep artifact adoption immediately. Apply where value is
 
 ## Foundational artifacts
 
-1. `atlas.data.v1` (optional wrapper for backend atlas data contract)
-2. `docs.route-manifest.v1` (plugin-generated page routes and labels)
-3. `openapi.partial.<plugin>.v1` (plugin partial specs; merged deterministically)
+1. `atlas.data` (optional wrapper for backend atlas data contract)
+2. `docs.route-manifest` (plugin-generated page routes and labels)
+3. `openapi.partial.<plugin>` (plugin partial specs; merged deterministically)
 
 ## Migration ecosystem artifacts
 
-4. `snapshot.object-index.v1`
-5. `migration.analysis.v1`
-6. `migration.lineage.v1`
-7. `migration.staleness.v1`
-8. `migration.studio.draft.v1` (studio-owned)
+4. `snapshot.object-index`
+5. `migration.analysis`
+6. `migration.lineage`
+7. `migration.staleness`
+8. `migration.studio.draft` (studio-owned)
 
 ## Optional supporting artifacts
 
-9. `typescript.schema-types.v1` (typegen output metadata + path/hash)
-10. `depgraph.graph.v1`
-11. `frontend.usage.v1`
-12. `runtime.service-health.v1`
-13. `runtime.query-stats.v1`
+9. `typescript.schema-types` (typegen output metadata + path/hash)
+10. `depgraph.graph`
+11. `frontend.usage`
+12. `runtime.service-health`
+13. `runtime.query-stats`
 
 ---
 
@@ -196,7 +227,8 @@ Adoption:
 - add artifact utility plumbing and default directories
 - expose contract-safe read/write helpers (or route through SDK)
 - add collision/freshness warnings
-- implement migration path: legacy file contracts remain supported
+- enforce artifact directory/layout invariants from first implementation release
+- stop introducing new implicit file contracts (artifact contracts are the default)
 
 Priority: P0
 
@@ -227,10 +259,10 @@ Role:
 
 Adoption:
 
-- produce `migration.analysis.v1`
-- produce `migration.lineage.v1`
-- produce `migration.staleness.v1`
-- consume `snapshot.object-index.v1` if available (fallback to legacy snapshot files)
+- produce `migration.analysis`
+- produce `migration.lineage`
+- produce `migration.staleness`
+- consume `snapshot.object-index` as the canonical source artifact for snapshot indexing
 
 Priority: P1
 
@@ -244,7 +276,7 @@ Role:
 
 Adoption:
 
-- consume `docs.route-manifest.v1` for robust linking
+- consume `docs.route-manifest` for robust linking
 - consume namespaced atlas contribution metadata
 - enforce renderer symbol/id namespacing rules
 - warn on duplicate category keys and kind labels
@@ -261,9 +293,9 @@ Role:
 
 Adoption:
 
-- consume `docs.route-manifest.v1` to avoid hardcoded assumptions
-- consume `openapi.partial.*` artifacts (when present) in deterministic merge order
-- emit warnings on path/component conflict
+- consume `docs.route-manifest` to avoid hardcoded assumptions
+- consume `openapi.partial.*` artifacts in deterministic merge order
+- apply explicit conflict policy (error/warn rules by OpenAPI section)
 
 Priority: P1
 
@@ -277,9 +309,9 @@ Role:
 
 Adoption:
 
-- scaffold optional artifact producer/consumer boilerplate
+- scaffold artifact producer/consumer boilerplate by default
 - scaffold namespaced IDs/functions for Atlas UI
-- scaffold contract test templates
+- scaffold contract test templates and schema fixture placeholders
 
 Priority: P1
 
@@ -293,8 +325,8 @@ Role:
 
 Adoption:
 
-- optionally consume `atlas.data.v1` instead of direct hardcoded file reliance
-- produce `depgraph.graph.v1` artifact for reuse
+- consume `atlas.data` instead of direct hardcoded file reliance
+- produce `depgraph.graph` artifact for reuse
 - publish route metadata for its HTML page
 
 Priority: P2
@@ -309,9 +341,9 @@ Role:
 
 Adoption:
 
-- produce `openapi.partial.deno-functions.v1`
-- optionally produce `edge-functions.inventory.v1`
-- docs server merges artifact instead of hook-only path over time
+- produce `openapi.partial.deno-functions`
+- optionally produce `edge-functions.inventory`
+- docs server consumes artifacts as the primary integration path
 
 Priority: P2
 
@@ -325,7 +357,7 @@ Role:
 
 Adoption:
 
-- produce `frontend.usage.v1`
+- produce `frontend.usage`
 - optionally publish route manifest entry for report page
 
 Priority: P2
@@ -340,7 +372,7 @@ Role:
 
 Adoption:
 
-- optional periodic `runtime.service-health.v1` and `runtime.query-stats.v1`
+- optional periodic `runtime.service-health` and `runtime.query-stats`
 - do not force artifacts for always-live streaming paths; keep artifacts for snapshot-style reporting only
 
 Priority: P3
@@ -355,7 +387,7 @@ Role:
 
 Adoption:
 
-- optional `typescript.schema-types.v1` metadata artifact:
+- optional `typescript.schema-types` metadata artifact:
   - output path
   - hash
   - generated timestamp
@@ -373,7 +405,7 @@ Role:
 
 Adoption:
 
-- optional `erd.outputs.v1` route/index artifact for docs/atlas linkage
+- optional `erd.outputs` route/index artifact for docs/atlas linkage
 - no heavy adoption required unless ERD becomes a primary downstream dependency
 
 Priority: P4
@@ -388,8 +420,8 @@ Role:
 
 Adoption:
 
-- optional `db-test.last-run.v1` summary artifact
-- optional consume `migration.analysis.v1` for pre-test advisory checks
+- optional `db-test.last-run` summary artifact
+- optional consume `migration.analysis` for pre-test advisory checks
 - keep core test flow independent of artifact availability
 
 Priority: P4
@@ -405,10 +437,11 @@ Deliver:
 - architecture spec (this document)
 - artifact ID registry doc
 - compatibility policy and contributor checklist
+- plugin version-source alignment audit across all 13 packages
 
 Gate:
 
-- team signs off on contract ownership and naming conventions
+- team signs off on contract ownership, naming conventions, and conflict policy semantics
 
 ---
 
@@ -419,14 +452,12 @@ Deliver:
 - envelope types + validation helpers
 - artifact read/write APIs
 - default storage conventions
-- feature flags for rollout:
-  - `SBT_ARTIFACTS_WRITE=1`
-  - `SBT_ARTIFACTS_READ=1`
-  - `SBT_ARTIFACTS_STRICT=1` (future)
+- typed capability fields added to plugin contract
+- core-provided artifact context injected into plugin runtime context
 
 Gate:
 
-- no behavior regression when flags disabled
+- all Tier A packages can compile and run against the new SDK contract
 
 ---
 
@@ -440,7 +471,7 @@ Deliver:
 
 Gate:
 
-- old flows keep working (legacy report generation untouched)
+- migration detail and staleness views run entirely through declared artifact contracts
 
 ---
 
@@ -450,10 +481,12 @@ Deliver:
 
 - atlas-html route manifest consumption and namespacing enforcement
 - docs-server openapi/artifact merge path + conflict reporting
+- deterministic merge order rules (plugin ordering + explicit priority override support)
 
 Gate:
 
 - deterministic merge outputs in integration tests
+- collision fixtures verify documented fail/warn behavior for OpenAPI paths/components/tags and Atlas identifiers
 
 ---
 
@@ -486,36 +519,34 @@ Gate:
 
 Deliver:
 
-- dual-read/dual-write migration completion
-- deprecate fragile implicit assumptions gradually
+- remove remaining implicit contract assumptions
 - formalize warning-to-error timeline for strict mode
+- publish migration guide for plugin maintainers
 
 Gate:
 
-- published migration guide for plugin maintainers
+- all Tier A/B integrations validated as artifact-first in integration tests
 
 ---
 
-## 10) Backward compatibility approach
+## 10) Cutover policy (active development mode)
 
-## Dual-write policy
+This repository is in active development; artifact adoption does not require preserving legacy contract paths.
 
-Producers write:
+## Default policy
 
-1. legacy output (existing behavior)
-2. new artifact envelope
+- new cross-package integrations must be artifact-based
+- new features should not add sibling-plugin hook coupling as a primary path
+- strict schema validation is enabled in CI for official artifact IDs
 
-for at least one stable release cycle.
+## Cutover policy
 
-## Dual-read policy
-
-Consumers prefer artifacts if available; fallback to legacy files/hooks.
+- when a package adopts an artifact contract, consumer flows should switch to that contract directly
+- if temporary adapters are required during implementation, they must be explicitly time-boxed in the same milestone
 
 ## Strict mode policy
 
-Only after adoption maturity:
-
-- strict mode can require artifact presence and schema validity
+- strict mode requires artifact presence, schema validity, and compatible major versions
 
 ---
 
@@ -548,7 +579,7 @@ Mitigation:
 
 - scaffold templates
 - migration cookbook examples
-- dual-read/dual-write grace period
+- artifact-first cookbook examples and contract migration recipes
 
 ---
 
@@ -559,7 +590,7 @@ Minimum required:
 1. schema validation tests per artifact
 2. producer fixture tests (stable output snapshots)
 3. consumer compatibility tests (unknown fields tolerated)
-4. integration tests with mixed legacy + artifact mode
+4. integration tests for deterministic artifact-first flows
 5. failure tests (missing, invalid, stale artifacts)
 
 ---
@@ -576,13 +607,14 @@ Minimum required:
 
 - [ ] envelope types + validators
 - [ ] artifact filesystem helper module
-- [ ] feature flags and logging behavior
+- [ ] plugin contract extension for artifact capabilities
+- [ ] plugin version-source alignment check (index metadata vs package version)
 
 ## Checklist C - migration path
 
 - [ ] migration-audit producer artifacts
 - [ ] detail/staleness pages consume artifacts
-- [ ] fallback behavior verified
+- [ ] artifact freshness and schema validation behavior verified
 
 ## Checklist D - atlas/docs adoption
 
@@ -615,8 +647,8 @@ The versioned artifact initiative is considered complete when:
 
 1. foundational contracts are in SDK/core and documented
 2. high-value packages (Tier A/B) use artifact-based collaboration where it matters
-3. legacy file/hook assumptions are no longer single points of coupling
-4. all adoption paths are backward-compatible and tested
+3. implicit file/hook assumptions are removed from Tier A/B primary flows
+4. all adoption paths are artifact-first and tested
 5. plugin maintainers have clear guidance and scaffold support
 
 ---
@@ -629,4 +661,3 @@ This document complements:
 
 That plan focuses on migration features and platform outcomes.  
 This plan defines the **cross-package contract system** needed to scale those features without creating monolithic coupling.
-
