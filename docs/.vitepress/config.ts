@@ -62,6 +62,16 @@ export default defineConfig({
         ],
       },
       { text: "Writing Plugins", link: "/writing-plugins" },
+      {
+        text: "Architecture",
+        collapsed: false,
+        items: [
+          { text: "Overview", link: "/architecture/" },
+          { text: "Artifact Registry", link: "/architecture/artifact-registry" },
+          { text: "Artifact Contract Guide", link: "/architecture/artifact-contract-guide" },
+          { text: "Artifact Compatibility Policy", link: "/architecture/artifact-compatibility-policy" },
+        ],
+      },
       { text: "SDK API", link: "/sdk/" },
     ],
   },

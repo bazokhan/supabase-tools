@@ -18,6 +18,7 @@ import path from "node:path";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { hasFlag, openFile, SbtError } from "@sbtools/sdk";
 import { buildGraph } from "./graph-builder.js";
+import { writeDepgraphArtifact } from "./artifact.js";
 import { generateMermaid, writeMermaid } from "./mermaid-generator.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
 import { depgraphSectionHtml } from "./atlas/sections.js";
@@ -78,6 +79,9 @@ and supabase/current/ snapshot files. No running database is required.
   }
 
   const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
+  if (graph.nodes.length > 0) {
+    writeDepgraphArtifact(ctx, graph, { atlasDataPath: paths.atlasDataPath, snapshotDir: paths.snapshotDir });
+  }
 
   if (graph.nodes.length === 0) {
     console.error(
@@ -144,7 +148,11 @@ function getRelationshipCounts(
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-depgraph",
-  version: "1.0.0",
+  version: "0.3.0",
+  artifactCapabilities: {
+    produces: ["depgraph.graph"],
+    consumes: [],
+  },
 
   commands: [
     {
@@ -158,6 +166,9 @@ const plugin: SbtPlugin = {
   getAtlasData: async (ctx: PluginContext) => {
     const paths = resolvePaths(ctx);
     const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
+    if (graph.nodes.length > 0) {
+      writeDepgraphArtifact(ctx, graph, { atlasDataPath: paths.atlasDataPath, snapshotDir: paths.snapshotDir });
+    }
 
     const relationshipCounts = getRelationshipCounts(graph.edges);
 
@@ -210,6 +221,9 @@ const plugin: SbtPlugin = {
   getStatusLines: async (ctx: PluginContext) => {
     const paths = resolvePaths(ctx);
     const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
+    if (graph.nodes.length > 0) {
+      writeDepgraphArtifact(ctx, graph, { atlasDataPath: paths.atlasDataPath, snapshotDir: paths.snapshotDir });
+    }
 
     const lines: string[] = [];
     lines.push(

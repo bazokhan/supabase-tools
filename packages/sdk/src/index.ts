@@ -36,7 +36,20 @@ export type {
     ResolvedPaths,
     PluginAtlasData,
     PluginAtlasUI,
+    ArtifactCapabilities,
 } from "./plugin-api.js";
+
+// Artifact helpers
+export {
+    writeArtifact,
+    readArtifact,
+    readArtifactOrNull,
+    validateArtifactEnvelope,
+    parseArtifactEnvelope,
+    artifactDir,
+    artifactLatestPath,
+} from "./artifacts.js";
+export type { ArtifactEnvelope, ReadArtifactResult } from "./artifacts.js";
 
 // CLI utilities
 export { hasFlag, getArg, openFile } from "./cli-utils.js";

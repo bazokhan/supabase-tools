@@ -13,13 +13,24 @@
 // Plugin entry point
 // ---------------------------------------------------------------------------
 
+/** Artifact capability declaration for a plugin. */
+export interface ArtifactCapabilities {
+  /** Artifact IDs this plugin produces. */
+  produces?: string[];
+  /** Artifact IDs this plugin consumes. */
+  consumes?: string[];
+}
+
 /** Shape that every plugin's index.ts must default-export. */
 export interface SbtPlugin {
   /** Unique plugin name (e.g. "@sbtools/plugin-deno-functions"). */
   name: string;
 
-  /** Semver version string. */
+  /** Semver version string. Must match package.json version for artifact provenance. */
   version: string;
+
+  /** Artifact IDs this plugin produces and consumes. Enables tooling to validate artifact availability. */
+  artifactCapabilities?: ArtifactCapabilities;
 
   /** CLI commands this plugin adds to `sbt`. */
   commands?: SbtPluginCommand[];
@@ -80,6 +91,9 @@ export interface PluginContext {
 
   /** Project-local runtime data dir (.sbt/). */
   sbtDataDir: string;
+
+  /** Absolute path to artifact storage (.sbt/artifacts/). Use SDK readArtifact/writeArtifact for access. */
+  artifactsDir: string;
 
   /** The `config` block from the plugin entry in supabase-tools.config.json. */
   pluginConfig: Record<string, unknown>;

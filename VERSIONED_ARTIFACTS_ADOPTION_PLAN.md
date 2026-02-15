@@ -599,34 +599,34 @@ Minimum required:
 
 ## Checklist A - policy and docs
 
-- [ ] add artifact ID registry document
-- [ ] add contract authoring guide
-- [ ] add compatibility policy to contributor docs
+- [x] add artifact ID registry document
+- [x] add contract authoring guide
+- [x] add compatibility policy to contributor docs
 
 ## Checklist B - SDK/core foundation
 
-- [ ] envelope types + validators
-- [ ] artifact filesystem helper module
-- [ ] plugin contract extension for artifact capabilities
-- [ ] plugin version-source alignment check (index metadata vs package version)
+- [x] envelope types + validators
+- [x] artifact filesystem helper module
+- [x] plugin contract extension for artifact capabilities
+- [x] plugin version-source alignment check (index metadata vs package version)
 
 ## Checklist C - migration path
 
-- [ ] migration-audit producer artifacts
+- [x] migration-audit producer artifacts
 - [ ] detail/staleness pages consume artifacts
 - [ ] artifact freshness and schema validation behavior verified
 
 ## Checklist D - atlas/docs adoption
 
 - [ ] route manifest contract
-- [ ] conflict-safe merges
+- [x] conflict-safe merges (docs-server consumes openapi.partial.* artifacts)
 - [ ] namespaced renderer validation
 
 ## Checklist E - medium/optional plugins
 
-- [ ] depgraph artifact output
-- [ ] deno-functions openapi partial artifact
-- [ ] frontend-usage artifact output
+- [x] depgraph artifact output
+- [x] deno-functions openapi partial artifact
+- [x] frontend-usage artifact output
 - [ ] optional logs/typegen/erd/db-test metadata artifacts
 
 ---

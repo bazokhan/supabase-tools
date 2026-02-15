@@ -10,6 +10,7 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { hasFlag, openFile } from "@sbtools/sdk";
 import { scanDirectory } from "./scanner.js";
 import { analyze } from "./analyzer.js";
+import { writeFrontendUsageArtifact } from "./artifact.js";
 import { generateHtml } from "./html-generator.js";
 import { frontendUsageSectionHtml } from "./atlas/sections.js";
 import { frontendUsageCardRendererJs } from "./atlas/cards.js";
@@ -58,6 +59,7 @@ Config (supabase-tools.config.json → plugins[].config):
   const scanPaths = getScanPaths(ctx);
   const results = scanDirectory(ctx.projectRoot, scanPaths);
   const data = analyze(results);
+  writeFrontendUsageArtifact(ctx, data, { scanPaths });
 
   if (hasFlag(args, "--json")) {
     console.log(
@@ -109,7 +111,11 @@ function toAtlasItems(data: Awaited<ReturnType<typeof analyze>>): Array<{
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-frontend-usage",
-  version: "1.0.0",
+  version: "0.3.0",
+  artifactCapabilities: {
+    produces: ["frontend.usage"],
+    consumes: [],
+  },
 
   commands: [
     {
@@ -123,6 +129,7 @@ const plugin: SbtPlugin = {
     const scanPaths = getScanPaths(ctx);
     const results = scanDirectory(ctx.projectRoot, scanPaths);
     const data = analyze(results);
+    writeFrontendUsageArtifact(ctx, data, { scanPaths });
     const items = toAtlasItems(data);
 
     const tableCount = data.byResource.table?.length ?? 0;
@@ -171,6 +178,7 @@ const plugin: SbtPlugin = {
     const scanPaths = getScanPaths(ctx);
     const results = scanDirectory(ctx.projectRoot, scanPaths);
     const data = analyze(results);
+    writeFrontendUsageArtifact(ctx, data, { scanPaths });
     const compCount = Object.keys(data.components).length;
     const tableCount = data.byResource.table?.length ?? 0;
     const rpcCount = data.byResource.rpc?.length ?? 0;

@@ -18,6 +18,7 @@ import path from "node:path";
 import fs from "node:fs";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { extractEdgeFunctions } from "./extractor.js";
+import { writeOpenApiPartialArtifact } from "./artifact.js";
 import { edgeFunctionSectionHtml } from "./atlas/sections.js";
 import { edgeFunctionCardRendererJs } from "./atlas/cards.js";
 import { edgeFunctionStyles } from "./atlas/styles.js";
@@ -31,7 +32,11 @@ function resolveConfigTomlPath(ctx: PluginContext): string | undefined {
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-deno-functions",
-  version: "1.0.0",
+  version: "0.3.0",
+  artifactCapabilities: {
+    produces: ["openapi.partial.deno-functions"],
+    consumes: [],
+  },
 
   commands: [
     {
@@ -76,6 +81,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
           configTomlPath: resolveConfigTomlPath(ctx),
           baseUrl,
         });
+        if (items.length > 0) {
+          writeOpenApiPartialArtifact(ctx, items, { baseUrl });
+        }
 
         if (items.length === 0) {
           console.log("No edge functions found.");
@@ -164,6 +172,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
+    writeOpenApiPartialArtifact(ctx, items, { baseUrl });
 
     return {
       categories: { edge_functions: items },
@@ -186,6 +195,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
+    writeOpenApiPartialArtifact(ctx, items, { baseUrl });
     return generateEdgeFunctionOpenApi(items, { apiUrl: ctx.apiUrl, baseUrl }) as unknown as Record<string, unknown>;
   },
 
@@ -196,6 +206,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
+    if (items.length > 0) {
+      writeOpenApiPartialArtifact(ctx, items, { baseUrl });
+    }
 
     if (items.length === 0) {
       return ["  (no edge functions found)"];

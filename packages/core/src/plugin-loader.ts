@@ -94,10 +94,12 @@ export function buildPluginContext(
   loaded: LoadedPlugin,
   allLoaded?: LoadedPlugin[],
 ): PluginContext {
+  const artifactsDir = path.join(config.sbtDataDir, "artifacts");
   return {
     projectRoot: config.projectRoot,
     toolsDir: config.toolsDir,
     sbtDataDir: config.sbtDataDir,
+    artifactsDir,
     pluginConfig: loaded.pluginConfig,
     apiUrl: config.api.url,
     paths: {
