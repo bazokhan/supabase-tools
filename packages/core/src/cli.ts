@@ -104,10 +104,6 @@ function init(): void {
   ensureGitignoreSbtEntry();
 }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
-
 try {
   const loaded = await loadPlugins();
   const pluginCommands = loaded.flatMap((entry) =>

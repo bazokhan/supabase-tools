@@ -6,11 +6,15 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { hasFlag, openFile } from "@sbtools/sdk";
 import { scanDirectory } from "./scanner.js";
 import { analyze } from "./analyzer.js";
 import { writeFrontendUsageArtifact } from "./artifact.js";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
 import { generateHtml } from "./html-generator.js";
 import { frontendUsageSectionHtml } from "./atlas/sections.js";
 import { frontendUsageCardRendererJs } from "./atlas/cards.js";
@@ -59,7 +63,7 @@ Config (supabase-tools.config.json → plugins[].config):
   const scanPaths = getScanPaths(ctx);
   const results = scanDirectory(ctx.projectRoot, scanPaths);
   const data = analyze(results);
-  writeFrontendUsageArtifact(ctx, data, { scanPaths });
+  writeFrontendUsageArtifact(ctx, data, { scanPaths, pluginVersion: PLUGIN_VERSION });
 
   if (hasFlag(args, "--json")) {
     console.log(
@@ -111,7 +115,7 @@ function toAtlasItems(data: Awaited<ReturnType<typeof analyze>>): Array<{
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-frontend-usage",
-  version: "0.3.0",
+  version: PLUGIN_VERSION,
   artifactCapabilities: {
     produces: ["frontend.usage"],
     consumes: [],
@@ -129,7 +133,7 @@ const plugin: SbtPlugin = {
     const scanPaths = getScanPaths(ctx);
     const results = scanDirectory(ctx.projectRoot, scanPaths);
     const data = analyze(results);
-    writeFrontendUsageArtifact(ctx, data, { scanPaths });
+    // Artifact is written by command - skip here to avoid redundant writes
     const items = toAtlasItems(data);
 
     const tableCount = data.byResource.table?.length ?? 0;
@@ -178,7 +182,7 @@ const plugin: SbtPlugin = {
     const scanPaths = getScanPaths(ctx);
     const results = scanDirectory(ctx.projectRoot, scanPaths);
     const data = analyze(results);
-    writeFrontendUsageArtifact(ctx, data, { scanPaths });
+    // Artifact is written by command - skip here to avoid redundant writes
     const compCount = Object.keys(data.components).length;
     const tableCount = data.byResource.table?.length ?? 0;
     const rpcCount = data.byResource.rpc?.length ?? 0;

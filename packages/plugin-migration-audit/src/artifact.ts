@@ -76,7 +76,7 @@ export interface MigrationAnalysisArtifactData {
 export function writeMigrationAnalysisArtifact(
   ctx: PluginContext,
   result: AuditResult,
-  opts?: { sourceHash?: string; snapshotHash?: string }
+  opts?: { sourceHash?: string; snapshotHash?: string; pluginVersion?: string }
 ): void {
   const envelope: ArtifactEnvelope<MigrationAnalysisArtifactData> = {
     id: "migration.analysis",
@@ -91,7 +91,7 @@ export function writeMigrationAnalysisArtifact(
       ...(opts?.snapshotHash && { snapshotHash: opts.snapshotHash }),
     },
     meta: {
-      toolVersion: "0.4.0",
+      toolVersion: opts?.pluginVersion ?? "unknown",
     },
     data: toArtifactData(result),
   };

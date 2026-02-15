@@ -8,22 +8,32 @@ This document is the **single source of truth** for official artifact IDs in sup
 - Use dot-separated lowercase: `<domain>.<entity>` or `<domain>.<entity>.<plugin>`.
 - Avoid duplicate semantics under different IDs.
 
+## Status definitions
+
+| Status | Meaning |
+|--------|---------|
+| **Active** | Producer and consumer both exist and work end-to-end |
+| **Producing** | Producer writes the artifact; no consumer reads it yet |
+| **Planned** | Defined in the plan but no implementation yet |
+| **Convention** | Naming convention for a family of artifacts |
+| **Optional** | Low-priority; implement only if ROI is justified |
+
 ## Official registry
 
 | Artifact ID | Owner Package | Schema Version | Status | Description |
 |-------------|---------------|----------------|--------|-------------|
 | `atlas.data` | core | — | Planned | Optional wrapper for backend atlas data contract |
 | `docs.route-manifest` | plugin-atlas-html, plugin-docs-server | — | Planned | Plugin-generated page routes and labels |
-| `openapi.partial.deno-functions` | plugin-deno-functions | 1.0.0 | Active | Deno functions partial OpenAPI spec |
+| `openapi.partial.deno-functions` | plugin-deno-functions | 1.0.0 | Active | Deno functions partial OpenAPI spec (consumed by docs-server) |
 | `openapi.partial.<plugin>` | (producing plugin) | — | Convention | Plugin partial OpenAPI specs; merged deterministically |
 | `snapshot.object-index` | core | — | Planned | Snapshot object index (canonical source for migration audit) |
-| `migration.analysis` | plugin-migration-audit | 1.0.0 | Planned | Migration audit result: disk vs DB comparison |
+| `migration.analysis` | plugin-migration-audit | 1.0.0 | Producing | Migration audit result: disk vs DB comparison |
 | `migration.lineage` | plugin-migration-audit | — | Planned | Migration dependency/lineage graph |
 | `migration.staleness` | plugin-migration-audit | — | Planned | Staleness and drift metrics |
 | `migration.studio.draft` | (studio) | — | Planned | Studio-owned draft migration metadata |
 | `typescript.schema-types` | plugin-typegen | — | Optional | Typegen output metadata (path, hash, timestamp) |
-| `depgraph.graph` | plugin-depgraph | 1.0.0 | Active | Dependency graph |
-| `frontend.usage` | plugin-frontend-usage | 1.0.0 | Active | Frontend usage scan results |
+| `depgraph.graph` | plugin-depgraph | 1.0.0 | Producing | Dependency graph |
+| `frontend.usage` | plugin-frontend-usage | 1.0.0 | Producing | Frontend usage scan results |
 | `runtime.service-health` | plugin-logs | — | Optional | Runtime service health snapshots |
 | `runtime.query-stats` | plugin-logs | — | Optional | Query statistics snapshots |
 

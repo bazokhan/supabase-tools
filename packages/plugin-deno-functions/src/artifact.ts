@@ -35,7 +35,7 @@ function toPartialSpec(
 export function writeOpenApiPartialArtifact(
   ctx: PluginContext,
   items: EdgeFunctionItem[],
-  opts: { baseUrl: string }
+  opts: { baseUrl: string; pluginVersion: string }
 ): void {
   const fullSpec = generateEdgeFunctionOpenApi(items, {
     apiUrl: ctx.apiUrl,
@@ -51,7 +51,7 @@ export function writeOpenApiPartialArtifact(
       projectRoot: ctx.projectRoot,
       functionsPath: ctx.paths.functions,
     },
-    meta: { toolVersion: "0.3.0" },
+    meta: { toolVersion: opts.pluginVersion },
     data: toPartialSpec(fullSpec),
   };
   writeArtifact(ctx, envelope);

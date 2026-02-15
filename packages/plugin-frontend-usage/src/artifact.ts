@@ -15,7 +15,7 @@ export const FRONTEND_USAGE_VERSION = "1.0.0";
 export function writeFrontendUsageArtifact(
   ctx: PluginContext,
   data: FrontendUsageData,
-  opts?: { scanPaths?: string[] }
+  opts?: { scanPaths?: string[]; pluginVersion?: string }
 ): void {
   const envelope: ArtifactEnvelope<FrontendUsageData> = {
     id: "frontend.usage",
@@ -27,7 +27,7 @@ export function writeFrontendUsageArtifact(
       projectRoot: ctx.projectRoot,
       ...(opts?.scanPaths && { scanPaths: opts.scanPaths.join(",") }),
     },
-    meta: { toolVersion: "0.3.0" },
+    meta: { toolVersion: opts?.pluginVersion ?? "unknown" },
     data,
   };
   writeArtifact(ctx, envelope);

@@ -15,7 +15,7 @@ export const DEPGRAPH_GRAPH_VERSION = "1.0.0";
 export function writeDepgraphArtifact(
   ctx: PluginContext,
   graph: DependencyGraph,
-  opts?: { atlasDataPath?: string; snapshotDir?: string }
+  opts?: { atlasDataPath?: string; snapshotDir?: string; pluginVersion?: string }
 ): void {
   const envelope: ArtifactEnvelope<DependencyGraph> = {
     id: "depgraph.graph",
@@ -28,7 +28,7 @@ export function writeDepgraphArtifact(
       ...(opts?.atlasDataPath && { atlasDataPath: opts.atlasDataPath }),
       ...(opts?.snapshotDir && { snapshotDir: opts.snapshotDir }),
     },
-    meta: { toolVersion: "0.3.0" },
+    meta: { toolVersion: opts?.pluginVersion ?? "unknown" },
     data: graph,
   };
   writeArtifact(ctx, envelope);

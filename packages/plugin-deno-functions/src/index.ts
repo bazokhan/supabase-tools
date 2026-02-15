@@ -16,6 +16,7 @@
  */
 import path from "node:path";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { extractEdgeFunctions } from "./extractor.js";
 import { writeOpenApiPartialArtifact } from "./artifact.js";
@@ -23,6 +24,9 @@ import { edgeFunctionSectionHtml } from "./atlas/sections.js";
 import { edgeFunctionCardRendererJs } from "./atlas/cards.js";
 import { edgeFunctionStyles } from "./atlas/styles.js";
 import { generateEdgeFunctionOpenApi } from "./openapi.js";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
 
 function resolveConfigTomlPath(ctx: PluginContext): string | undefined {
   const tomlRel = (ctx.pluginConfig.configTomlPath as string) ?? "supabase/config.toml";
@@ -32,7 +36,7 @@ function resolveConfigTomlPath(ctx: PluginContext): string | undefined {
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-deno-functions",
-  version: "0.3.0",
+  version: PLUGIN_VERSION,
   artifactCapabilities: {
     produces: ["openapi.partial.deno-functions"],
     consumes: [],
@@ -82,7 +86,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
           baseUrl,
         });
         if (items.length > 0) {
-          writeOpenApiPartialArtifact(ctx, items, { baseUrl });
+          writeOpenApiPartialArtifact(ctx, items, { baseUrl, pluginVersion: PLUGIN_VERSION });
         }
 
         if (items.length === 0) {
@@ -172,7 +176,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
-    writeOpenApiPartialArtifact(ctx, items, { baseUrl });
+    if (items.length > 0) {
+      writeOpenApiPartialArtifact(ctx, items, { baseUrl, pluginVersion: PLUGIN_VERSION });
+    }
 
     return {
       categories: { edge_functions: items },
@@ -195,7 +201,6 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
-    writeOpenApiPartialArtifact(ctx, items, { baseUrl });
     return generateEdgeFunctionOpenApi(items, { apiUrl: ctx.apiUrl, baseUrl }) as unknown as Record<string, unknown>;
   },
 
@@ -206,10 +211,6 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
-    if (items.length > 0) {
-      writeOpenApiPartialArtifact(ctx, items, { baseUrl });
-    }
-
     if (items.length === 0) {
       return ["  (no edge functions found)"];
     }

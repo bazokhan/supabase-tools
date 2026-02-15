@@ -48,7 +48,6 @@ const ARTIFACT_ID_REGEX = /^[a-z0-9.-]+$/;
 
 /**
  * Validate that an envelope has required fields and valid format.
- * Returns null if valid, or an error message if invalid.
  */
 export function validateArtifactEnvelope<T>(
   envelope: unknown
@@ -110,6 +109,10 @@ export function writeArtifact<T>(
   ctx: Pick<PluginContext, "sbtDataDir">,
   envelope: ArtifactEnvelope<T>
 ): void {
+  if (!validateArtifactEnvelope<T>(envelope)) {
+    const e = envelope as unknown as { id?: unknown; version?: unknown };
+    throw new Error(`Invalid artifact envelope: id=${e.id}, version=${e.version}`);
+  }
   const dir = artifactDir(ctx.sbtDataDir, envelope.id, envelope.version);
   ensureDir(dir);
   const filePath = path.join(dir, "latest.json");
