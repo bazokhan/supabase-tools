@@ -115,6 +115,27 @@ Config: `erdOutput`, `displayColumns`
 
 Config: `scanPaths`
 
+### plugin-migration-audit
+
+| Command | Description |
+|---------|-------------|
+| `migration-audit` | Compare disk migrations vs DB; CLI summary + HTML report + detail pages |
+| `migration-audit --json` | Output raw audit JSON |
+| `migration-audit --html` | Generate HTML only |
+| `migration-audit --no-open` | Skip opening browser |
+
+Produces `migration.analysis` artifact. Detail pages at `{docsOutput}/migration-audit/<slug>.html`.
+
+### plugin-migration-studio
+
+| Command | Description |
+|---------|-------------|
+| `migration-studio` | Start schema-aware migration authoring UI at http://localhost:3335 |
+| `migration-studio --port N` | Use custom port |
+| `migration-studio --restart` | Kill existing process on port, then start (auto-retry on port conflict) |
+
+Requires DB for schema introspection (falls back to atlas-data/artifact when unreachable).
+
 ### plugin-logs
 
 | Command | Description |

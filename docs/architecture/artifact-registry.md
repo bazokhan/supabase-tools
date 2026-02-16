@@ -26,11 +26,10 @@ This document is the **single source of truth** for official artifact IDs in sup
 | `docs.route-manifest` | plugin-atlas-html, plugin-docs-server | — | Planned | Plugin-generated page routes and labels |
 | `openapi.partial.deno-functions` | plugin-deno-functions | 1.0.0 | Active | Deno functions partial OpenAPI spec (consumed by docs-server) |
 | `openapi.partial.<plugin>` | (producing plugin) | — | Convention | Plugin partial OpenAPI specs; merged deterministically |
-| `snapshot.object-index` | core | — | Planned | Snapshot object index (canonical source for migration audit) |
-| `migration.analysis` | plugin-migration-audit | 1.0.0 | Producing | Migration audit result: disk vs DB comparison |
+| `migration.analysis` | plugin-migration-audit | 1.0.0 | Active | Migration audit result; per-migration sqlAnalysis; consumed by migration-studio |
 | `migration.lineage` | plugin-migration-audit | — | Planned | Migration dependency/lineage graph |
 | `migration.staleness` | plugin-migration-audit | — | Planned | Staleness and drift metrics |
-| `migration.studio.draft` | (studio) | — | Planned | Studio-owned draft migration metadata |
+| `migration.studio.draft` | plugin-migration-studio | — | Planned | Studio-owned draft migration metadata |
 | `typescript.schema-types` | plugin-typegen | — | Optional | Typegen output metadata (path, hash, timestamp) |
 | `depgraph.graph` | plugin-depgraph | 1.0.0 | Producing | Dependency graph |
 | `frontend.usage` | plugin-frontend-usage | 1.0.0 | Producing | Frontend usage scan results |

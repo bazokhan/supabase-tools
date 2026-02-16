@@ -96,6 +96,44 @@ const jwtSecret = extractComposeKey(composePath, [/JWT_SECRET:\s*([^\s]+)/]);
 - `getArg(args, name)` — Get CLI argument value
 - `openFile(path)` — Open file in default editor
 
+## DB Utilities
+
+Optional; plugins that need DB access must have `pg` installed. SDK exposes thin wrappers:
+
+- `resolveDbUrl()` — From `DATABASE_URL`, `SUPABASE_DB_URL`, `POSTGRES_URL`, or default local URL
+- `createPgClient()` — Create `pg.Client` (throws if `pg` not installed)
+- `testConnection(client)` — Returns `true` if connect succeeds
+- `disconnectClient(client)` — Safe disconnect
+
+```ts
+import { createPgClient, testConnection, disconnectClient } from "@sbtools/sdk";
+
+const client = createPgClient();
+try {
+  if (await testConnection(client)) { /* ... */ }
+} finally {
+  await disconnectClient(client);
+}
+```
+
+## Migration Scanner
+
+- `scanMigrationFiles(dir)` — Returns `MigrationFileInfo[]` (.sql files, sorted)
+- `parseTimestampPrefix(filename)` — Extract `YYYYMMDDHHMMSS` from migration filename
+
+```ts
+import { scanMigrationFiles, parseTimestampPrefix } from "@sbtools/sdk";
+
+const files = scanMigrationFiles(ctx.paths.migrations);
+const ts = parseTimestampPrefix("20240101120000_foo.sql"); // "20240101120000"
+```
+
+## SQL Analyzer
+
+- `analyzeMigrationSql(sql)` — Regex-based DDL classifier. Returns `MigrationSqlAnalysis` with `operations`, `touchedObjectKeys`, `riskFlags`, `confidence`.
+
+Used by migration-audit and migration-studio. No Node.js deps; can run in browser.
+
 ## Building Plugins
 
 See [plugin-scaffold](/plugins/plugin-scaffold) to scaffold a new plugin, or inspect existing plugins in the repository.

@@ -95,7 +95,18 @@ CREATE TABLE IF NOT EXISTS app_migrations.schema_migrations (
     if (applied.has(file)) continue;
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
     ui.step(`Applying ${file}...`);
-    psql(sql);
+    // Wrap in transaction so partial execution never commits (psql autocommits by default).
+    // Skip wrapping if the migration already starts with BEGIN (e.g. from "Wrap in transaction").
+    const alreadyWrapped = /^\s*BEGIN\s*;/i.test(sql.trimStart());
+    let toRun: string;
+    if (alreadyWrapped) {
+      toRun = sql;
+    } else {
+      const trimmed = sql.trimEnd();
+      const needsSemicolon = trimmed.length > 0 && !trimmed.endsWith(";");
+      toRun = `BEGIN;\n${sql}${needsSemicolon ? ";" : ""}\nCOMMIT;`;
+    }
+    psql(toRun);
     const version = file.replace(/'/g, "''");
     psql(`INSERT INTO app_migrations.schema_migrations (version) VALUES ('${version}');`);
     appliedNowCount += 1;

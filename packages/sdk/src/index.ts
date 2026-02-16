@@ -92,3 +92,18 @@ export {
 // SQL analyzer (shared by migration-audit and migration-studio)
 export { analyzeMigrationSql } from "./sql-analyzer.js";
 export type { OperationKind, ParsedOperation, MigrationSqlAnalysis } from "./sql-analyzer.js";
+
+// DB utilities (optional: plugins need pg installed)
+export {
+  resolveDbUrl,
+  createPgClient,
+  testConnection,
+  disconnectClient,
+} from "./db-utils.js";
+
+// Migration scanner
+export {
+  scanMigrationFiles,
+  parseTimestampPrefix,
+} from "./migration-scanner.js";
+export type { MigrationFileInfo } from "./migration-scanner.js";

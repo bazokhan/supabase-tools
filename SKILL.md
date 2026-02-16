@@ -36,6 +36,8 @@ Development: `npm run dev` or `tsx packages/core/src/cli.ts <command>`
 - `generate-atlas` — Backend Atlas JSON (HTML via plugin-atlas-html)
 - `test` — pgTAP tests (live or `--mem` PGlite)
 - `docs` — Start Swagger, ReDoc, Atlas, SchemaSpy (plugin-docs-server)
+- `migration-audit` — Compare migrations vs DB; report + detail pages (plugin-migration-audit)
+- `migration-studio` — Schema-aware migration authoring UI (plugin-migration-studio)
 - `init` — Generate config file; appends `.sbt/` to `.gitignore` if missing
 
 ## Versioned Artifacts
@@ -84,7 +86,7 @@ npm run clean   # rimraf dist in all packages
 npm test
 ```
 
-Vitest in `packages/core`. Tests use `@sbtools/sdk` from workspace.
+Vitest in `packages/sdk`, `packages/core`, and selected plugins. Tests use `@sbtools/sdk` from workspace.
 
 ## CLI Verification
 
@@ -96,7 +98,8 @@ Run all impacted commands against a consumer project with linked packages and fu
 |---------|----------|
 | `sbt help` | Help listing with plugin commands |
 | `sbt init` | Config exists or created; `.sbt/` added to `.gitignore` if missing |
-| `sbt migration-audit` | Audit summary; writes `migration.analysis` artifact; report in docs |
+| `sbt migration-audit` | Audit summary; writes `migration.analysis` artifact; report + detail pages in docs |
+| `sbt migration-studio` | Schema-aware migration authoring UI at http://localhost:3335 |
 | `sbt edge-functions` | Edge function table; writes `openapi.partial.deno-functions` artifact |
 | `sbt frontend-usage` | Components/tables report; writes `frontend.usage` artifact |
 | `sbt status` | Service URLs, keys; plugin status lines |

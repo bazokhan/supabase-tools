@@ -14,6 +14,7 @@ This document catalogs the implicit file conventions used by core and plugins. T
 | Path | Producer | Purpose |
 |------|----------|---------|
 | `{docsOutput}/migration-audit.html` | plugin-migration-audit | Full migration audit report |
+| `{docsOutput}/migration-audit/<slug>.html` | plugin-migration-audit | Per-migration detail pages (SQL viewer, operations, risk) |
 | `{docsOutput}/entity-relations/*.md` | plugin-erd | Mermaid ERD diagrams |
 | `{docsOutput}/openapi-spec.json` | plugin-docs-server | Merged OpenAPI spec |
 
@@ -24,6 +25,7 @@ This document catalogs the implicit file conventions used by core and plugins. T
 | `.sbt/artifacts/migration.analysis/1.0.0/latest.json` | migration.analysis | Migration audit result |
 | `.sbt/artifacts/depgraph.graph/1.0.0/latest.json` | depgraph.graph | Dependency graph |
 | `.sbt/artifacts/openapi.partial.deno-functions/1.0.0/latest.json` | openapi.partial.deno-functions | Deno functions OpenAPI partial |
+| `.sbt/artifacts/frontend.usage/1.0.0/latest.json` | frontend.usage | Frontend SDK usage scan |
 
 See [artifact registry](./artifact-registry.md) for the full contract set.
 

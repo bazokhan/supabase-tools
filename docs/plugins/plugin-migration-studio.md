@@ -1,17 +1,20 @@
 ---
-description: Migration authoring UI for supabase-tools — create migrations, analyze SQL, apply via sbt migrate.
+description: Schema-aware migration authoring UI — CodeMirror 6 editor, autocomplete, templates, live analysis.
 ---
 
 # plugin-migration-studio
 
-Migration authoring UI. Create migrations in a browser-based editor, analyze SQL for operations and risk, and apply via the core `sbt migrate` flow.
+Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dialect, table/column autocomplete, migration templates, and live analysis. Apply via the core `sbt migrate` flow.
 
 ## Features
 
-- SQL editor with live analysis
-- Save migration files with timestamp prefix
-- Apply migrations (requires confirmation, runs `sbt migrate`)
-- Consumes `migration.analysis` artifact when migration-audit has run
+- **CodeMirror 6 editor** — Syntax highlighting, line numbers, bracket matching, search (Ctrl+F), undo/redo
+- **Schema-aware autocomplete** — Tables, columns, functions, types (from DB → atlas-data → artifact)
+- **Live analysis** — Operations, risk flags, touched objects (debounced, updates as you type)
+- **Migration templates** — Create table with RLS, add column, function, trigger, policy, index, FK, enum
+- **Context sidebar** — Migrations list (from disk + `migration.analysis` status), schema tree; click to load or insert
+- **Save** — Description prompt → filename `YYYYMMDDHHMMSS_<slug>.sql`
+- **Apply** — Requires confirmation, runs `sbt migrate`
 
 ## Installation
 
@@ -35,7 +38,20 @@ npm install @sbtools/plugin-migration-studio
 sbt migration-studio
 ```
 
-Starts the studio at http://localhost:3335. Use `--port N` to change the port.
+Starts the studio at http://localhost:3335. Use `--port N` to change the port. If the port is in use, the server automatically kills the existing process and restarts. Use `--restart` to force-kill before starting.
+
+## API Endpoints (internal)
+
+The studio serves a local HTTP server with:
+
+- `GET /` — Editor page
+- `GET /api/schema` — Schema introspection (DB → atlas-data → artifact)
+- `GET /api/templates` — Migration template list
+- `GET /api/migrations` — Migration files with status
+- `GET /api/migration/:filename` — SQL content of a migration file
+- `POST /api/analyze` — Analyze SQL (operations, risk flags)
+- `POST /api/save` — Save migration file (body: `{ sql, description? }`)
+- `POST /api/apply` — Run `sbt migrate`
 
 ## Configuration
 
@@ -46,6 +62,19 @@ Starts the studio at http://localhost:3335. Use `--port N` to change the port.
 ## Contract
 
 - **Produces:** `migration.studio.draft` (planned)
-- **Consumes:** `migration.analysis` (optional)
+- **Consumes:** `migration.analysis` (optional — enriches migrations list and schema fallback)
 
 Apply path uses core migration execution; no duplicate engine.
+
+## Refresh requirements (real-time updates)
+
+| Feature | Requires | Command |
+|---------|----------|---------|
+| Migrations list with status | `migration.analysis` artifact | `sbt migration-audit` |
+| Schema from atlas cache | `docs/backend-atlas-data.json` | `sbt generate-atlas` |
+
+**Note:** `migration.analysis` is written only by `sbt migration-audit`, not by `sbt generate-atlas`. See [Package & Artifact Dependencies](../architecture/package-dependencies.md) for the full map.
+
+## Dependencies
+
+Requires `pg` for database schema introspection (optional peer; studio degrades to atlas-data/artifact when DB unreachable).

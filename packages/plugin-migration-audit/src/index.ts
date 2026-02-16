@@ -159,7 +159,6 @@ const plugin: SbtPlugin = {
   version: PLUGIN_VERSION,
   artifactCapabilities: {
     produces: ["migration.analysis"],
-    consumes: ["snapshot.object-index"],
   },
 
   commands: [

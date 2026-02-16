@@ -97,8 +97,7 @@ const plugin: SbtPlugin = {
   name: "@sbtools/plugin-migration-audit",
   version: "0.4.0",
   artifactCapabilities: {
-    produces: ["migration.analysis", "migration.lineage", "migration.staleness"],
-    consumes: ["snapshot.object-index"],
+    produces: ["migration.analysis"],
   },
   // ...
 };

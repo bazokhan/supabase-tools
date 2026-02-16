@@ -2,6 +2,10 @@
 
 Documentation for supabase-tools architecture decisions and cross-package contracts.
 
+## Package Dependencies
+
+- [Package & Artifact Dependencies](./package-dependencies.md) — NPM deps, artifact produce/consume, command flows, real-time update requirements
+
 ## Versioned Artifacts
 
 Versioned artifacts are the contract layer for cross-plugin collaboration. New integrations should use artifact-based contracts instead of implicit file conventions or hook-time object sharing.

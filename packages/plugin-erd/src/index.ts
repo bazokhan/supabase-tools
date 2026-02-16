@@ -1,7 +1,6 @@
 import path from "node:path";
 import { createRequire } from "node:module";
-import { Client } from "pg";
-import { ui, ensureDir } from "@sbtools/sdk";
+import { ui, ensureDir, createPgClient, disconnectClient } from "@sbtools/sdk";
 
 const require = createRequire(import.meta.url);
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
@@ -33,13 +32,7 @@ const plugin: SbtPlugin = {
 
         ui.step("Generating ERD diagrams...\n");
 
-        const dbUrl =
-          process.env.DATABASE_URL ||
-          process.env.SUPABASE_DB_URL ||
-          process.env.POSTGRES_URL ||
-          "postgresql://postgres:postgres@localhost:54322/postgres";
-
-        const client = new Client({ connectionString: dbUrl });
+        const client = createPgClient();
 
         try {
           await client.connect();
@@ -200,11 +193,11 @@ const plugin: SbtPlugin = {
             ui.detail(`   ${tableName}`);
           }
 
-          await client.end();
+          await disconnectClient(client);
           ui.success(`\nGenerated ERD diagrams for ${tables.length} tables`);
           ui.info(`Location: ${OUT_DIR}`);
         } catch (error) {
-          await client.end().catch(() => {});
+          await disconnectClient(client).catch(() => {});
           throw error;
         }
       },
