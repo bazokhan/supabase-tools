@@ -5,5 +5,5 @@
 
 # Security: address CodeQL / github-advanced-security findings
 
-- **plugin-migration-studio**: Whitelist HTTP method before route lookup to avoid unvalidated dynamic dispatch (CodeQL: unvalidated dynamic method call).
+- **plugin-migration-studio**: Validate handler is a function before invoking (CodeQL: unvalidated dynamic method call).
 - **sdk**: Replace ReDoS-vulnerable block comment regex in sql-analyzer with linear-time pattern (CodeQL: polynomial regular expression on uncontrolled data).
