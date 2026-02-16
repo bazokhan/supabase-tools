@@ -63,10 +63,12 @@ function objectKey(schema: string, name: string): string {
   return s ? `${s}.${n}` : n;
 }
 
-const RE_SQL_COMMENT = /--[^\n]*|\/\*[\s\S]*?\*\//g;
+const RE_LINE_COMMENT = /--[^\n]*/g;
+/** Block comment: avoids ReDoS by not using [\s\S]*? (linear-time match). */
+const RE_BLOCK_COMMENT = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g;
 
 function stripComments(sql: string): string {
-  return sql.replace(RE_SQL_COMMENT, " ").replace(/\s+/g, " ");
+  return sql.replace(RE_LINE_COMMENT, " ").replace(RE_BLOCK_COMMENT, " ").replace(/\s+/g, " ");
 }
 
 const PATTERNS: Array<{

@@ -298,11 +298,14 @@ export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMes
     ["POST:/api/apply", handleApply],
   ]);
 
+  const allowedMethods = new Set(["GET", "POST", "HEAD", "OPTIONS"]);
+
   return async (req, res) => {
     if (serveLibFile(req, res)) return;
     const url = req.url ?? "/";
     const pathname = url.split("?")[0];
-    const method = req.method ?? "GET";
+    const rawMethod = req.method ?? "GET";
+    const method = allowedMethods.has(rawMethod) ? rawMethod : "GET";
     let handler = routes.get(`${method}:${pathname}`);
     if (!handler && method === "GET" && pathname.startsWith("/api/migration/") && pathname !== "/api/migration/") {
       handler = handleMigrationFile;
