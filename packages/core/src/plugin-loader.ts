@@ -60,6 +60,12 @@ async function resolveAndImport(entryPath: string): Promise<{ plugin: SbtPlugin 
   return null;
 }
 
+/** Packages that were merged into core — gracefully skip with a helpful warning. */
+const MERGED_INTO_CORE = [
+  "@sbtools/plugin-atlas-html",
+  "@sbtools/plugin-docs-server",
+];
+
 /**
  * Load config-declared plugins.
  */
@@ -69,6 +75,12 @@ export async function loadPlugins(): Promise<LoadedPlugin[]> {
   const entries = config.plugins ?? [];
   for (const entry of entries) {
     if (entry.enabled === false) continue;
+
+    // Detect known merged packages
+    if (MERGED_INTO_CORE.includes(entry.path)) {
+      ui.warn(`⚠️  ${entry.path} has been merged into @sbtools/core. Remove it from your plugins config.`);
+      continue;
+    }
 
     try {
       const result = await resolveAndImport(entry.path);
@@ -111,5 +123,25 @@ export function buildPluginContext(
     siblingPlugins: allLoaded
       ?.filter((l) => l.plugin.name !== loaded.plugin.name)
       .map((l) => l.plugin),
+  };
+}
+
+/** Build a PluginContext for core commands that need plugin access (e.g. docs merging OpenAPI). */
+export function buildCoreContext(allLoaded: LoadedPlugin[]): PluginContext {
+  const artifactsDir = path.join(config.sbtDataDir, "artifacts");
+  return {
+    projectRoot: config.projectRoot,
+    toolsDir: config.toolsDir,
+    sbtDataDir: config.sbtDataDir,
+    artifactsDir,
+    pluginConfig: {},
+    apiUrl: config.api.url,
+    paths: {
+      migrations: resolve(config.paths.migrations),
+      snapshot: resolve(config.paths.snapshot),
+      docsOutput: resolve(config.paths.docsOutput),
+      functions: resolve(config.paths.functions),
+    },
+    siblingPlugins: allLoaded.map((l) => l.plugin),
   };
 }

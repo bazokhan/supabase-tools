@@ -2,10 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { ui } from "@sbtools/sdk";
-import {
-  readSqlFile, discoverTestFiles, processSqlFile,
-  checkBackslashCommands, extractEchoMarkers,
-} from "./test-utils.js";
+import type { SqlExecutor } from "./runner-base.js";
+import { runTestSuite } from "./runner-base.js";
 
 // -- SQL statement splitter (respects dollar-quoting, single quotes, comments) --
 
@@ -32,7 +30,11 @@ function splitSqlStatements(sql: string): string[] {
     if (inSingleQuote) {
       current += char;
       if (char === "'") {
-        if (nextChar === "'") { current += nextChar; i += 2; continue; }
+        if (nextChar === "'") {
+          current += nextChar;
+          i += 2;
+          continue;
+        }
         inSingleQuote = false;
       }
       i++;
@@ -42,7 +44,10 @@ function splitSqlStatements(sql: string): string[] {
     if (char === "$" && !inDollarQuote) {
       let j = i + 1;
       let tag = "";
-      while (j < sql.length && sql[j] !== "$") { tag += sql[j]; j++; }
+      while (j < sql.length && sql[j] !== "$") {
+        tag += sql[j];
+        j++;
+      }
       if (j < sql.length && sql[j] === "$") {
         inDollarQuote = true;
         dollarTag = tag;
@@ -53,7 +58,10 @@ function splitSqlStatements(sql: string): string[] {
     } else if (char === "$" && inDollarQuote) {
       let j = i + 1;
       let tag = "";
-      while (j < sql.length && sql[j] !== "$") { tag += sql[j]; j++; }
+      while (j < sql.length && sql[j] !== "$") {
+        tag += sql[j];
+        j++;
+      }
       if (tag === dollarTag && j < sql.length && sql[j] === "$") {
         inDollarQuote = false;
         dollarTag = "";
@@ -97,39 +105,35 @@ function stripLeadingComments(sql: string): string {
   return sql.replace(/^\s*(--[^\n]*\n\s*)+/g, "").trim();
 }
 
-async function execSql(db: PGlite, sql: string): Promise<void> {
-  const { cleanSql, echoes } = extractEchoMarkers(sql);
-  for (const msg of echoes) ui.log(msg);
+function createMemExecutor(db: PGlite): SqlExecutor {
+  return {
+    async execute(cleanSql: string): Promise<void> {
+      const statements = splitSqlStatements(cleanSql);
+      for (const statement of statements) {
+        const effective = stripLeadingComments(statement.trim());
+        if (!effective) continue;
 
-  const problems = checkBackslashCommands(cleanSql);
-  if (problems.length > 0) {
-    throw new Error(`Found unprocessed backslash commands:\n${problems.join("\n")}`);
-  }
-
-  const statements = splitSqlStatements(cleanSql);
-  for (const statement of statements) {
-    const effective = stripLeadingComments(statement.trim());
-    if (!effective) continue;
-
-    try {
-      const results = await db.exec(statement.trim());
-      for (const result of results) {
-        for (const row of result.rows ?? []) {
-          for (const value of Object.values(row)) {
-            if (typeof value === "string" && value.trim().length > 0) {
-              ui.log(value);
+        try {
+          const results = await db.exec(statement.trim());
+          for (const result of results) {
+            for (const row of result.rows ?? []) {
+              for (const value of Object.values(row)) {
+                if (typeof value === "string" && value.trim().length > 0) {
+                  ui.log(value);
+                }
+              }
             }
           }
+        } catch (error) {
+          if (error instanceof Error) {
+            ui.error("\nSQL Error Details:");
+            ui.error(`Message: ${error.message}`);
+          }
+          throw error;
         }
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        ui.error("\nSQL Error Details:");
-        ui.error(`Message: ${error.message}`);
-      }
-      throw error;
-    }
-  }
+    },
+  };
 }
 
 // -- PGlite environment setup --
@@ -174,7 +178,11 @@ async function setupAuthSchema(db: PGlite): Promise<void> {
 
 async function setupCoreFunctions(db: PGlite): Promise<void> {
   await db.exec(`CREATE SCHEMA IF NOT EXISTS extensions;`);
-  try { await db.exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`); } catch { /* ok */ }
+  try {
+    await db.exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+  } catch {
+    /* ok */
+  }
 
   await db.exec(`
     CREATE OR REPLACE FUNCTION public.gen_random_uuid() RETURNS uuid
@@ -261,10 +269,6 @@ async function loadMigrations(db: PGlite, migrationsDir: string): Promise<void> 
 }
 
 export async function runMemTests(testsDir: string, migrationsDir: string): Promise<void> {
-  ui.heading("========================================");
-  ui.heading("Running Database Tests (In-Memory PGlite)");
-  ui.heading("========================================\n");
-
   const db = new PGlite("memory://");
   await db.waitReady;
 
@@ -281,25 +285,6 @@ export async function runMemTests(testsDir: string, migrationsDir: string): Prom
 
   await db.exec("SET search_path TO test, public, extensions");
 
-  const testFiles = discoverTestFiles(testsDir);
-  if (testFiles.length === 0) {
-    ui.info("No test files found.");
-    return;
-  }
-
-  for (const testFile of testFiles) {
-    const label = testFile.replace(/^functions\/test_/, "").replace(/\.sql$/, "");
-    ui.heading(`Testing: ${label}`);
-    ui.log("----------------------------------------");
-
-    const testContent = readSqlFile(testsDir, testFile);
-    const testFileDir = path.dirname(path.resolve(testsDir, testFile));
-    const processedTest = processSqlFile(testContent, testFileDir);
-    await execSql(db, processedTest);
-    ui.blank();
-  }
-
-  ui.heading("========================================");
-  ui.success("All tests completed!");
-  ui.heading("========================================");
+  const executor = createMemExecutor(db);
+  await runTestSuite(executor, testsDir, "Running Database Tests (In-Memory PGlite)");
 }

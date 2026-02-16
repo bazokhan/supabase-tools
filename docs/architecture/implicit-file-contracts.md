@@ -7,7 +7,7 @@ This document catalogs the implicit file conventions used by core and plugins. T
 | Path | Producer | Purpose |
 |------|----------|---------|
 | `{docsOutput}/backend-atlas-data.json` | `sbt generate-atlas` | Atlas JSON data; plugins contribute via `getAtlasData` |
-| `{docsOutput}/backend-atlas.html` | `sbt atlas-html` | Atlas HTML page; plugins contribute via `getAtlasUI` |
+| `{docsOutput}/backend-atlas.html` | core (`sbt atlas-html`) | Atlas HTML page; plugins contribute via `getAtlasUI` |
 
 ## Plugin output paths (by convention)
 
@@ -16,7 +16,7 @@ This document catalogs the implicit file conventions used by core and plugins. T
 | `{docsOutput}/migration-audit.html` | plugin-migration-audit | Full migration audit report |
 | `{docsOutput}/migration-audit/<slug>.html` | plugin-migration-audit | Per-migration detail pages (SQL viewer, operations, risk) |
 | `{docsOutput}/entity-relations/*.md` | plugin-erd | Mermaid ERD diagrams |
-| `{docsOutput}/openapi-spec.json` | plugin-docs-server | Merged OpenAPI spec |
+| `{docsOutput}/openapi-spec.json` | core (docs) | Merged OpenAPI spec |
 
 ## Artifact paths (versioned, preferred)
 

@@ -35,7 +35,7 @@ describe("createDebouncedSingleFlightScheduler", () => {
     expect(run).toHaveBeenCalledTimes(1);
 
     resolveRun?.();
-    await Promise.resolve();
+    await vi.runAllTimersAsync();
     expect(run).toHaveBeenCalledTimes(2);
 
     scheduler.stop();

@@ -54,14 +54,6 @@ Run `npx sbt help` to list available commands (including installed plugins).
 
 ## Plugin Commands
 
-### plugin-atlas-html
-
-| Command | Description |
-|---------|-------------|
-| `atlas-html` | Generate Backend Atlas HTML visualization |
-
-Requires `generate-atlas` first.
-
 ### plugin-db-test
 
 | Command | Description |
@@ -94,7 +86,13 @@ Config: `baseUrl`, `configTomlPath`
 
 Requires `generate-atlas` first. Config: `typesFilePath`
 
-### plugin-docs-server
+### atlas-html (core)
+
+| Command | Description |
+|---------|-------------|
+| `atlas-html` | Generate Backend Atlas HTML from backend-atlas-data.json |
+
+### docs (core)
 
 | Command | Description |
 |---------|-------------|

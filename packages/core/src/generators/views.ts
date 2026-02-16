@@ -1,3 +1,5 @@
+import { snapshotFileHeader } from "@sbtools/sdk";
+
 /**
  * Builds the full file content for a view snapshot.
  *
@@ -9,15 +11,16 @@ export function formatViewFile(row: {
   name: string;
   definition: string;
 }): string {
-  return `-- GENERATED: current view definition
--- Schema: ${row.schema}
--- View: ${row.name}
--- Do not edit manually. Regenerate via: npm run db:snapshot
-
-CREATE OR REPLACE VIEW ${row.schema}.${row.name} AS
+  return (
+    snapshotFileHeader({
+      objectType: "view definition",
+      headers: { Schema: row.schema, View: row.name },
+    }) +
+    `CREATE OR REPLACE VIEW ${row.schema}.${row.name} AS
 ${row.definition}
 ;
-`;
+`
+  );
 }
 
 /**
@@ -31,13 +34,14 @@ export function formatMaterializedViewFile(row: {
   name: string;
   definition: string;
 }): string {
-  return `-- GENERATED: current materialized view definition
--- Schema: ${row.schema}
--- Materialized View: ${row.name}
--- Do not edit manually. Regenerate via: npm run db:snapshot
-
-CREATE MATERIALIZED VIEW IF NOT EXISTS ${row.schema}.${row.name} AS
+  return (
+    snapshotFileHeader({
+      objectType: "materialized view definition",
+      headers: { Schema: row.schema, "Materialized View": row.name },
+    }) +
+    `CREATE MATERIALIZED VIEW IF NOT EXISTS ${row.schema}.${row.name} AS
 ${row.definition}
 ;
-`;
+`
+  );
 }

@@ -13,7 +13,8 @@ export async function extractTriggers(
   client: Client,
   ctx: SnapshotContext
 ): Promise<void> {
-  const res = await client.query(`
+  const res = await client.query(
+    `
     SELECT
       n.nspname AS schema,
       c.relname AS table_name,
@@ -24,9 +25,11 @@ export async function extractTriggers(
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE NOT t.tgisinternal
       AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-      ${ctx.schemaFilterNsp}
+      ${ctx.schemaFilterNsp.clause}
     ORDER BY n.nspname, c.relname, t.tgname;
-  `);
+  `,
+    ctx.schemaFilterNsp.params
+  );
 
   for (const r of res.rows as { schema: string; table_name: string; trigger_name: string; ddl: string }[]) {
     const baseFileName = `triggers/${safeName(r.schema)}.${safeName(r.table_name)}.${safeName(r.trigger_name)}.sql`;

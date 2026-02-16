@@ -24,7 +24,9 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 - **Filesystem** — `ensureDir`, `readText`, `writeFileInDir`, `safeName`, `safeFileName`, `sanitizeSlug`, `sanitizeIdentifier`
 - **Container** — `sanitizeContainerPrefix`, `deriveContainerPrefix` — Docker project prefix from config
 - **Compose** — `extractComposeKey`, `extractSupabaseKeys` — Extract keys from docker-compose files
-- **CLI** — `hasFlag`, `getArg`, `openFile`
+- **CLI** — `hasFlag`, `getArg`, `openFile`, `withHelp`, `loadPackageVersion`
+- **Atlas UI** — `buildAtlasUI` — Declarative builder for Backend Atlas UI contributions
+- **Schema** — `SchemaFilter` — Parameterized SQL filter type (`{ clause, params }`)
 
 ## Dependencies
 

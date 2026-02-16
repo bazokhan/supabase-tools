@@ -48,11 +48,11 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: "Overview", link: "/plugins/" },
-          { text: "plugin-atlas-html", link: "/plugins/plugin-atlas-html" },
           { text: "plugin-db-test", link: "/plugins/plugin-db-test" },
           { text: "plugin-deno-functions", link: "/plugins/plugin-deno-functions" },
           { text: "plugin-depgraph", link: "/plugins/plugin-depgraph" },
-          { text: "plugin-docs-server", link: "/plugins/plugin-docs-server" },
+          { text: "docs (built-in)", link: "/plugins/plugin-docs-server" },
+          { text: "atlas-html (built-in)", link: "/plugins/plugin-atlas-html" },
           { text: "plugin-erd", link: "/plugins/plugin-erd" },
           { text: "plugin-frontend-usage", link: "/plugins/plugin-frontend-usage" },
           { text: "plugin-logs", link: "/plugins/plugin-logs" },

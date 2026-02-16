@@ -6,35 +6,23 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { hasFlag, openFile } from "@sbtools/sdk";
+import { hasFlag, openFile, ui, loadPackageVersion, getConfigStringArray, withHelp } from "@sbtools/sdk";
 import { scanDirectory } from "./scanner.js";
 import { analyze } from "./analyzer.js";
 import { writeFrontendUsageArtifact } from "./artifact.js";
-
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
 import { generateHtml } from "./html-generator.js";
-import { frontendUsageSectionHtml } from "./atlas/sections.js";
-import { frontendUsageCardRendererJs } from "./atlas/cards.js";
-import { frontendUsageStyles } from "./atlas/styles.js";
+import { getFrontendUsageAtlasUI } from "./atlas.js";
 
 function getScanPaths(ctx: PluginContext): string[] {
-  const configured = ctx.pluginConfig.scanPaths;
-  if (Array.isArray(configured) && configured.length > 0) {
-    return configured.map(String);
-  }
-  return ["src/"];
+  return getConfigStringArray(ctx, "scanPaths", ["src/"]);
 }
 
 function getOutputPath(ctx: PluginContext): string {
   return path.join(ctx.paths.docsOutput, "frontend-usage.html");
 }
 
-async function frontendUsageCommand(args: string[], ctx: PluginContext): Promise<void> {
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const FRONTEND_USAGE_HELP = `
 frontend-usage — Scan frontend code for Supabase SDK usage
 
 Usage:
@@ -56,17 +44,16 @@ Scans .ts/.tsx/.js/.jsx files for:
 
 Config (supabase-tools.config.json → plugins[].config):
   scanPaths    Directories to scan (default: ["src/"])
-`);
-    return;
-  }
+`;
 
+async function frontendUsageCommand(args: string[], ctx: PluginContext): Promise<void> {
   const scanPaths = getScanPaths(ctx);
   const results = scanDirectory(ctx.projectRoot, scanPaths);
   const data = analyze(results);
-  writeFrontendUsageArtifact(ctx, data, { scanPaths, pluginVersion: PLUGIN_VERSION });
+  writeFrontendUsageArtifact(ctx, data, { scanPaths, pluginVersion: loadPackageVersion(import.meta.url) });
 
   if (hasFlag(args, "--json")) {
-    console.log(
+    ui.log(
       JSON.stringify(
         { data, scanResults: results.map((r) => ({ ...r, hits: r.hits })) },
         null,
@@ -84,9 +71,9 @@ Config (supabase-tools.config.json → plugins[].config):
   const tableCount = data.byResource.table?.length ?? 0;
   const rpcCount = data.byResource.rpc?.length ?? 0;
   const fnCount = data.byResource.edge_function?.length ?? 0;
-  console.log(`Frontend usage report written to ${outputPath}`);
-  console.log(
-    `  ${Object.keys(data.components).length} components use ${tableCount} tables, ${rpcCount} RPCs, ${fnCount} edge functions`,
+  ui.info(`Frontend usage report written to ${outputPath}`);
+  ui.detail(
+    `${Object.keys(data.components).length} components use ${tableCount} tables, ${rpcCount} RPCs, ${fnCount} edge functions`,
   );
 
   if (!hasFlag(args, "--no-open")) {
@@ -115,7 +102,7 @@ function toAtlasItems(data: Awaited<ReturnType<typeof analyze>>): Array<{
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-frontend-usage",
-  version: PLUGIN_VERSION,
+  version: loadPackageVersion(import.meta.url),
   artifactCapabilities: {
     produces: ["frontend.usage"],
     consumes: [],
@@ -125,7 +112,7 @@ const plugin: SbtPlugin = {
     {
       name: "frontend-usage",
       description: "Scan frontend code for Supabase SDK usage, generate HTML report",
-      run: frontendUsageCommand,
+      run: withHelp(FRONTEND_USAGE_HELP, frontendUsageCommand),
     },
   ],
 
@@ -150,33 +137,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => ({
-    kindLabels: { frontend_usage: "Frontend Usage" },
-    sectionHtml: frontendUsageSectionHtml(),
-    cardRendererJs: frontendUsageCardRendererJs(),
-    initJs: `
-      (function() {
-        var summary = document.getElementById("frontend-usage-summary");
-        if (summary && data.categories.frontend_usage) {
-          var items = data.categories.frontend_usage;
-          var comps = items.length;
-          var tables = 0, rpcs = 0;
-          var seenT = {}, seenR = {};
-          items.forEach(function(it) {
-            (it.resources || []).forEach(function(r) {
-              if (r.type === "table" && !seenT[r.resource]) { seenT[r.resource]=1; tables++; }
-              if (r.type === "rpc" && !seenR[r.resource]) { seenR[r.resource]=1; rpcs++; }
-            });
-          });
-          summary.innerHTML = '<div class="fw-stat"><span class="fw-stat-value">' + comps + '</span><span class="fw-stat-label">components</span></div>' +
-            '<div class="fw-stat"><span class="fw-stat-value">' + tables + '</span><span class="fw-stat-label">tables</span></div>' +
-            '<div class="fw-stat"><span class="fw-stat-value">' + rpcs + '</span><span class="fw-stat-label">RPCs</span></div>';
-        }
-        renderSection("frontend-usage-list", data.categories.frontend_usage || [], renderFrontendUsageCard, "components");
-      })();
-    `,
-    styles: frontendUsageStyles(),
-  }),
+  getAtlasUI: () => getFrontendUsageAtlasUI(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const scanPaths = getScanPaths(ctx);

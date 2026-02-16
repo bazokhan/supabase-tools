@@ -88,14 +88,16 @@ async function validateSql(sql: string): Promise<{ valid: boolean; error?: strin
     return { valid: true, dbConnected: true };
   } catch (e) {
     try {
-      await client.query("ROLLBACK").catch(() => {});
+      await client.query("ROLLBACK").catch((err) => {
+        if (process.env.SBT_DEBUG === "1") console.warn("ROLLBACK failed:", (err as Error).message);
+      });
     } catch {
       // ignore
     }
     try {
       await disconnectClient(client);
-    } catch {
-      // ignore
+    } catch (err) {
+      if (process.env.SBT_DEBUG === "1") console.warn("disconnectClient failed:", (err as Error).message);
     }
     const msg = (e as { message?: string }).message ?? String(e);
     if (msg.includes("connect") || msg.includes("ECONNREFUSED") || msg.includes("timeout")) {

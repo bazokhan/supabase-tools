@@ -1,3 +1,5 @@
+import { snapshotFileHeader } from "@sbtools/sdk";
+
 /**
  * Builds the full file content for a trigger snapshot.
  *
@@ -10,12 +12,14 @@ export function formatTriggerFile(row: {
   trigger_name: string;
   ddl: string;
 }): string {
-  return `-- GENERATED: current trigger definition
--- Schema: ${row.schema}
--- Table: ${row.table_name}
--- Trigger: ${row.trigger_name}
--- Do not edit manually. Regenerate via: npm run db:snapshot
-
-${row.ddl};
-`;
+  return (
+    snapshotFileHeader({
+      objectType: "trigger definition",
+      headers: {
+        Schema: row.schema,
+        Table: row.table_name,
+        Trigger: row.trigger_name,
+      },
+    }) + row.ddl + ";\n"
+  );
 }

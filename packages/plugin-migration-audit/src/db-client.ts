@@ -1,23 +1,8 @@
 /**
- * Audit-specific DB queries. Shared utilities come from @sbtools/sdk.
+ * Audit-specific DB queries. Use createPgClient, testConnection, disconnectClient from @sbtools/sdk.
  */
 import type { Client } from "pg";
-import {
-  createPgClient,
-  testConnection as sdkTestConnection,
-  disconnectClient as sdkDisconnectClient,
-} from "@sbtools/sdk";
 import type { AppliedMigration, SchemaSnapshot } from "./types.js";
-
-/** Create a pg.Client (uses SDK). */
-export function createClient(): Client {
-  return createPgClient() as Client;
-}
-
-/** Test connection (uses SDK). */
-export async function testConnection(client: Client): Promise<boolean> {
-  return sdkTestConnection(client);
-}
 
 /** Check if app_migrations.schema_migrations table exists. */
 export async function checkTrackingTable(client: Client): Promise<boolean> {
@@ -87,9 +72,4 @@ export async function getSchemaSnapshot(client: Client): Promise<SchemaSnapshot>
     dbSize: sizeResult.rows[0]?.size ?? null,
     pgVersion: versionResult.rows[0]?.version ?? null,
   };
-}
-
-/** Safe disconnect (uses SDK). */
-export async function disconnectClient(client: Client): Promise<void> {
-  return sdkDisconnectClient(client);
 }

@@ -1,20 +1,14 @@
 ---
-description: Start API documentation services — Swagger UI, ReDoc, Backend Atlas, SchemaSpy via Docker Compose.
+description: docs command (built into core) — Swagger UI, ReDoc, Backend Atlas, SchemaSpy.
 ---
 
-# @sbtools/plugin-docs-server
+# docs command (Built-in)
 
-[![npm](https://img.shields.io/npm/v/@sbtools/plugin-docs-server.svg)](https://www.npmjs.com/package/@sbtools/plugin-docs-server)
+The `docs` command is **built into @sbtools/core** — no plugin installation required. It starts API documentation services via Docker Compose: Swagger UI, ReDoc, Backend Atlas, and SchemaSpy.
 
-Plugin that starts API documentation services via Docker Compose: Swagger UI, ReDoc, Backend Atlas, and SchemaSpy. Subcommands let you start only the services you need.
+> Previously provided by `@sbtools/plugin-docs-server`, which has been merged into core. Remove it from your config if present.
 
-## Quick Start
-
-```bash
-npm install @sbtools/plugin-docs-server
-```
-
-Add to config: `{ "path": "@sbtools/plugin-docs-server" }`
+## Usage
 
 ```bash
 npx sbt docs              # All services
@@ -32,18 +26,6 @@ npx sbt docs stop         # Stop all docs containers
 | `docs atlas` | Backend Atlas (port 8083/atlas/) |
 | `docs schemaspy` | SchemaSpy (port 8083/schemaspy/) |
 | `docs stop` | Stop all documentation containers |
-
-![Swagger UI](../images/plugin-docs-swagger-output.jpg)
-*Swagger UI*
-
-![ReDoc](../images/plugin-docs-redoc-output.jpg)
-*ReDoc*
-
-![Backend Atlas](../images/plugin-docs-atlas-output.jpg)
-*Backend Atlas*
-
-![SchemaSpy](../images/plugin-docs-schemaspy-output.jpg)
-*SchemaSpy*
 
 ## Prerequisites by Subcommand
 
@@ -65,4 +47,4 @@ npx sbt docs stop         # Stop all docs containers
 
 ## Configuration
 
-Uses `api.url` and Docker compose from @sbtools/core. Fetches OpenAPI spec from the running REST API.
+Uses `api.url` and Docker compose from @sbtools/core. Fetches OpenAPI spec from the running REST API. Merges OpenAPI contributions from plugins (e.g. edge functions) when available.

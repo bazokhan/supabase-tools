@@ -94,11 +94,11 @@ Hooks let your plugin contribute to core commands. All are optional.
 | Hook | Called by | Returns |
 |------|-----------|---------|
 | `getAtlasData(ctx)` | `sbt generate-atlas` | `{ categories: Record<string, any[]>, stats: { label, value }[] }` |
-| `getAtlasUI()` | `sbt atlas-html` | `{ kindLabels, sectionHtml, cardRendererJs, initJs, styles }` |
+| `getAtlasUI()` | `sbt atlas-html` | Return value from `buildAtlasUI()` — see example below |
 | `getStatusLines(ctx)` | `sbt status` | `string[]` — lines appended to status output |
 | `getOpenApiSpec(ctx)` | `sbt docs` | Partial OpenAPI 3.0 object (deep-merged into the PostgREST spec) |
 
-Example:
+### getStatusLines Example
 
 ```ts
 const plugin: SbtPlugin = {
@@ -109,6 +109,16 @@ const plugin: SbtPlugin = {
   async getStatusLines(ctx) {
     return ["  My Plugin: 3 items tracked"];
   },
+};
+```
+
+### getAtlasData Example
+
+```ts
+const plugin: SbtPlugin = {
+  name: "@sbtools/plugin-example",
+  version: "1.0.0",
+  commands: [/* ... */],
 
   async getAtlasData(ctx) {
     return {
@@ -118,6 +128,59 @@ const plugin: SbtPlugin = {
   },
 };
 ```
+
+### getAtlasUI Example (Recommended: buildAtlasUI)
+
+Create an `atlas.ts` file in your plugin:
+
+```ts
+// src/atlas.ts
+import { buildAtlasUI, type AtlasSectionDef } from "@sbtools/sdk";
+
+const sections: AtlasSectionDef[] = [
+  {
+    id: "my-items",
+    title: "My Items",
+    description: "Items extracted from the database.",
+    kind: "my_item",
+    kindLabel: "My Item",
+    listId: "my-items-list",
+    dataKey: "my_items",
+    rendererName: "renderMyItemCard",
+    emptyLabel: "items",
+    card: {
+      searchFields: ["item.name", "item.description"],
+      title: "item.name",
+      subtitle: "item.type",
+      badges: [
+        { label: "'active'", cssClass: "badge-green", condition: "item.active" },
+      ],
+      details: [
+        { heading: "Description", value: "item.description" },
+      ],
+    },
+  },
+];
+
+export function getMyPluginAtlasUI() {
+  return buildAtlasUI(sections);
+}
+```
+
+Then in `src/index.ts`:
+
+```ts
+import { getMyPluginAtlasUI } from "./atlas.js";
+
+const plugin: SbtPlugin = {
+  name: "@sbtools/plugin-example",
+  version: "1.0.0",
+  commands: [/* ... */],
+  getAtlasUI: () => getMyPluginAtlasUI(),
+};
+```
+
+See [SDK API — Atlas UI Builder](/sdk/#atlas-ui-builder) for full documentation.
 
 ## SDK Utilities
 

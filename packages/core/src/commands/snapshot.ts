@@ -1,15 +1,48 @@
 import path from "node:path";
 import { Client } from "pg";
 import "dotenv/config";
-import { ui, DatabaseError, ensureDir, writeFileInDir } from "@sbtools/sdk";
+import { ui, DatabaseError, ensureDir, writeFileInDir, resolveDbUrl } from "@sbtools/sdk";
 import type { SnapshotMeta, SnapshotContext } from "@sbtools/sdk";
-import { config, resolve, getDbUrl } from "../config.js";
+import { config, resolve } from "../config.js";
 import { clearDir, sanitizeDbUrl, parseSchemaArgs, getSchemaFilter } from "../utils/index.js";
 import { formatReadme } from "../generators/index.js";
 import {
-  extractFunctions, extractViews, extractMaterializedViews,
-  extractTriggers, extractPolicies, extractTypes, extractEnums,
+  extractFunctions,
+  extractViews,
+  extractMaterializedViews,
+  extractTriggers,
+  extractPolicies,
+  extractTypes,
+  extractEnums,
 } from "../extractors/index.js";
+
+type ExtractorFn = (client: Client, ctx: SnapshotContext) => Promise<void>;
+
+const EXTRACTORS: Array<{
+  label: string;
+  countKey: keyof SnapshotMeta["object_counts"];
+  extract: ExtractorFn;
+}> = [
+  { label: "📦 Extracting functions...", countKey: "functions", extract: extractFunctions },
+  { label: "👁️  Extracting views...", countKey: "views", extract: extractViews },
+  { label: "📊 Extracting materialized views...", countKey: "materialized_views", extract: extractMaterializedViews },
+  { label: "⚡ Extracting triggers...", countKey: "triggers", extract: extractTriggers },
+  { label: "🔒 Extracting RLS policies...", countKey: "policies", extract: extractPolicies },
+  { label: "📋 Extracting custom types...", countKey: "types", extract: extractTypes },
+  { label: "🔢 Extracting enums...", countKey: "enums", extract: extractEnums },
+];
+
+async function withDbClient<T>(dbUrl: string, fn: (client: Client) => Promise<T>): Promise<T> {
+  const client = new Client({ connectionString: dbUrl });
+  try {
+    await client.connect();
+    return await fn(client);
+  } finally {
+    await client.end().catch((err) => {
+      if (process.env.SBT_DEBUG === "1") ui.warn(`client.end() failed: ${(err as Error).message}`);
+    });
+  }
+}
 
 export async function runSnapshot(): Promise<void> {
   const OUT_DIR = resolve(config.paths.snapshot);
@@ -31,63 +64,50 @@ export async function runSnapshot(): Promise<void> {
   ensureDir(path.join(OUT_DIR, "_meta"));
   ui.success("✅ Cleared previous snapshot\n");
 
-  const dbUrl = getDbUrl();
-  const sanitizedUrl = sanitizeDbUrl(dbUrl);
-  ui.step("🔗 Connecting to database...");
-  const client = new Client({ connectionString: dbUrl });
+  const dbUrl = resolveDbUrl();
   const schemaFilterNsp = getSchemaFilter(requestedSchemas, "nspname");
   const schemaFilterSchemaname = getSchemaFilter(requestedSchemas, "schemaname");
 
   try {
-    await client.connect();
-    ui.success("✅ Connected successfully\n");
+    const metadata = await withDbClient(dbUrl, async (client) => {
+      ui.step("🔗 Connecting to database...");
+      ui.success("✅ Connected successfully\n");
 
-    const versionResult = await client.query("SELECT version()");
-    const postgresVersion = versionResult.rows[0]?.version ?? "unknown";
+      const versionResult = await client.query("SELECT version()");
+      const postgresVersion = versionResult.rows[0]?.version ?? "unknown";
 
-    const metadata: SnapshotMeta = {
-      timestamp: new Date().toISOString(),
-      database_url: sanitizedUrl,
-      postgres_version: postgresVersion,
-      object_counts: {
-        functions: 0, views: 0, materialized_views: 0,
-        triggers: 0, policies: 0, types: 0, enums: 0,
-      },
-    };
+      const meta: SnapshotMeta = {
+        timestamp: new Date().toISOString(),
+        database_url: sanitizeDbUrl(dbUrl),
+        postgres_version: postgresVersion,
+        object_counts: {
+          functions: 0,
+          views: 0,
+          materialized_views: 0,
+          triggers: 0,
+          policies: 0,
+          types: 0,
+          enums: 0,
+        },
+      };
 
-    const ctx: SnapshotContext = { outDir: OUT_DIR, schemaFilterNsp, schemaFilterSchemaname, meta: metadata };
+      const ctx: SnapshotContext = {
+        outDir: OUT_DIR,
+        schemaFilterNsp,
+        schemaFilterSchemaname,
+        meta,
+      };
 
-    ui.step("📦 Extracting functions...");
-    await extractFunctions(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.functions} functions`);
+      for (const { label, countKey, extract } of EXTRACTORS) {
+        ui.step(label);
+        await extract(client, ctx);
+        ui.detail(`   ✓ Extracted ${meta.object_counts[countKey]} ${String(countKey).replace("_", " ")}`);
+      }
 
-    ui.step("👁️  Extracting views...");
-    await extractViews(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.views} views`);
-
-    ui.step("📊 Extracting materialized views...");
-    await extractMaterializedViews(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.materialized_views} materialized views`);
-
-    ui.step("⚡ Extracting triggers...");
-    await extractTriggers(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.triggers} triggers`);
-
-    ui.step("🔒 Extracting RLS policies...");
-    await extractPolicies(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.policies} policies`);
-
-    ui.step("📋 Extracting custom types...");
-    await extractTypes(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.types} custom types`);
-
-    ui.step("🔢 Extracting enums...");
-    await extractEnums(client, ctx);
-    ui.detail(`   ✓ Extracted ${metadata.object_counts.enums} enums`);
-
-    writeFileInDir(OUT_DIR, "_meta/snapshot.json", JSON.stringify(metadata, null, 2) + "\n");
-    writeFileInDir(OUT_DIR, "_meta/README.md", formatReadme(metadata));
-    await client.end();
+      writeFileInDir(OUT_DIR, "_meta/snapshot.json", JSON.stringify(meta, null, 2) + "\n");
+      writeFileInDir(OUT_DIR, "_meta/README.md", formatReadme(meta));
+      return meta;
+    });
 
     ui.success("\n✅ Snapshot generated successfully!");
     ui.info(`📁 Location: ${OUT_DIR}`);
@@ -100,7 +120,6 @@ export async function runSnapshot(): Promise<void> {
     ui.detail(`   Types: ${metadata.object_counts.types}`);
     ui.detail(`   Enums: ${metadata.object_counts.enums}`);
   } catch (error) {
-    await client.end().catch(() => {});
     throw new DatabaseError(
       `Error generating snapshot: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error },

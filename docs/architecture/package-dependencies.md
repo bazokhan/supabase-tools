@@ -1,6 +1,8 @@
 # Package & Artifact Dependencies
 
-Dependency map for all 14 packages: npm dependencies, artifact produce/consume, filesystem I/O, and command flows. Use this to understand real-time update requirements (e.g. Migration Studio needs fresh `migration.analysis` to show migration list/status).
+Dependency map for all 12 packages (sdk + core + 10 plugins): npm dependencies, artifact produce/consume, filesystem I/O, and command flows. Use this to understand real-time update requirements (e.g. Migration Studio needs fresh `migration.analysis` to show migration list/status).
+
+**Note:** `@sbtools/plugin-atlas-html` and `@sbtools/plugin-docs-server` were previously separate packages but have been merged into `@sbtools/core` as of v0.3.0. The `atlas-html` and `docs` commands are now built-in.
 
 ## NPM Package Dependencies
 
@@ -10,10 +12,8 @@ Dependency map for all 14 packages: npm dependencies, artifact produce/consume, 
 | `@sbtools/core` | `@sbtools/sdk`, `dotenv`, `pg`, `zod` |
 | `@sbtools/plugin-migration-studio` | `@sbtools/sdk`, `pg`, `@codemirror/*` |
 | `@sbtools/plugin-migration-audit` | `@sbtools/sdk`, `pg` |
-| `@sbtools/plugin-docs-server` | `@sbtools/sdk` |
 | `@sbtools/plugin-deno-functions` | `@sbtools/sdk` |
 | `@sbtools/plugin-depgraph` | `@sbtools/sdk` |
-| `@sbtools/plugin-atlas-html` | `@sbtools/sdk` |
 | `@sbtools/plugin-erd` | `@sbtools/sdk`, `pg` |
 | `@sbtools/plugin-typegen` | `@sbtools/sdk` |
 | `@sbtools/plugin-db-test` | `@sbtools/sdk`, `pg`, `@electric-sql/pglite` |
@@ -27,7 +27,7 @@ Dependency map for all 14 packages: npm dependencies, artifact produce/consume, 
 |---------|----------|----------|
 | plugin-migration-studio | `migration.studio.draft` (planned) | `migration.analysis` |
 | plugin-migration-audit | `migration.analysis` | — |
-| plugin-docs-server | — | `openapi.partial.deno-functions` |
+| @sbtools/core (docs) | — | `openapi.partial.deno-functions` |
 | plugin-deno-functions | `openapi.partial.deno-functions` | — |
 | plugin-depgraph | `depgraph.graph` | — |
 | plugin-frontend-usage | `frontend.usage` | — |
@@ -107,9 +107,9 @@ sbt watch --scope migration
 |----------|--------|
 | **core** snapshot | DB (live) |
 | **core** generate-atlas | `supabase/current/` + all plugins `getAtlasData` |
-| plugin-atlas-html | `docs/backend-atlas-data.json` |
+| **core** atlas-html | `docs/backend-atlas-data.json` |
+| **core** docs | `.sbt/openapi-spec.json`, `openapi.partial.deno-functions` artifact |
 | plugin-depgraph | `docs/backend-atlas-data.json`, `supabase/current/`, `types.ts` |
-| plugin-docs-server | `.sbt/openapi-spec.json`, `openapi.partial.deno-functions` artifact |
 | plugin-migration-audit | `supabase/migrations/`, DB |
 | plugin-migration-studio | `supabase/migrations/`, DB, `docs/backend-atlas-data.json`, `migration.analysis` artifact |
 

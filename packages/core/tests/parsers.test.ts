@@ -12,6 +12,12 @@ describe("parseHeader", () => {
   it("returns empty string for missing label", () => {
     expect(parseHeader("-- Schema: public", "Function")).toBe("");
   });
+  it("trims extra whitespace around value", () => {
+    expect(parseHeader("-- Schema:   public  ", "Schema")).toBe("public");
+  });
+  it("handles empty content", () => {
+    expect(parseHeader("", "Schema")).toBe("");
+  });
 });
 
 describe("parseArgs", () => {
@@ -83,6 +89,19 @@ describe("parseTriggerDetails", () => {
     expect(result.events).toBe("INSERT");
     expect(result.function_name).toBe("handle_insert");
   });
+  it("parses INSTEAD OF trigger", () => {
+    const sql = "CREATE TRIGGER view_trigger INSTEAD OF INSERT ON public.my_view EXECUTE FUNCTION handle_view_insert()";
+    const result = parseTriggerDetails(sql);
+    expect(result.timing).toBe("INSTEAD OF");
+    expect(result.events).toBe("INSERT");
+    expect(result.function_name).toBe("handle_view_insert");
+  });
+  it("parses AFTER UPDATE trigger", () => {
+    const sql = "CREATE TRIGGER after_up AFTER UPDATE ON t EXECUTE FUNCTION fn()";
+    const result = parseTriggerDetails(sql);
+    expect(result.timing).toBe("AFTER");
+    expect(result.events).toBe("UPDATE");
+  });
   it("returns empty for non-trigger SQL", () => {
     const result = parseTriggerDetails("SELECT 1");
     expect(result.timing).toBe("");
@@ -96,6 +115,18 @@ describe("parsePolicyBlocks", () => {
     expect(blocks).toHaveLength(2);
     expect(blocks[0].name).toBe("alpha");
     expect(blocks[1].name).toBe("beta");
+  });
+  it("handles multi-policy file with full policy SQL", () => {
+    const content = `-- Policy: allow_read
+CREATE POLICY "allow_read" ON public.users AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);
+-- Policy: allow_insert
+CREATE POLICY "allow_insert" ON public.users AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (true);`;
+    const blocks = parsePolicyBlocks(content);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].name).toBe("allow_read");
+    expect(blocks[0].sql).toContain("SELECT");
+    expect(blocks[1].name).toBe("allow_insert");
+    expect(blocks[1].sql).toContain("INSERT");
   });
 });
 

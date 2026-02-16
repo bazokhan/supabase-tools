@@ -1,12 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
+import { loadPackageVersion } from "@sbtools/sdk";
 const SCAFFOLD_SDK_VERSION = (require("../package.json") as { dependencies?: { "@sbtools/sdk"?: string } }).dependencies?.["@sbtools/sdk"] ?? "^0.3.0";
-import { ui, hasFlag, sanitizeSlug } from "@sbtools/sdk";
+import { ui, hasFlag, sanitizeSlug, withHelp } from "@sbtools/sdk";
 
 function resolveSdkVersion(toolsDir: string): string {
   const sdkPkgPath = path.join(toolsDir, "..", "sdk", "package.json");
@@ -25,9 +22,7 @@ import { generateRootIndexTs } from "./templates/root-index-ts.js";
 import { generateReadmeMd } from "./templates/readme-md.js";
 import { generateSkillMd } from "./templates/skill-md.js";
 
-async function scaffoldCommand(args: string[], ctx: PluginContext): Promise<void> {
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const SCAFFOLD_HELP = `
 scaffold-plugin — Generate new plugin boilerplate
 
 Usage:
@@ -45,10 +40,9 @@ Examples:
   sbt scaffold-plugin analytics           → packages/plugin-analytics/
   sbt scaffold-plugin my-plugin --external  → plugin-my-plugin/
   sbt scaffold-plugin dashboard --hooks   → Internal plugin with Atlas hooks
-`);
-    return;
-  }
+`;
 
+async function scaffoldCommand(args: string[], ctx: PluginContext): Promise<void> {
   const name = args[0];
   if (!name || name.startsWith("-")) {
     ui.error("Plugin name is required. Example: sbt scaffold-plugin my-plugin\n");
@@ -113,13 +107,13 @@ Examples:
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-scaffold",
-  version: PLUGIN_VERSION,
+  version: loadPackageVersion(import.meta.url),
 
   commands: [
     {
       name: "scaffold-plugin",
       description: "Scaffold a new plugin with consistent boilerplate",
-      run: scaffoldCommand,
+      run: withHelp(SCAFFOLD_HELP, scaffoldCommand),
     },
   ],
 };

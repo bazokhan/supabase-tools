@@ -8,7 +8,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { SbtError } from "@sbtools/sdk";
+import { SbtError, COMPOSE_DB_FILE } from "@sbtools/sdk";
 import { config, resolve } from "./config.js";
 
 // ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ interface Check {
 // ---------------------------------------------------------------------------
 
 const composeDb = (): Check => ({
-  path: path.join(config.toolsDir, "docker-compose.db.yml"),
+  path: path.join(config.toolsDir, COMPOSE_DB_FILE),
   label: "Docker Compose DB config",
   fix: "This file ships with supabase-tools. Re-clone or restore it.",
   kind: "file",
@@ -49,6 +49,13 @@ const migrationsDir = (): Check => ({
   label: "Migrations directory",
   fix: `Create the directory at ${config.paths.migrations} or run \`sbt init\`.`,
   kind: "dir",
+});
+
+const atlasDataFile = (): Check => ({
+  path: path.join(resolve(config.paths.docsOutput), "backend-atlas-data.json"),
+  label: "backend-atlas-data.json",
+  fix: "Run `sbt generate-atlas` first to generate the atlas data.",
+  kind: "file",
 });
 
 // ---------------------------------------------------------------------------
@@ -78,6 +85,12 @@ function checksForCommand(command: string, args: string[]): Check[] {
 
     case "generate-atlas":
       return [snapshotMeta()];
+
+    case "docs":
+      return [composeDb()];
+
+    case "atlas-html":
+      return [atlasDataFile()];
 
     default:
       return [];

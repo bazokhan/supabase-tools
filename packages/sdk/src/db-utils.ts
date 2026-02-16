@@ -3,6 +3,7 @@
  * If `pg` is not available, functions throw a descriptive error.
  */
 import { createRequire } from "node:module";
+import { SbtError } from "./errors.js";
 
 const require = createRequire(import.meta.url);
 
@@ -22,9 +23,9 @@ export function createPgClient(): import("pg").Client {
     const { Client } = require("pg") as typeof import("pg");
     return new Client({ connectionString: resolveDbUrl() });
   } catch {
-    throw new Error(
-      "pg package is required for database operations. Install it: npm install pg"
-    );
+    throw new SbtError("COMMAND_FAILED", "pg package is required for database operations.", {
+      tips: ["Install it: npm install pg"],
+    });
   }
 }
 
@@ -46,7 +47,9 @@ export async function disconnectClient(
 ): Promise<void> {
   try {
     await client.end();
-  } catch {
-    // ignore
+  } catch (err) {
+    if (process.env.SBT_DEBUG === "1") {
+      console.warn(`disconnectClient failed: ${(err as Error).message}`);
+    }
   }
 }

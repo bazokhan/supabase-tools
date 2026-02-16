@@ -1,30 +1,37 @@
 import path from "node:path";
-import { createRequire } from "node:module";
-import { ui, DatabaseError, hasFlag } from "@sbtools/sdk";
-
-const require = createRequire(import.meta.url);
+import { ui, DatabaseError, hasFlag, resolveDbUrl, loadPackageVersion, resolveConfigPath, withHelp } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { runLiveTests } from "./runner-live.js";
 import { runMemTests } from "./runner-mem.js";
 
 /** Resolve test and migration directories from plugin context. */
 export function resolveTestPaths(ctx: PluginContext): { testsDir: string; migrationsDir: string } {
-  const testsDir = (ctx.pluginConfig.testsDir as string) ??
-    path.join(ctx.projectRoot, "supabase", "tests");
-  const migrationsDir = (ctx.pluginConfig.migrationsDir as string) ??
-    ctx.paths.migrations;
+  const testsDir = resolveConfigPath(ctx, "testsDir", "supabase/tests");
+  const migrationsDir = resolveConfigPath(ctx, "migrationsDir", ctx.paths.migrations);
   return { testsDir, migrationsDir };
 }
 
+const TEST_HELP = `
+test — Run database tests (pgTAP)
+
+Usage:
+  sbt test              Run tests against the running database
+  sbt test --mem        Run tests in-memory with PGlite (no DB required)
+
+Options:
+  --mem, --memory       Use PGlite in-memory mode
+  -h, --help            Show help
+`;
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-db-test",
-  version: (require("../package.json") as { version: string }).version,
+  version: loadPackageVersion(import.meta.url),
 
   commands: [
     {
       name: "test",
       description: "Run database tests (pgTAP). Use --mem for in-memory PGlite mode.",
-      async run(args: string[], ctx: PluginContext): Promise<void> {
+      run: withHelp(TEST_HELP, async (args: string[], ctx: PluginContext): Promise<void> => {
         const { testsDir, migrationsDir } = resolveTestPaths(ctx);
 
         const useMem = hasFlag(args, "--mem") || hasFlag(args, "--memory");
@@ -33,12 +40,7 @@ const plugin: SbtPlugin = {
           if (useMem) {
             await runMemTests(testsDir, migrationsDir);
           } else {
-            const dbUrl =
-              process.env.DATABASE_URL ||
-              process.env.SUPABASE_DB_URL ||
-              process.env.POSTGRES_URL ||
-              "postgresql://postgres:postgres@localhost:54322/postgres";
-            await runLiveTests(dbUrl, testsDir);
+            await runLiveTests(resolveDbUrl(), testsDir);
           }
         } catch (error) {
           throw new DatabaseError(
@@ -46,7 +48,7 @@ const plugin: SbtPlugin = {
             { cause: error },
           );
         }
-      },
+      }),
     },
   ],
 };

@@ -3,7 +3,7 @@
  * Written whenever edge functions are extracted so docs-server can consume it
  * for deterministic OpenAPI merge instead of calling getOpenApiSpec at runtime.
  */
-import { writeArtifact, type ArtifactEnvelope } from "@sbtools/sdk";
+import { createArtifactWriter } from "@sbtools/sdk";
 import type { PluginContext } from "@sbtools/sdk";
 import { generateEdgeFunctionOpenApi } from "./openapi.js";
 import type { EdgeFunctionItem } from "./extractor.js";
@@ -28,6 +28,12 @@ function toPartialSpec(
   };
 }
 
+const writeOpenApiPartialFn = createArtifactWriter<OpenApiPartialDenoFunctionsData>({
+  id: "openapi.partial.deno-functions",
+  version: OPENAPI_PARTIAL_DENO_FUNCTIONS_VERSION,
+  producer: "@sbtools/plugin-deno-functions",
+});
+
 /**
  * Write the openapi.partial.deno-functions artifact.
  * Call with extracted items when producer needs to persist for docs-server consumption.
@@ -41,18 +47,9 @@ export function writeOpenApiPartialArtifact(
     apiUrl: ctx.apiUrl,
     baseUrl: opts.baseUrl,
   });
-  const envelope: ArtifactEnvelope<OpenApiPartialDenoFunctionsData> = {
-    id: "openapi.partial.deno-functions",
-    version: OPENAPI_PARTIAL_DENO_FUNCTIONS_VERSION,
-    producer: "@sbtools/plugin-deno-functions",
-    generatedAt: new Date().toISOString(),
-    schemaRef: `https://sbtools.dev/contracts/openapi.partial.deno-functions/${OPENAPI_PARTIAL_DENO_FUNCTIONS_VERSION}`,
-    inputs: {
-      projectRoot: ctx.projectRoot,
-      functionsPath: ctx.paths.functions,
-    },
+  const data = toPartialSpec(fullSpec);
+  writeOpenApiPartialFn(ctx, data, {
+    inputs: { functionsPath: ctx.paths.functions },
     meta: { toolVersion: opts.pluginVersion },
-    data: toPartialSpec(fullSpec),
-  };
-  writeArtifact(ctx, envelope);
+  });
 }

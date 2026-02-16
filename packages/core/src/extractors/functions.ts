@@ -13,7 +13,8 @@ export async function extractFunctions(
   client: Client,
   ctx: SnapshotContext
 ): Promise<void> {
-  const res = await client.query(`
+  const res = await client.query(
+    `
     SELECT
       n.nspname AS schema,
       p.proname AS name,
@@ -24,9 +25,11 @@ export async function extractFunctions(
     WHERE n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
       AND n.nspname NOT LIKE 'pg_temp_%'
       AND n.nspname NOT LIKE 'pg_toast_temp_%'
-      ${ctx.schemaFilterNsp}
+      ${ctx.schemaFilterNsp.clause}
     ORDER BY n.nspname, p.proname, pg_get_function_identity_arguments(p.oid);
-  `);
+  `,
+    ctx.schemaFilterNsp.params
+  );
 
   for (const r of res.rows as { schema: string; name: string; identity_args: string; ddl: string }[]) {
     const baseFileName = `functions/${safeName(r.schema)}.${safeName(r.name)}.sql`;

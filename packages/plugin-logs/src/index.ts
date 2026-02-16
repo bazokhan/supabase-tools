@@ -16,10 +16,8 @@
  *     }
  *   }]
  */
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-
-const require = createRequire(import.meta.url);
+import { loadPackageVersion, getConfigNumber, ui, withHelp } from "@sbtools/sdk";
 import { hasFlag, getArg } from "@sbtools/sdk";
 import {
   deriveContainerPrefix,
@@ -40,18 +38,13 @@ import {
   formatStatsTable,
 } from "./pg-stats.js";
 import { startViewer } from "./viewer.js";
-import { logsSectionHtml } from "./atlas/sections.js";
-import { logsCardRendererJs } from "./atlas/cards.js";
-import { logsStyles } from "./atlas/styles.js";
+import { getLogsAtlasUI } from "./atlas.js";
 
 // ---------------------------------------------------------------------------
 // CLI: logs command
 // ---------------------------------------------------------------------------
 
-async function logsCommand(args: string[], ctx: PluginContext): Promise<void> {
-  // ---- Help ----
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const LOGS_HELP = `
 logs — Live Docker log tailing, pg_stat_statements monitoring, and log viewer
 
 Usage:
@@ -87,10 +80,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   viewerPort    Default viewer port (default: 3333)
   tailLines     Default tail line count (default: 100)
   dbContainer   DB container suffix (default: "supabase-db")
-`);
-    return;
-  }
+`;
 
+async function logsCommand(args: string[], ctx: PluginContext): Promise<void> {
   const subcommand = args[0];
 
   // ---- pg-stats ----
@@ -110,26 +102,26 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   // ---- --list ----
   if (hasFlag(args, "--list")) {
     const statuses = getServiceStatuses(ctx.projectRoot);
-    console.log("\nSupabase Service Status\n");
-    console.log(
+    ui.heading("\nSupabase Service Status\n");
+    ui.detail(
       "  " +
       "Service".padEnd(14) +
       "Container".padEnd(40) +
       "Status",
     );
-    console.log("  " + "-".repeat(70));
+    ui.detail("  " + "-".repeat(70));
     for (const s of statuses) {
       const icon = s.running ? "\x1b[32m●\x1b[0m" : "\x1b[31m●\x1b[0m";
-      console.log(
+      ui.log(
         `  ${icon} ${s.service.padEnd(12)} ${s.container.padEnd(40)} ${s.status}`,
       );
     }
-    console.log("");
+    ui.blank();
     return;
   }
 
   // ---- Tail logs ----
-  const tailLines = parseInt(getArg(args, "--tail") ?? String(ctx.pluginConfig.tailLines ?? 100), 10);
+  const tailLines = parseInt(getArg(args, "--tail") ?? String(getConfigNumber(ctx, "tailLines", 100)), 10);
   const noColor = hasFlag(args, "--no-color");
   const timestamps = hasFlag(args, "--timestamps");
 
@@ -140,7 +132,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   } else if (SERVICE_NAMES.includes(subcommand)) {
     services = [subcommand];
   } else {
-    console.error(
+    ui.error(
       `Unknown service: ${subcommand}\nAvailable: ${SERVICE_NAMES.join(", ")}`,
     );
     process.exit(1);
@@ -155,7 +147,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
     .map((s) => s.service);
 
   if (running.length === 0) {
-    console.error(
+    ui.error(
       "No running containers found for the requested services.\n" +
       "Run `sbt start` first, or use `sbt logs --list` to check status.",
     );
@@ -164,12 +156,10 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
 
   if (running.length < services.length) {
     const stopped = services.filter((s) => !running.includes(s));
-    console.log(
-      `\x1b[33mSkipping stopped services: ${stopped.join(", ")}\x1b[0m\n`,
-    );
+    ui.warn(`Skipping stopped services: ${stopped.join(", ")}\n`);
   }
 
-  console.log(
+  ui.info(
     `Tailing ${running.length} service(s): ${running.join(", ")}  (Ctrl+C to stop)\n`,
   );
 
@@ -186,7 +176,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
         buffer = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.trim()) continue;
-          console.log(formatLogLine(service, line, { noColor }));
+          ui.log(formatLogLine(service, line, { noColor }));
         }
       });
     };
@@ -199,7 +189,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   await new Promise<void>((resolve) => {
     process.on("SIGINT", () => {
       killAllChildren();
-      console.log("\nStopped.");
+      ui.info("\nStopped.");
       resolve();
     });
   });
@@ -210,14 +200,14 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
 // ---------------------------------------------------------------------------
 
 async function handlePgStats(args: string[], ctx: PluginContext): Promise<void> {
-  const dbContainer = getDbContainerName(ctx.projectRoot, ctx.pluginConfig);
+    const dbContainer = getDbContainerName(ctx);
 
   if (hasFlag(args, "--reset")) {
     const result = resetStats(dbContainer);
     if (result.ok) {
-      console.log("pg_stat_statements reset successfully.");
+      ui.success("pg_stat_statements reset successfully.");
     } else {
-      console.error(`Failed to reset: ${result.error}`);
+      ui.error(`Failed to reset: ${result.error}`);
     }
     return;
   }
@@ -232,9 +222,9 @@ async function handlePgStats(args: string[], ctx: PluginContext): Promise<void> 
   }
 
   if (hasFlag(args, "--json")) {
-    console.log(JSON.stringify(snapshot, null, 2));
+    ui.log(JSON.stringify(snapshot, null, 2));
   } else {
-    console.log(formatStatsTable(snapshot));
+    ui.log(formatStatsTable(snapshot));
   }
 }
 
@@ -244,19 +234,18 @@ async function handlePgStats(args: string[], ctx: PluginContext): Promise<void> 
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-logs",
-  version: (require("../package.json") as { version: string }).version,
+  version: loadPackageVersion(import.meta.url),
 
   commands: [
     {
       name: "logs",
-      description:
-        "Live Docker log tailing, pg_stat_statements, and log viewer",
-      run: logsCommand,
+      description: "Live Docker log tailing, pg_stat_statements, and log viewer",
+      run: withHelp(LOGS_HELP, logsCommand),
     },
   ],
 
   getAtlasData: async (ctx: PluginContext) => {
-    const dbContainer = getDbContainerName(ctx.projectRoot, ctx.pluginConfig);
+    const dbContainer = getDbContainerName(ctx);
     const statuses = getServiceStatuses(ctx.projectRoot);
 
     // Collect pg_stat_statements snapshot (top 10)
@@ -277,19 +266,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => ({
-    kindLabels: {
-      query_performance: "Query Performance",
-      service_health: "Service Health",
-    },
-    sectionHtml: logsSectionHtml(),
-    cardRendererJs: logsCardRendererJs(),
-    initJs: [
-      'renderSection("query-performance-list", data.categories.query_performance || [], renderQueryPerfCard, "queries");',
-      'renderSection("service-health-list", data.categories.service_health || [], renderServiceHealthCard, "services");',
-    ].join("\n    "),
-    styles: logsStyles(),
-  }),
+  getAtlasUI: () => getLogsAtlasUI(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const statuses = getServiceStatuses(ctx.projectRoot);
@@ -307,7 +284,7 @@ const plugin: SbtPlugin = {
     }
 
     // pg_stat_statements summary
-    const dbContainer = getDbContainerName(ctx.projectRoot, ctx.pluginConfig);
+    const dbContainer = getDbContainerName(ctx);
     const snapshot = getTopQueries(dbContainer, 3);
     if (snapshot.available && snapshot.queries.length > 0) {
       lines.push("");

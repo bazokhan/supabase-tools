@@ -47,7 +47,7 @@ npx sbt help
 | `generate-atlas` | Generate Backend Atlas data (JSON) |
 | `init` | Generate config file |
 
-Plugin commands (generate-erd, docs, atlas-html, test, etc.) — [Plugins](/plugins/).
+Plugin commands (generate-erd, test, etc.) — [Plugins](/plugins/). Core also provides `docs` and `atlas-html`.
 
 All commands: `npx sbt <command>`
 

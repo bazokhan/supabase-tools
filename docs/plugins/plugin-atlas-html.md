@@ -1,43 +1,26 @@
 ---
-description: Generate Backend Atlas HTML visualization. Aggregates data from core extractors and sibling plugins.
+description: atlas-html command (built into core) — Generate Backend Atlas HTML visualization.
 ---
 
-# @sbtools/plugin-atlas-html
+# atlas-html command (Built-in)
 
-[![npm](https://img.shields.io/npm/v/@sbtools/plugin-atlas-html.svg)](https://www.npmjs.com/package/@sbtools/plugin-atlas-html)
+The `atlas-html` command is **built into @sbtools/core** — no plugin installation required. It generates the Backend Atlas HTML visualization, aggregating data from core extractors and sibling plugins into a single interactive HTML document.
 
-Plugin that generates the Backend Atlas HTML visualization. Aggregates data from core extractors and sibling plugins into a single interactive HTML document.
+> Previously provided by `@sbtools/plugin-atlas-html`, which has been merged into core. Remove it from your config if present.
 
-## Quick Start
-
-```bash
-npm install @sbtools/plugin-atlas-html
-```
-
-Add to config: `{ "path": "@sbtools/plugin-atlas-html" }`
+## Usage
 
 ```bash
-npm run sbt -- generate-atlas
-npm run sbt -- atlas-html
+npx sbt generate-atlas   # First: generate backend-atlas-data.json
+npx sbt atlas-html       # Then: generate the HTML page
 ```
 
-## Commands
+## Output
 
-| Command | Description |
-|---------|-------------|
-| `atlas-html` | Generate `docs/backend-atlas.html` with all plugin contributions |
-
-```
-$ npx sbt atlas-html
-
-Collecting data from plugins...
-  ✓ erd (63 tables)
-  ✓ deno-functions (4 functions)
-  ✓ depgraph (142 relationships)
-
-✓ Written to docs/backend-atlas.html
-```
+- Writes to `docs/backend-atlas.html` (or `paths.docsOutput`)
+- Requires `backend-atlas-data.json` (run `sbt generate-atlas` first)
+- Merges UI contributions from plugins via `getAtlasUI` (kind labels, section HTML, card renderers, styles)
 
 ## Configuration
 
-Uses `paths.docsOutput` from root config for the output directory. No plugin-specific config required.
+Uses `paths.docsOutput` from root config. No plugin-specific config required.

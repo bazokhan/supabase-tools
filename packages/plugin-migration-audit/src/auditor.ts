@@ -2,8 +2,8 @@
  * Core audit logic: compare disk vs DB, detect issues.
  */
 import fs from "node:fs";
+import type { MigrationFileInfo } from "@sbtools/sdk";
 import type {
-  MigrationFile,
   AppliedMigration,
   MigrationEntry,
   MigrationStatus,
@@ -12,8 +12,7 @@ import type {
   AuditSummary,
   SchemaSnapshot,
 } from "./types.js";
-import { parseTimestampPrefix } from "./migration-scanner.js";
-import { analyzeMigrationSql } from "@sbtools/sdk";
+import { parseTimestampPrefix, analyzeMigrationSql } from "@sbtools/sdk";
 
 export const ISSUE_CODES = {
   MISSING_FILE: "MISSING_FILE",
@@ -26,7 +25,7 @@ export const ISSUE_CODES = {
 
 export interface BuildAuditResultOpts {
   migrationsDir: string;
-  files: MigrationFile[];
+  files: MigrationFileInfo[];
   applied: AppliedMigration[];
   trackingTableExists: boolean;
   databaseReachable: boolean;
@@ -51,7 +50,7 @@ export function buildAuditResult(opts: BuildAuditResultOpts): AuditResult {
     appliedByVersion.set(a.version, a);
   }
 
-  const filesByFilename = new Map<string, MigrationFile>();
+  const filesByFilename = new Map<string, MigrationFileInfo>();
   for (const f of files) {
     filesByFilename.set(f.filename, f);
   }

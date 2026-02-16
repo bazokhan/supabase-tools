@@ -1,5 +1,5 @@
 import type { ArgInfo } from "@sbtools/sdk";
-import { normalizeWhitespace, splitArgs } from "../utils/index.js";
+import { normalizeWhitespace, splitArgs } from "./string-utils.js";
 
 export function parseHeader(content: string, label: string): string {
     const match = content.match(new RegExp(`^--\\s*${label}:\\s*(.+)$`, "m"));

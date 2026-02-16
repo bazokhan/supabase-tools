@@ -12,6 +12,7 @@
 
 // Types
 export type {
+    SchemaFilter,
     SnapshotMeta,
     ArgInfo,
     BaseItem,
@@ -48,11 +49,17 @@ export {
     parseArtifactEnvelope,
     artifactDir,
     artifactLatestPath,
+    createArtifactWriter,
 } from "./artifacts.js";
-export type { ArtifactEnvelope, ReadArtifactResult } from "./artifacts.js";
+export type {
+    ArtifactEnvelope,
+    ReadArtifactResult,
+    CreateArtifactWriterOpts,
+    WriteArtifactOpts,
+} from "./artifacts.js";
 
 // CLI utilities
-export { hasFlag, getArg, openFile } from "./cli-utils.js";
+export { hasFlag, getArg, openFile, withHelp } from "./cli-utils.js";
 
 // UI
 export { ui } from "./ui.js";
@@ -107,3 +114,30 @@ export {
   parseTimestampPrefix,
 } from "./migration-scanner.js";
 export type { MigrationFileInfo } from "./migration-scanner.js";
+
+// Package meta
+export { loadPackageVersion } from "./package-meta.js";
+
+// Plugin config
+export {
+  getConfigString,
+  getConfigNumber,
+  getConfigStringArray,
+  resolveConfigPath,
+} from "./plugin-config.js";
+
+// Constants
+export { COMPOSE_DB_FILE, COMPOSE_API_DOCS_FILE } from "./constants.js";
+
+// Templates
+export { snapshotFileHeader } from "./templates.js";
+
+// Atlas UI builder
+export { buildAtlasUI } from "./atlas-ui.js";
+export type {
+  AtlasSectionDef,
+  AtlasCardDef,
+  AtlasBadgeDef,
+  AtlasDetailDef,
+  AtlasSummaryDef,
+} from "./atlas-ui.js";

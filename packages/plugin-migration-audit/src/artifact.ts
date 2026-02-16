@@ -2,7 +2,8 @@
  * Produces the migration.analysis versioned artifact.
  * Written whenever audit completes so consumers can read the canonical result.
  */
-import { writeArtifact, type ArtifactEnvelope } from "@sbtools/sdk";
+import { createArtifactWriter } from "@sbtools/sdk";
+import type { MigrationSqlAnalysis } from "@sbtools/sdk";
 import type { PluginContext } from "@sbtools/sdk";
 import type { AuditResult } from "./types.js";
 
@@ -46,19 +47,7 @@ export interface MigrationAnalysisArtifactData {
     sizeBytes: number;
     fileModifiedAt: string | null;
     filePath: string;
-    sqlAnalysis?: {
-      operations: Array<{ kind: string; objectKey: string; schema?: string; name?: string }>;
-      touchedObjectKeys: string[];
-      riskFlags: {
-        hasTransaction: boolean;
-        hasDestructive: boolean;
-        hasIfExists: boolean;
-        hasIfNotExists: boolean;
-        hasTruncate: boolean;
-        hasDrop: boolean;
-      };
-      confidence: "high" | "medium" | "low";
-    };
+    sqlAnalysis?: MigrationSqlAnalysis;
   }>;
   issues: Array<{ severity: string; code: string; message: string; affectedMigrations?: string[] }>;
   summary: {
@@ -83,6 +72,12 @@ export interface MigrationAnalysisArtifactData {
   } | null;
 }
 
+const writeMigrationAnalysisFn = createArtifactWriter<MigrationAnalysisArtifactData>({
+  id: "migration.analysis",
+  version: MIGRATION_ANALYSIS_VERSION,
+  producer: "@sbtools/plugin-migration-audit",
+});
+
 /**
  * Write the migration.analysis artifact after an audit completes.
  * Call this from any code path that produces an AuditResult.
@@ -92,22 +87,13 @@ export function writeMigrationAnalysisArtifact(
   result: AuditResult,
   opts?: { sourceHash?: string; snapshotHash?: string; pluginVersion?: string }
 ): void {
-  const envelope: ArtifactEnvelope<MigrationAnalysisArtifactData> = {
-    id: "migration.analysis",
-    version: MIGRATION_ANALYSIS_VERSION,
-    producer: "@sbtools/plugin-migration-audit",
+  writeMigrationAnalysisFn(ctx, toArtifactData(result), {
     generatedAt: result.auditedAt,
-    schemaRef: `https://sbtools.dev/contracts/migration.analysis/${MIGRATION_ANALYSIS_VERSION}`,
     inputs: {
-      projectRoot: ctx.projectRoot,
       migrationsDir: result.migrationsDir,
       ...(opts?.sourceHash && { sourceHash: opts.sourceHash }),
       ...(opts?.snapshotHash && { snapshotHash: opts.snapshotHash }),
     },
-    meta: {
-      toolVersion: opts?.pluginVersion ?? "unknown",
-    },
-    data: toArtifactData(result),
-  };
-  writeArtifact(ctx, envelope);
+    meta: { toolVersion: opts?.pluginVersion ?? "unknown" },
+  });
 }

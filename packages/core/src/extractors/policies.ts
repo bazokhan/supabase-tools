@@ -13,7 +13,8 @@ export async function extractPolicies(
   client: Client,
   ctx: SnapshotContext
 ): Promise<void> {
-  const res = await client.query(`
+  const res = await client.query(
+    `
     SELECT
       schemaname AS schema,
       tablename AS table_name,
@@ -25,9 +26,11 @@ export async function extractPolicies(
       with_check
     FROM pg_policies
     WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-      ${ctx.schemaFilterSchemaname}
+      ${ctx.schemaFilterSchemaname.clause}
     ORDER BY schemaname, tablename, policyname;
-  `);
+  `,
+    ctx.schemaFilterSchemaname.params
+  );
 
   const rows = res.rows as PolicyRow[];
   const byTable = new Map<string, PolicyRow[]>();

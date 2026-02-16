@@ -7,7 +7,16 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { SbtError } from "@sbtools/sdk";
+import {
+  SbtError,
+  type AtlasData,
+  type FunctionItem,
+  type ViewItem,
+  type TriggerItem,
+  type PolicyItem,
+  type EnumItem,
+  type TypeItem,
+} from "@sbtools/sdk";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,59 +39,6 @@ export interface GraphEdge {
 export interface DependencyGraph {
   nodes: GraphNode[];
   edges: GraphEdge[];
-}
-
-// Atlas data item shapes (duck-typed, no import from main package)
-interface AtlasItem {
-  id: string;
-  kind: string;
-  schema?: string;
-  name: string;
-  sql?: string;
-}
-
-interface TriggerItem extends AtlasItem {
-  table: string;
-  function_name: string;
-  timing: string;
-  events: string;
-}
-
-interface PolicyItem extends AtlasItem {
-  table: string;
-  permissive: string;
-  command: string;
-  using: string;
-  with_check: string;
-}
-
-interface FunctionItem extends AtlasItem {
-  signature: string;
-  returns: string;
-}
-
-interface ViewItem extends AtlasItem {}
-
-interface EnumItem extends AtlasItem {
-  values: string[];
-}
-
-interface TypeItem extends AtlasItem {
-  type_kind: string;
-}
-
-interface AtlasData {
-  schemas: string[];
-  categories: {
-    functions: FunctionItem[];
-    views: ViewItem[];
-    materialized_views: ViewItem[];
-    triggers: TriggerItem[];
-    policies: PolicyItem[];
-    types: TypeItem[];
-    enums: EnumItem[];
-    [key: string]: unknown[];
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -169,6 +125,112 @@ function extractFunctionCalls(expr: string): string[] {
   }
   return [...fns];
 }
+
+// ---------------------------------------------------------------------------
+// Edge rules (declarative)
+// ---------------------------------------------------------------------------
+
+type EdgeContext = {
+  nodes: Map<string, GraphNode>;
+  defaultSchema: string;
+  nodeId: (type: string, schema: string, name: string) => string;
+  extractTableRefs: (sql: string, schema: string) => string[];
+  extractFunctionCalls: (expr: string) => string[];
+};
+
+interface EdgeRule {
+  addEdges(atlas: AtlasData, edges: GraphEdge[], ctx: EdgeContext): void;
+}
+
+const ATLAS_EDGE_RULES: EdgeRule[] = [
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const tr of atlas.categories.triggers ?? []) {
+        const s = tr.schema ?? ctx.defaultSchema;
+        const t = tr as TriggerItem;
+        addEdge(edges, ctx.nodeId("trigger", s, t.name), ctx.nodeId("table", s, t.table), "fires on");
+      }
+    },
+  },
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const tr of atlas.categories.triggers ?? []) {
+        const s = tr.schema ?? ctx.defaultSchema;
+        const t = tr as TriggerItem;
+        if (t.function_name) {
+          addNode(ctx.nodes, "function", s, t.function_name);
+          addEdge(edges, ctx.nodeId("trigger", s, t.name), ctx.nodeId("function", s, t.function_name), "calls");
+        }
+      }
+    },
+  },
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const pol of atlas.categories.policies ?? []) {
+        const s = pol.schema ?? ctx.defaultSchema;
+        const p = pol as PolicyItem;
+        addEdge(edges, ctx.nodeId("policy", s, p.name), ctx.nodeId("table", s, p.table), "guards");
+      }
+    },
+  },
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const fn of atlas.categories.functions ?? []) {
+        const s = fn.schema ?? ctx.defaultSchema;
+        if (fn.sql) {
+          for (const tbl of ctx.extractTableRefs(fn.sql, s)) {
+            if (ctx.nodes.has(ctx.nodeId("table", s, tbl))) {
+              addEdge(edges, ctx.nodeId("function", s, fn.name), ctx.nodeId("table", s, tbl), "references");
+            }
+          }
+        }
+      }
+    },
+  },
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const v of atlas.categories.views ?? []) {
+        const s = v.schema ?? ctx.defaultSchema;
+        if (v.sql) {
+          for (const tbl of ctx.extractTableRefs(v.sql, s)) {
+            addNode(ctx.nodes, "table", s, tbl);
+            addEdge(edges, ctx.nodeId("view", s, v.name), ctx.nodeId("table", s, tbl), "reads from");
+          }
+        }
+      }
+    },
+  },
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const mv of atlas.categories.materialized_views ?? []) {
+        const s = mv.schema ?? ctx.defaultSchema;
+        if (mv.sql) {
+          for (const tbl of ctx.extractTableRefs(mv.sql, s)) {
+            addNode(ctx.nodes, "table", s, tbl);
+            addEdge(edges, ctx.nodeId("materialized_view", s, mv.name), ctx.nodeId("table", s, tbl), "reads from");
+          }
+        }
+      }
+    },
+  },
+  {
+    addEdges(atlas, edges, ctx) {
+      for (const pol of atlas.categories.policies ?? []) {
+        const s = pol.schema ?? ctx.defaultSchema;
+        const p = pol as PolicyItem;
+        const fns = new Set([
+          ...ctx.extractFunctionCalls(p.using ?? ""),
+          ...ctx.extractFunctionCalls(p.with_check ?? ""),
+        ]);
+        for (const fn of fns) {
+          if (ctx.nodes.has(ctx.nodeId("function", s, fn))) {
+            addEdge(edges, ctx.nodeId("policy", s, p.name), ctx.nodeId("function", s, fn), "calls in check");
+          }
+        }
+      }
+    },
+  },
+];
 
 /**
  * Parse the Supabase-generated TypeScript types file to extract FK
@@ -303,8 +365,8 @@ export function buildGraph(
   for (const fn of atlas.categories.functions ?? []) {
     const s = fn.schema ?? defaultSchema;
     addNode(nodes, "function", s, fn.name, {
-      signature: (fn as FunctionItem).signature ?? "",
-      returns: (fn as FunctionItem).returns ?? "",
+      signature: fn.signature ?? "",
+      returns: fn.returns ?? "",
     });
   }
 
@@ -368,115 +430,19 @@ export function buildGraph(
   }
 
   // ------------------------------------------------------------------
-  // 2. Build edges
+  // 2. Build edges (declarative rules)
   // ------------------------------------------------------------------
 
-  // 2a. trigger -> table ("fires on")
-  for (const tr of atlas.categories.triggers ?? []) {
-    const s = tr.schema ?? defaultSchema;
-    const t = tr as TriggerItem;
-    addEdge(
-      edges,
-      nodeId("trigger", s, t.name),
-      nodeId("table", s, t.table),
-      "fires on",
-    );
-  }
+  const ctx = {
+    nodes,
+    defaultSchema,
+    nodeId,
+    extractTableRefs,
+    extractFunctionCalls,
+  };
 
-  // 2b. trigger -> function ("calls")
-  for (const tr of atlas.categories.triggers ?? []) {
-    const s = tr.schema ?? defaultSchema;
-    const t = tr as TriggerItem;
-    if (t.function_name) {
-      const fnNodeId = nodeId("function", s, t.function_name);
-      // Ensure function node exists
-      addNode(nodes, "function", s, t.function_name);
-      addEdge(edges, nodeId("trigger", s, t.name), fnNodeId, "calls");
-    }
-  }
-
-  // 2c. policy -> table ("guards")
-  for (const pol of atlas.categories.policies ?? []) {
-    const s = pol.schema ?? defaultSchema;
-    const p = pol as PolicyItem;
-    addEdge(
-      edges,
-      nodeId("policy", s, p.name),
-      nodeId("table", s, p.table),
-      "guards",
-    );
-  }
-
-  // 2d. function -> table ("references") — parse function SQL body
-  for (const fn of atlas.categories.functions ?? []) {
-    const s = fn.schema ?? defaultSchema;
-    if (fn.sql) {
-      const refs = extractTableRefs(fn.sql, s);
-      for (const tbl of refs) {
-        if (nodes.has(nodeId("table", s, tbl))) {
-          addEdge(
-            edges,
-            nodeId("function", s, fn.name),
-            nodeId("table", s, tbl),
-            "references",
-          );
-        }
-      }
-    }
-  }
-
-  // 2e. view -> table ("reads from") — parse view SQL
-  for (const v of atlas.categories.views ?? []) {
-    const s = v.schema ?? defaultSchema;
-    if (v.sql) {
-      const refs = extractTableRefs(v.sql, s);
-      for (const tbl of refs) {
-        addNode(nodes, "table", s, tbl);
-        addEdge(
-          edges,
-          nodeId("view", s, v.name),
-          nodeId("table", s, tbl),
-          "reads from",
-        );
-      }
-    }
-  }
-
-  // Also for materialized views
-  for (const mv of atlas.categories.materialized_views ?? []) {
-    const s = mv.schema ?? defaultSchema;
-    if (mv.sql) {
-      const refs = extractTableRefs(mv.sql, s);
-      for (const tbl of refs) {
-        addNode(nodes, "table", s, tbl);
-        addEdge(
-          edges,
-          nodeId("materialized_view", s, mv.name),
-          nodeId("table", s, tbl),
-          "reads from",
-        );
-      }
-    }
-  }
-
-  // 2f. policy -> function ("calls in check") — parse USING / WITH CHECK
-  for (const pol of atlas.categories.policies ?? []) {
-    const s = pol.schema ?? defaultSchema;
-    const p = pol as PolicyItem;
-    const fns = new Set([
-      ...extractFunctionCalls(p.using ?? ""),
-      ...extractFunctionCalls(p.with_check ?? ""),
-    ]);
-    for (const fn of fns) {
-      if (nodes.has(nodeId("function", s, fn))) {
-        addEdge(
-          edges,
-          nodeId("policy", s, p.name),
-          nodeId("function", s, fn),
-          "calls in check",
-        );
-      }
-    }
+  for (const rule of ATLAS_EDGE_RULES) {
+    rule.addEdges(atlas, edges, ctx);
   }
 
   // ------------------------------------------------------------------

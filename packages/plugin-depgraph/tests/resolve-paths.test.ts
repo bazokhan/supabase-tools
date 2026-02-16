@@ -40,7 +40,7 @@ describe("resolvePaths", () => {
 
   it("uses pluginConfig.typesFilePath when set", () => {
     const { typesFilePath } = resolvePaths(makeCtx({ typesFilePath: "src/types/db.ts" }));
-    expect(typesFilePath).toBe("src/types/db.ts");
+    expect(typesFilePath).toBe(path.join(PROJECT, "src", "types", "db.ts"));
   });
 
   it("follows custom docsOutput from root config", () => {

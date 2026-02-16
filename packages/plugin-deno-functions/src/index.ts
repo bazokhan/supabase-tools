@@ -16,21 +16,17 @@
  */
 import path from "node:path";
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+import { loadPackageVersion, resolveConfigPath, getConfigString, ui, withHelp } from "@sbtools/sdk";
 import { extractEdgeFunctions } from "./extractor.js";
 import { writeOpenApiPartialArtifact } from "./artifact.js";
-import { edgeFunctionSectionHtml } from "./atlas/sections.js";
-import { edgeFunctionCardRendererJs } from "./atlas/cards.js";
-import { edgeFunctionStyles } from "./atlas/styles.js";
+import { getEdgeFunctionAtlasUI } from "./atlas.js";
 import { generateEdgeFunctionOpenApi } from "./openapi.js";
 
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
+const PLUGIN_VERSION = loadPackageVersion(import.meta.url);
 
 function resolveConfigTomlPath(ctx: PluginContext): string | undefined {
-  const tomlRel = (ctx.pluginConfig.configTomlPath as string) ?? "supabase/config.toml";
-  const tomlPath = path.resolve(ctx.projectRoot, tomlRel);
+  const tomlPath = resolveConfigPath(ctx, "configTomlPath", "supabase/config.toml");
   return fs.existsSync(tomlPath) ? tomlPath : undefined;
 }
 
@@ -46,10 +42,8 @@ const plugin: SbtPlugin = {
     {
       name: "edge-functions",
       description: "List discovered edge functions and their metadata",
-      run: async (args: string[], ctx: PluginContext): Promise<void> => {
-        // ---- Help ----
-        if (args.includes("--help") || args.includes("-h")) {
-          console.log(`
+      run: withHelp(
+        `
 edge-functions — Discover and document Supabase Edge Functions
 
 Usage:
@@ -75,11 +69,9 @@ How it works:
 Plugin config (in supabase-tools.config.json → plugins[].config):
   baseUrl          URL prefix for endpoints (default: "/functions/v1")
   configTomlPath   Path to config.toml (default: "supabase/config.toml")
-`);
-          return;
-        }
-
-        const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
+`,
+        async (args: string[], ctx: PluginContext): Promise<void> => {
+          const baseUrl = getConfigString(ctx, "baseUrl", "/functions/v1");
         const items = extractEdgeFunctions({
           functionsPath: ctx.paths.functions,
           configTomlPath: resolveConfigTomlPath(ctx),
@@ -90,29 +82,29 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
         }
 
         if (items.length === 0) {
-          console.log("No edge functions found.");
+          ui.info("No edge functions found.");
           return;
         }
 
         // ---- JSON mode ----
         if (args.includes("--json")) {
-          console.log(JSON.stringify(items, null, 2));
+          ui.log(JSON.stringify(items, null, 2));
           return;
         }
 
-        console.log(`\nDiscovered ${items.length} edge function(s):\n`);
-        console.log(
+        ui.log(`\nDiscovered ${items.length} edge function(s):\n`);
+        ui.detail(
           "  " +
             "Name".padEnd(26) +
             "Methods".padEnd(14) +
             "Auth".padEnd(16) +
             "Endpoint"
         );
-        console.log("  " + "-".repeat(80));
+        ui.detail("  " + "-".repeat(80));
 
         for (const fn of items) {
           const methods = fn.methods.filter((m) => m !== "OPTIONS").join(", ");
-          console.log(
+          ui.detail(
             "  " +
               fn.name.padEnd(26) +
               methods.padEnd(14) +
@@ -124,30 +116,30 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
         // Show details for each (unless --brief)
         if (!args.includes("--brief")) {
           for (const fn of items) {
-            console.log(`\n--- ${fn.name} ---`);
+            ui.detail(`\n--- ${fn.name} ---`);
             if (fn.request_fields.length) {
-              console.log("  Request fields:");
+              ui.detail("  Request fields:");
               for (const f of fn.request_fields) {
-                console.log(`    ${f.name}: ${f.type}`);
+                ui.detail(`    ${f.name}: ${f.type}`);
               }
             }
             if (fn.response_fields.length) {
-              console.log("  Response fields:");
+              ui.detail("  Response fields:");
               for (const f of fn.response_fields) {
-                console.log(`    ${f.name}: ${f.type}`);
+                ui.detail(`    ${f.name}: ${f.type}`);
               }
             }
             if (fn.env_vars.length) {
-              console.log(`  Env vars: ${fn.env_vars.join(", ")}`);
+              ui.detail(`  Env vars: ${fn.env_vars.join(", ")}`);
             }
             if (fn.external_apis.length) {
-              console.log(`  External APIs: ${fn.external_apis.join(", ")}`);
+              ui.detail(`  External APIs: ${fn.external_apis.join(", ")}`);
             }
             if (fn.db_tables.length) {
-              console.log(`  DB tables: ${fn.db_tables.join(", ")}`);
+              ui.detail(`  DB tables: ${fn.db_tables.join(", ")}`);
             }
             if (fn.storage_buckets.length) {
-              console.log(`  Storage buckets: ${fn.storage_buckets.join(", ")}`);
+              ui.detail(`  Storage buckets: ${fn.storage_buckets.join(", ")}`);
             }
           }
         }
@@ -161,16 +153,17 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
           const outPath = path.join(ctx.paths.docsOutput, "edge-functions-openapi.json");
           fs.mkdirSync(path.dirname(outPath), { recursive: true });
           fs.writeFileSync(outPath, JSON.stringify(spec, null, 2) + "\n", "utf8");
-          console.log(`\nOpenAPI spec written to: ${outPath}`);
+          ui.info(`\nOpenAPI spec written to: ${outPath}`);
         }
 
-        console.log("");
-      },
+        ui.blank();
+        },
+      ),
     },
   ],
 
   getAtlasData: async (ctx: PluginContext) => {
-    const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
+    const baseUrl = getConfigString(ctx, "baseUrl", "/functions/v1");
     const items = extractEdgeFunctions({
       functionsPath: ctx.paths.functions,
       configTomlPath: resolveConfigTomlPath(ctx),
@@ -186,16 +179,10 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
     };
   },
 
-  getAtlasUI: () => ({
-    kindLabels: { edge_function: "Edge Functions" },
-    sectionHtml: edgeFunctionSectionHtml(),
-    cardRendererJs: edgeFunctionCardRendererJs(),
-    initJs: `renderSection("edge-functions-list", data.categories.edge_functions || [], renderEdgeFunctionCard, "edge functions");`,
-    styles: edgeFunctionStyles(),
-  }),
+  getAtlasUI: () => getEdgeFunctionAtlasUI(),
 
   getOpenApiSpec: async (ctx: PluginContext) => {
-    const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
+    const baseUrl = getConfigString(ctx, "baseUrl", "/functions/v1");
     const items = extractEdgeFunctions({
       functionsPath: ctx.paths.functions,
       configTomlPath: resolveConfigTomlPath(ctx),
@@ -205,7 +192,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
   },
 
   getStatusLines: async (ctx: PluginContext) => {
-    const baseUrl = (ctx.pluginConfig.baseUrl as string) ?? "/functions/v1";
+    const baseUrl = getConfigString(ctx, "baseUrl", "/functions/v1");
     const items = extractEdgeFunctions({
       functionsPath: ctx.paths.functions,
       configTomlPath: resolveConfigTomlPath(ctx),

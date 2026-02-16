@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { FSWatcher } from "node:fs";
 import { Client } from "pg";
-import { getArg, hasFlag, SbtError, ui } from "@sbtools/sdk";
-import { config, getDbUrl } from "../config.js";
+import { getArg, hasFlag, SbtError, ui, resolveDbUrl, withHelp } from "@sbtools/sdk";
+import { config } from "../config.js";
 import { loadPlugins, buildPluginContext, type LoadedPlugin } from "../plugin-loader.js";
 import { createDebouncedSingleFlightScheduler } from "../watch/scheduler.js";
 import { installDbWatchHooks } from "../watch/db-hooks.js";
@@ -57,9 +57,7 @@ function resolveMigrationAuditCommand(loadedPlugins: LoadedPlugin[]): {
   );
 }
 
-export async function runWatch(args: string[]): Promise<void> {
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const WATCH_HELP = `
 watch — Keep plugin artifacts fresh in near real time
 
 Usage:
@@ -74,10 +72,9 @@ Options:
   --no-db-hooks       Skip DB helper trigger/event-trigger installation
   --verbose           Print raw event payloads
   -h, --help          Show help
-`);
-    return;
-  }
+`;
 
+export const runWatch = withHelp(WATCH_HELP, async (args: string[], _ctx: unknown): Promise<void> => {
   const scope = getArg(args, "--scope") ?? "migration";
   if (scope !== "migration") {
     throw new SbtError("COMMAND_FAILED", `Unsupported watch scope: ${scope}`, {
@@ -126,7 +123,7 @@ Options:
 
   const connectDbListener = async (): Promise<void> => {
     if (shuttingDown) return;
-    const client = new Client({ connectionString: getDbUrl() });
+    const client = new Client({ connectionString: resolveDbUrl() });
     try {
       await client.connect();
       dbClient = client;
@@ -229,4 +226,4 @@ Options:
   await new Promise<void>(() => {
     // Keep process alive until signal.
   });
-}
+});

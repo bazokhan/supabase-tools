@@ -13,7 +13,8 @@ export async function extractEnums(
   client: Client,
   ctx: SnapshotContext
 ): Promise<void> {
-  const res = await client.query(`
+  const res = await client.query(
+    `
     SELECT
       n.nspname AS schema,
       t.typname AS name,
@@ -22,10 +23,12 @@ export async function extractEnums(
     JOIN pg_enum e ON t.oid = e.enumtypid
     JOIN pg_namespace n ON n.oid = t.typnamespace
     WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
-      ${ctx.schemaFilterNsp}
+      ${ctx.schemaFilterNsp.clause}
     GROUP BY n.nspname, t.typname
     ORDER BY n.nspname, t.typname;
-  `);
+  `,
+    ctx.schemaFilterNsp.params
+  );
 
   for (const r of res.rows as EnumRow[]) {
     let values: string[];

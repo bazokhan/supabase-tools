@@ -1,4 +1,5 @@
 import type { PolicyRow } from "@sbtools/sdk";
+import { snapshotFileHeader } from "@sbtools/sdk";
 
 /**
  * Builds a single CREATE POLICY block from a policy row.
@@ -47,10 +48,10 @@ export function formatPoliciesFile(
   policies: PolicyRow[]
 ): string {
   const blocks = policies.map((p) => formatPolicyBlock(p, schema, table));
-  return `-- GENERATED: current RLS policies for ${schema}.${table}
--- Note: this is reconstructed from pg_policies.
--- Do not edit manually. Regenerate via: npm run db:snapshot
-
-${blocks.join("\n\n")}
-`;
+  return (
+    snapshotFileHeader({
+      objectType: `RLS policies for ${schema}.${table}`,
+      headers: { Note: "this is reconstructed from pg_policies" },
+    }) + blocks.join("\n\n") + "\n"
+  );
 }

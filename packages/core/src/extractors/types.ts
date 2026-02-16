@@ -13,7 +13,8 @@ export async function extractTypes(
   client: Client,
   ctx: SnapshotContext
 ): Promise<void> {
-  const res = await client.query(`
+  const res = await client.query(
+    `
     SELECT
       n.nspname AS schema,
       t.typname AS name,
@@ -31,9 +32,11 @@ export async function extractTypes(
         SELECT 1 FROM pg_type e
         WHERE e.oid = t.typelem AND e.typarray = t.oid
       )
-      ${ctx.schemaFilterNsp}
+      ${ctx.schemaFilterNsp.clause}
     ORDER BY n.nspname, t.typname;
-  `);
+  `,
+    ctx.schemaFilterNsp.params
+  );
 
   for (const r of res.rows as TypeRow[]) {
     let ddl = `CREATE TYPE ${r.schema}.${r.name} AS ();`;

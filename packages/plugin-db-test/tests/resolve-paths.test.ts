@@ -33,14 +33,14 @@ describe("resolveTestPaths", () => {
     expect(migrationsDir).toBe(path.join(PROJECT, "supabase", "migrations"));
   });
 
-  it("uses pluginConfig.testsDir when set", () => {
+  it("uses pluginConfig.testsDir when set (resolves to absolute)", () => {
     const { testsDir } = resolveTestPaths(makeCtx({ testsDir: "custom/tests" }));
-    expect(testsDir).toBe("custom/tests");
+    expect(testsDir).toBe(path.join(PROJECT, "custom", "tests"));
   });
 
-  it("uses pluginConfig.migrationsDir when set", () => {
+  it("uses pluginConfig.migrationsDir when set (resolves to absolute)", () => {
     const { migrationsDir } = resolveTestPaths(makeCtx({ migrationsDir: "custom/migrations" }));
-    expect(migrationsDir).toBe("custom/migrations");
+    expect(migrationsDir).toBe(path.join(PROJECT, "custom", "migrations"));
   });
 
   it("inherits migrations from root config paths", () => {

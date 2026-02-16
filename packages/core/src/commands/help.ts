@@ -1,25 +1,6 @@
 import { ui } from "@sbtools/sdk";
 import type { SbtPluginCommand } from "@sbtools/sdk";
-
-/** Core command metadata for help display. */
-interface CommandMeta {
-  name: string;
-  description: string;
-  category: string;
-}
-
-const CORE_COMMANDS: CommandMeta[] = [
-  { name: "start", description: "Start all Supabase Docker services", category: "Docker" },
-  { name: "stop", description: "Stop all services", category: "Docker" },
-  { name: "restart", description: "Restart all services", category: "Docker" },
-  { name: "status", description: "Show service URLs, keys, and connection info", category: "Docker" },
-  { name: "migrate", description: "Apply SQL migrations to running DB", category: "Database" },
-  { name: "snapshot", description: "Export DB objects (functions, views, etc.) to filesystem", category: "Database" },
-  { name: "watch", description: "Watch DB/files and keep artifacts refreshed", category: "Database" },
-  { name: "generate-atlas", description: "Generate Backend Atlas data (JSON)", category: "Code Generation" },
-  { name: "init", description: "Generate supabase-tools.config.json with defaults", category: "Setup" },
-  { name: "help", description: "Show this help", category: "Setup" },
-];
+import { allCommands } from "../command-registry.js";
 
 const CATEGORY_ORDER = ["Docker", "Database", "Code Generation", "Testing", "Docs", "Setup", "Plugins"];
 
@@ -33,11 +14,16 @@ function inferCategory(cmdName: string): string {
 export function showHelp(pluginCommands: { plugin: string; cmd: SbtPluginCommand }[]): void {
   const byCategory = new Map<string, { name: string; description: string; source?: string }[]>();
 
-  for (const meta of CORE_COMMANDS) {
-    const list = byCategory.get(meta.category) ?? [];
-    list.push({ name: meta.name, description: meta.description });
-    byCategory.set(meta.category, list);
+  for (const entry of allCommands()) {
+    const list = byCategory.get(entry.category) ?? [];
+    list.push({ name: entry.name, description: entry.description });
+    byCategory.set(entry.category, list);
   }
+
+  // Add help command
+  const setupList = byCategory.get("Setup") ?? [];
+  setupList.push({ name: "help", description: "Show this help" });
+  byCategory.set("Setup", setupList);
 
   // Add plugin commands not yet covered
   for (const { plugin, cmd } of pluginCommands) {

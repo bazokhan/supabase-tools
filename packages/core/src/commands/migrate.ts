@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { ui, sanitizeContainerPrefix } from "@sbtools/sdk";
+import { ui, sanitizeContainerPrefix, SbtError } from "@sbtools/sdk";
 import { config, resolve } from "../config.js";
 
 export async function runMigrate(): Promise<void> {
@@ -20,7 +20,9 @@ export async function runMigrate(): Promise<void> {
     });
     if (res.status !== 0) {
       const msg = res.stderr?.trim() || res.stdout?.trim() || "Unknown error";
-      throw new Error(msg);
+      throw new SbtError("COMMAND_FAILED", msg, {
+        tips: ["Ensure Docker is running and the DB container is up: sbt start"],
+      });
     }
     return res.stdout ?? "";
   };
@@ -38,7 +40,9 @@ export async function runMigrate(): Promise<void> {
       if (res.status === 0) return;
       sleep(1000);
     }
-    throw new Error("Timed out waiting for database to be ready.");
+    throw new SbtError("DATABASE_CONNECTION", "Timed out waiting for database to be ready.", {
+      tips: ["Ensure the DB container is running: sbt start", "Check Docker logs: sbt logs db"],
+    });
   };
 
   if (!fs.existsSync(MIGRATIONS_DIR)) {

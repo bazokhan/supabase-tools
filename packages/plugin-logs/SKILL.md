@@ -120,18 +120,16 @@ Reads `supabase-tools.config.json` to get `project.name`, then derives the Docke
 
 ```
 plugin-logs/
-├── index.ts          # Plugin entry point (SbtPlugin default export)
 ├── src/
-│   ├── index.ts      # Plugin implementation
+│   ├── index.ts       # SbtPlugin with logs command + hooks
+│   ├── atlas.ts       # Atlas UI via buildAtlasUI() — query perf + service health sections
 │   ├── docker-logs.ts # Container discovery, log tailing, process lifecycle
-│   ├── formatter.ts  # Per-service log parsing and ANSI colourisation
-│   ├── pg-stats.ts   # pg_stat_statements queries via docker exec psql
-│   ├── viewer.ts     # HTTP + SSE server for live log viewer
+│   ├── formatter.ts   # Per-service log parsing and ANSI colourisation
+│   ├── pg-stats.ts    # pg_stat_statements queries via docker exec psql
+│   ├── viewer.ts      # HTTP + SSE server for live log viewer
 │   ├── viewer-html.ts # Single-page HTML builder (dark theme, matching Atlas)
 │   └── atlas/
-│       ├── cards.ts  # Query perf + service health card renderers
-│       ├── sections.ts # HTML section stubs for Atlas
-│       └── styles.ts # Additional CSS for Atlas cards
+│       └── styles.ts  # Additional CSS for Atlas cards
 ├── package.json
 └── SKILL.md
 ```
