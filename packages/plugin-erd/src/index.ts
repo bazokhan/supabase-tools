@@ -1,6 +1,9 @@
 import path from "node:path";
+import { createRequire } from "node:module";
 import { Client } from "pg";
 import { ui, ensureDir } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { buildMermaid, updateMarkdown } from "./builder.js";
 import type { ColumnInfo, ForeignKeyInfo, ReferencedColumn } from "./builder.js";
@@ -16,7 +19,7 @@ export function resolveErdOutput(ctx: PluginContext): string {
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-erd",
-  version: "1.0.0",
+  version: (require("../package.json") as { version: string }).version,
 
   commands: [
     {

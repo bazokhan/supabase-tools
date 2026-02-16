@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { ui, SbtError, extractSupabaseKeys } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
 
 /** Resolve the types output file path from plugin context. */
 export function resolveTypesOutput(ctx: PluginContext): string {
@@ -14,7 +18,7 @@ export function resolveTypesOutput(ctx: PluginContext): string {
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-typegen",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
 
   commands: [
     {

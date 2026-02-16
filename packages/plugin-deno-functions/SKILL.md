@@ -1,4 +1,4 @@
-# @sbt/plugin-deno-functions
+# @sbtools/plugin-deno-functions
 
 Plugin for `supabase-tools` that documents Supabase Edge Functions by statically analysing TypeScript source files. Lives at `supabase-tools/packages/plugin-deno-functions/`.
 
@@ -18,7 +18,7 @@ Add to `supabase-tools.config.json`:
 {
   "plugins": [
     {
-      "path": "node_modules/@sbt/plugin-deno-functions",
+      "path": "node_modules/@sbtools/plugin-deno-functions",
       "config": {
         "baseUrl": "/functions/v1",
         "configTomlPath": "supabase/config.toml"

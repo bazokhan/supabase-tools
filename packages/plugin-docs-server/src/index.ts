@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { ui, SbtError, extractSupabaseKeys, readArtifact } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 
@@ -322,9 +323,12 @@ async function docsCommand(args: string[], ctx: PluginContext): Promise<void> {
 // Plugin export
 // ---------------------------------------------------------------------------
 
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-docs-server",
-  version: "0.3.0",
+  version: PLUGIN_VERSION,
   artifactCapabilities: {
     produces: [],
     consumes: ["openapi.partial.deno-functions"],

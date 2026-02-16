@@ -1,4 +1,4 @@
-# @sbt/plugin-db-test
+# @sbtools/plugin-db-test
 
 Plugin that runs pgTAP database tests. Lives in `supabase-tools/packages/plugin-db-test/`.
 

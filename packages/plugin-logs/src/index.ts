@@ -8,7 +8,7 @@
  * Activated by adding an entry in supabase-tools.config.json:
  *
  *   "plugins": [{
- *     "path": "node_modules/@sbt/plugin-logs",
+ *     "path": "node_modules/@sbtools/plugin-logs",
  *     "config": {
  *       "viewerPort": 3333,
  *       "tailLines": 100,
@@ -16,7 +16,10 @@
  *     }
  *   }]
  */
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
 import { hasFlag, getArg } from "@sbtools/sdk";
 import {
   deriveContainerPrefix,
@@ -241,7 +244,7 @@ async function handlePgStats(args: string[], ctx: PluginContext): Promise<void> 
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-logs",
-  version: "1.0.0",
+  version: (require("../package.json") as { version: string }).version,
 
   commands: [
     {

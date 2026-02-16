@@ -1,5 +1,5 @@
 /**
- * @sbt/plugin-depgraph
+ * @sbtools/plugin-depgraph
  *
  * Plugin for supabase-tools that visualizes all backend dependency
  * relationships (tables, functions, triggers, policies, views, enums,
@@ -9,7 +9,7 @@
  * Activated by adding an entry in supabase-tools.config.json:
  *
  *   "plugins": [{
- *     "path": "node_modules/@sbt/plugin-depgraph",
+ *     "path": "node_modules/@sbtools/plugin-depgraph",
  *     "config": {}
  *   }]
  */

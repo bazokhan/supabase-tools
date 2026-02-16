@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { AuditResult } from "./types.js";
+import { migrationDetailSlug, writeMigrationDetailPages } from "./detail-generator.js";
 
 function escapeHtml(s: string): string {
   return String(s)
@@ -71,16 +72,22 @@ export function generateHtml(result: AuditResult): string {
     )
     .join("\n");
 
+  const detailBase = "migration-audit/";
   const tableRows = migrations
-    .map(
-      (m) => `
+    .map((m) => {
+      const canDetail = m.status !== "missing" && m.filePath;
+      const slug = canDetail ? migrationDetailSlug(m.filename) : "";
+      const filenameCell = canDetail
+        ? `<a href="${escapeHtml(detailBase + slug + ".html")}">${escapeHtml(m.filename)}</a>`
+        : `<code>${escapeHtml(m.filename)}</code>`;
+      return `
     <tr data-filename="${escapeHtml(m.filename)}" data-status="${escapeHtml(m.status)}">
       <td><span class="badge ${STATUS_CLASS[m.status] || ""}">${escapeHtml(m.status)}</span></td>
-      <td><code>${escapeHtml(m.filename)}</code></td>
+      <td>${filenameCell}</td>
       <td>${escapeHtml(formatDate(m.appliedAt))}</td>
       <td>${escapeHtml(formatBytes(m.sizeBytes))}</td>
-    </tr>`
-    )
+    </tr>`;
+    })
     .join("\n");
 
   const schemaTables = schema?.publicTableNames?.length
@@ -426,4 +433,7 @@ export function writeHtml(result: AuditResult, outputPath: string): void {
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(outputPath, html, "utf8");
+
+  // Write migration detail pages
+  writeMigrationDetailPages(result.migrations, dir, outputPath);
 }

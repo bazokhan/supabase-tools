@@ -1,4 +1,4 @@
-# @sbt/plugin-atlas-html
+# @sbtools/plugin-atlas-html
 
 Plugin that generates the Backend Atlas HTML visualization. Lives in `supabase-tools/packages/plugin-atlas-html/`.
 

@@ -88,3 +88,7 @@ export {
   sanitizeContainerPrefix,
   deriveContainerPrefix,
 } from "./container-utils.js";
+
+// SQL analyzer (shared by migration-audit and migration-studio)
+export { analyzeMigrationSql } from "./sql-analyzer.js";
+export type { OperationKind, ParsedOperation, MigrationSqlAnalysis } from "./sql-analyzer.js";

@@ -1,4 +1,4 @@
-# @sbt/plugin-docs-server
+# @sbtools/plugin-docs-server
 
 Plugin that starts API documentation services (Swagger UI, ReDoc, Backend Atlas, SchemaSpy). Lives in `supabase-tools/packages/plugin-docs-server/`.
 

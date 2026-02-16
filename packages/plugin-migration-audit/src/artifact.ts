@@ -24,6 +24,7 @@ function toArtifactData(result: AuditResult): MigrationAnalysisArtifactData {
       sizeBytes: m.sizeBytes,
       fileModifiedAt: m.fileModifiedAt?.toISOString() ?? null,
       filePath: m.filePath,
+      sqlAnalysis: m.sqlAnalysis,
     })),
     issues: result.issues,
     summary: result.summary,
@@ -45,6 +46,19 @@ export interface MigrationAnalysisArtifactData {
     sizeBytes: number;
     fileModifiedAt: string | null;
     filePath: string;
+    sqlAnalysis?: {
+      operations: Array<{ kind: string; objectKey: string; schema?: string; name?: string }>;
+      touchedObjectKeys: string[];
+      riskFlags: {
+        hasTransaction: boolean;
+        hasDestructive: boolean;
+        hasIfExists: boolean;
+        hasIfNotExists: boolean;
+        hasTruncate: boolean;
+        hasDrop: boolean;
+      };
+      confidence: "high" | "medium" | "low";
+    };
   }>;
   issues: Array<{ severity: string; code: string; message: string; affectedMigrations?: string[] }>;
   summary: {

@@ -1,5 +1,8 @@
 import path from "node:path";
+import { createRequire } from "node:module";
 import { ui, DatabaseError, hasFlag } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { runLiveTests } from "./runner-live.js";
 import { runMemTests } from "./runner-mem.js";
@@ -15,7 +18,7 @@ export function resolveTestPaths(ctx: PluginContext): { testsDir: string; migrat
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-db-test",
-  version: "1.0.0",
+  version: (require("../package.json") as { version: string }).version,
 
   commands: [
     {

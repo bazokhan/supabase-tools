@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
 import { ui, hasFlag, sanitizeSlug } from "@sbtools/sdk";
 import { generatePackageJson } from "./templates/package-json.js";
 import { generateTsconfigJson } from "./templates/tsconfig-json.js";
@@ -96,7 +100,7 @@ Examples:
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-scaffold",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
 
   commands: [
     {
