@@ -6,7 +6,7 @@ Migration authoring UI for supabase-tools. Create migrations in a browser-based 
 
 - **SQL editor** — Write migration SQL in the browser
 - **Live analysis** — Analyze SQL to see operations and risk indicators (uses shared `analyzeMigrationSql` from SDK)
-- **Save as migration** — Write migration file to `supabase/migrations/` with timestamp prefix
+- **Save / Update migration** — Create new or overwrite pending migration; dry run before apply; wrap in transaction
 - **Apply migrations** — Runs `sbt migrate` (requires confirmation)
 
 ## Setup

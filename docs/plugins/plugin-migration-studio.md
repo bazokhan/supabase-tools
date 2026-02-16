@@ -13,7 +13,9 @@ Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dia
 - **Live analysis** — Operations, risk flags, touched objects (debounced, updates as you type)
 - **Migration templates** — Create table with RLS, add column, function, trigger, policy, index, FK, enum
 - **Context sidebar** — Migrations list (from disk + `migration.analysis` status), schema tree; click to load or insert
-- **Save** — Description prompt → filename `YYYYMMDDHHMMSS_<slug>.sql`
+- **Save / Update** — Update overwrites a loaded pending migration; Save as new always creates a new file
+- **Dry run** — Validates SQL (same format as migrate); shows success or error before apply
+- **Wrap in transaction** — Wraps selected or full SQL in `BEGIN;` … `COMMIT;`
 - **Apply** — Requires confirmation, runs `sbt migrate`
 
 ## Installation
@@ -50,7 +52,8 @@ The studio serves a local HTTP server with:
 - `GET /api/migrations` — Migration files with status
 - `GET /api/migration/:filename` — SQL content of a migration file
 - `POST /api/analyze` — Analyze SQL (operations, risk flags)
-- `POST /api/save` — Save migration file (body: `{ sql, description? }`)
+- `POST /api/save` — Save migration file (body: `{ sql, description?, filename? }` — `filename` overwrites existing pending migration)
+- `POST /api/validate` — Dry run: validate SQL (same format as migrate)
 - `POST /api/apply` — Run `sbt migrate`
 
 ## Configuration
