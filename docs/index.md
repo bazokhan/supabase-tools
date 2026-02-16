@@ -4,6 +4,8 @@ description: Portable toolkit for local Supabase development — Docker services
 
 # supabase-tools
 
+[![GitHub stars](https://img.shields.io/github/stars/bazokhan/supabase-tools?style=social)](https://github.com/bazokhan/supabase-tools)
+
 Portable toolkit for local Supabase development without the Supabase CLI.
 
 ## Quick Start
