@@ -29,6 +29,8 @@ export function generateIndexTs(name: string, external: boolean, hooks: boolean)
 const plugin: SbtPlugin = {
   name: "${pluginName}",
   version: "1.0.0",
+  // Declare artifact IDs this plugin produces/consumes (enables artifact-first collaboration)
+  // artifactCapabilities: { produces: ["my.artifact"], consumes: [] },
 
   commands: [
     {

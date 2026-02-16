@@ -1,7 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
+const SCAFFOLD_SDK_VERSION = (require("../package.json") as { dependencies?: { "@sbtools/sdk"?: string } }).dependencies?.["@sbtools/sdk"] ?? "^0.3.0";
 import { ui, hasFlag, sanitizeSlug } from "@sbtools/sdk";
+
+function resolveSdkVersion(toolsDir: string): string {
+  const sdkPkgPath = path.join(toolsDir, "..", "sdk", "package.json");
+  try {
+    const sdkPkg = JSON.parse(fs.readFileSync(sdkPkgPath, "utf8")) as { version?: string };
+    return sdkPkg.version ? `^${sdkPkg.version}` : SCAFFOLD_SDK_VERSION;
+  } catch {
+    if (SCAFFOLD_SDK_VERSION.startsWith("workspace:")) return "^0.3.0";
+    return SCAFFOLD_SDK_VERSION.startsWith("^") || SCAFFOLD_SDK_VERSION.startsWith("~") ? SCAFFOLD_SDK_VERSION : `^${SCAFFOLD_SDK_VERSION}`;
+  }
+}
 import { generatePackageJson } from "./templates/package-json.js";
 import { generateTsconfigJson } from "./templates/tsconfig-json.js";
 import { generateIndexTs } from "./templates/index-ts.js";
@@ -60,12 +76,13 @@ Examples:
 
   ui.step(`Scaffolding ${external ? "external" : "internal"} plugin: ${slug}\n`);
 
+  const sdkVersion = resolveSdkVersion(ctx.toolsDir);
   const srcDir = path.join(targetDir, "src");
   fs.mkdirSync(srcDir, { recursive: true });
 
   fs.writeFileSync(
     path.join(targetDir, "package.json"),
-    generatePackageJson(slug, external),
+    generatePackageJson(slug, external, sdkVersion),
     "utf8",
   );
   fs.writeFileSync(path.join(targetDir, "tsconfig.json"), generateTsconfigJson(external), "utf8");
@@ -96,7 +113,7 @@ Examples:
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-scaffold",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
 
   commands: [
     {

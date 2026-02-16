@@ -13,8 +13,12 @@
  *   }]
  */
 import path from "node:path";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { hasFlag, openFile, ui } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
 import { scanMigrationFiles } from "./migration-scanner.js";
 import {
   createClient,
@@ -26,6 +30,7 @@ import {
 } from "./db-client.js";
 import { buildAuditResult } from "./auditor.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
+import { writeMigrationAnalysisArtifact } from "./artifact.js";
 import { migrationAuditSectionHtml } from "./atlas/sections.js";
 import { migrationAuditCardRendererJs } from "./atlas/cards.js";
 import { migrationAuditStyles } from "./atlas/styles.js";
@@ -114,6 +119,7 @@ POSTGRES_URL (default: postgresql://postgres:postgres@localhost:54322/postgres).
   const shouldOpen = !hasFlag(args, "--no-open");
 
   const result = await runAudit(ctx);
+  writeMigrationAnalysisArtifact(ctx, result, { pluginVersion: PLUGIN_VERSION });
 
   if (onlyJson) {
     console.log(JSON.stringify(result, null, 2));
@@ -150,7 +156,10 @@ POSTGRES_URL (default: postgresql://postgres:postgres@localhost:54322/postgres).
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-migration-audit",
-  version: "0.1.0",
+  version: PLUGIN_VERSION,
+  artifactCapabilities: {
+    produces: ["migration.analysis"],
+  },
 
   commands: [
     {
@@ -162,6 +171,7 @@ const plugin: SbtPlugin = {
 
   getAtlasData: async (ctx: PluginContext) => {
     const result = await runAudit(ctx);
+    // Artifact is written by command - skip here to avoid redundant writes
 
     const cards = result.migrations.map((m) => ({
       filename: m.filename,
@@ -209,6 +219,7 @@ const plugin: SbtPlugin = {
 
   getStatusLines: async (ctx: PluginContext) => {
     const result = await runAudit(ctx);
+    // Artifact is written by command - skip here to avoid redundant writes
     const lines: string[] = [];
     lines.push(
       `  Migration Audit: ${result.summary.total} total, ${result.summary.applied} applied, ${result.summary.pending} pending, ${result.summary.missing} missing`

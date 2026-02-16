@@ -1,4 +1,4 @@
-# @sbt/plugin-frontend-usage
+# @sbtools/plugin-frontend-usage
 
 Plugin for supabase-tools that scans frontend code for Supabase SDK usage. Lives at `supabase-tools/packages/plugin-frontend-usage/`.
 

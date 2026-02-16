@@ -1,4 +1,4 @@
-# @sbt/plugin-typegen
+# @sbtools/plugin-typegen
 
 Plugin that generates TypeScript types from the PostgREST types generator. Lives in `supabase-tools/packages/plugin-typegen/`.
 

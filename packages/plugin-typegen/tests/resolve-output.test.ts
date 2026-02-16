@@ -10,6 +10,7 @@ function makeCtx(pluginConfig: Record<string, unknown> = {}): PluginContext {
     projectRoot: PROJECT,
     toolsDir: path.join(PROJECT, "node_modules", "@sbtools", "core"),
     sbtDataDir: path.join(PROJECT, ".sbt"),
+    artifactsDir: path.join(PROJECT, ".sbt", "artifacts"),
     pluginConfig,
     apiUrl: "http://localhost:54321",
     paths: {

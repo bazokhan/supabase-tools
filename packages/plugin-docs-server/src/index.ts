@@ -1,8 +1,14 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { ui, SbtError, extractSupabaseKeys } from "@sbtools/sdk";
+import { createRequire } from "node:module";
+import { ui, SbtError, extractSupabaseKeys, readArtifact } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+
+/** OpenAPI partial artifacts: id → version, in merge order. Skip plugin when artifact used. */
+const OPENAPI_PARTIAL_ARTIFACTS: Array<{ id: string; version: string; skipPlugin: string }> = [
+  { id: "openapi.partial.deno-functions", version: "1.0.0", skipPlugin: "@sbtools/plugin-deno-functions" },
+];
 
 // ---------------------------------------------------------------------------
 // Subcommand types
@@ -115,41 +121,71 @@ async function ensureOpenApiSpec(
     ui.detail("   Using existing/placeholder spec. Re-run with DB running for full spec.\n");
   }
 
-  // Merge plugin OpenAPI specs from siblings
+  // Merge plugin OpenAPI specs: artifacts first (deterministic), then getOpenApiSpec fallback
   const siblingPlugins = ctx.siblingPlugins ?? [];
   const pluginsWithSpec = siblingPlugins.filter((p) => p.getOpenApiSpec);
+  const skippedFromArtifact = new Set<string>();
 
-  if (pluginsWithSpec.length > 0) {
+  const spec = JSON.parse(readFileSync(specPath, "utf8")) as Record<string, unknown>;
+  const specPaths = (spec.paths ?? {}) as Record<string, unknown>;
+  const specComponents = (spec.components ?? {}) as Record<string, Record<string, unknown>>;
+  const specTags = (spec.tags ?? []) as { name: string; description?: string }[];
+
+  const hasAnyPluginSource = pluginsWithSpec.length > 0 || OPENAPI_PARTIAL_ARTIFACTS.length > 0;
+  if (hasAnyPluginSource) {
     ui.step("Merging plugin OpenAPI specs...\n");
+  }
 
-    const spec = JSON.parse(readFileSync(specPath, "utf8")) as Record<string, unknown>;
-    const specPaths = (spec.paths ?? {}) as Record<string, unknown>;
-    const specComponents = (spec.components ?? {}) as Record<string, Record<string, unknown>>;
-    const specTags = (spec.tags ?? []) as { name: string; description?: string }[];
-
-    for (const sibling of pluginsWithSpec) {
-      try {
-        const pluginSpec = await sibling.getOpenApiSpec!(ctx);
-        const pPaths = (pluginSpec.paths ?? {}) as Record<string, unknown>;
-        Object.assign(specPaths, pPaths);
-
-        const pComponents = (pluginSpec.components ?? {}) as Record<string, Record<string, unknown>>;
-        for (const [section, entries] of Object.entries(pComponents)) {
-          if (!specComponents[section]) specComponents[section] = {};
-          Object.assign(specComponents[section], entries);
-        }
-
-        const pTags = (pluginSpec.tags ?? []) as { name: string; description?: string }[];
-        for (const tag of pTags) {
-          if (!specTags.some((t) => t.name === tag.name)) specTags.push(tag);
-        }
-
-        ui.detail(`   ${sibling.name}: ${Object.keys(pPaths).length} path(s) merged.`);
-      } catch (err) {
-        ui.warn(`   ${sibling.name} getOpenApiSpec failed: ${(err as Error).message}`);
+  // 1. Merge from openapi.partial.* artifacts (deterministic order)
+  for (const { id, version, skipPlugin } of OPENAPI_PARTIAL_ARTIFACTS) {
+    const result = readArtifact<{ paths?: Record<string, unknown>; components?: Record<string, Record<string, unknown>>; tags?: Array<{ name: string; description?: string }> }>(
+      ctx,
+      id,
+      version,
+    );
+    if (result.ok) {
+      const pPaths = (result.envelope.data.paths ?? {}) as Record<string, unknown>;
+      Object.assign(specPaths, pPaths);
+      const pComponents = result.envelope.data.components ?? {};
+      for (const [section, entries] of Object.entries(pComponents)) {
+        if (!specComponents[section]) specComponents[section] = {};
+        Object.assign(specComponents[section], entries);
       }
+      const pTags = result.envelope.data.tags ?? [];
+      for (const tag of pTags) {
+        if (!specTags.some((t) => t.name === tag.name)) specTags.push(tag);
+      }
+      ui.detail(`   ${id} (artifact): ${Object.keys(pPaths).length} path(s) merged.`);
+      skippedFromArtifact.add(skipPlugin);
     }
+  }
 
+  // 2. Merge from getOpenApiSpec for plugins without artifact (or artifact missing)
+  for (const sibling of pluginsWithSpec) {
+    if (skippedFromArtifact.has(sibling.name)) continue;
+    try {
+      const pluginSpec = await sibling.getOpenApiSpec!(ctx);
+      const pPaths = (pluginSpec.paths ?? {}) as Record<string, unknown>;
+      Object.assign(specPaths, pPaths);
+
+      const pComponents = (pluginSpec.components ?? {}) as Record<string, Record<string, unknown>>;
+      for (const [section, entries] of Object.entries(pComponents)) {
+        if (!specComponents[section]) specComponents[section] = {};
+        Object.assign(specComponents[section], entries);
+      }
+
+      const pTags = (pluginSpec.tags ?? []) as { name: string; description?: string }[];
+      for (const tag of pTags) {
+        if (!specTags.some((t) => t.name === tag.name)) specTags.push(tag);
+      }
+
+      ui.detail(`   ${sibling.name}: ${Object.keys(pPaths).length} path(s) merged.`);
+    } catch (err) {
+      ui.warn(`   ${sibling.name} getOpenApiSpec failed: ${(err as Error).message}`);
+    }
+  }
+
+  if (hasAnyPluginSource) {
     spec.paths = specPaths;
     spec.components = specComponents;
     if (specTags.length > 0) spec.tags = specTags;
@@ -287,9 +323,16 @@ async function docsCommand(args: string[], ctx: PluginContext): Promise<void> {
 // Plugin export
 // ---------------------------------------------------------------------------
 
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-docs-server",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
+  artifactCapabilities: {
+    produces: [],
+    consumes: ["openapi.partial.deno-functions"],
+  },
 
   commands: [
     {

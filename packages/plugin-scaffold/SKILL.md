@@ -1,4 +1,4 @@
-# @sbt/plugin-scaffold
+# @sbtools/plugin-scaffold
 
 Plugin that scaffolds new supabase-tools plugins. Lives in `supabase-tools/packages/plugin-scaffold/`.
 

@@ -41,7 +41,10 @@ Migrations:
   ...
 
 ✓ HTML report → docs/migration-audit.html
+✓ Detail pages → docs/migration-audit/<slug>.html
 ```
+
+Each migration has a detail page with SQL viewer, parsed operations, risk flags, and touched objects. Links from the main report and Backend Atlas cards.
 
 ## Commands
 
@@ -65,6 +68,10 @@ Migrations:
 | `ORDERING_GAP` | warning | Applied out of chronological order |
 | `TIMESTAMP_PARSE_FAILURE` | info | Non-standard filename (no YYYYMMDDHHMMSS prefix) |
 | `EMPTY_MIGRATION` | info | 0-byte migration files |
+
+## Artifact
+
+Produces `migration.analysis` v1.0.0. Includes per-migration `sqlAnalysis` (operations, touched objects, risk flags, confidence). Consumed by migration-studio for schema fallback and migrations context.
 
 ## Configuration
 

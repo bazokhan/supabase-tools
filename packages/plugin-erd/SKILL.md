@@ -1,4 +1,4 @@
-# @sbt/plugin-erd
+# @sbtools/plugin-erd
 
 Plugin that generates Mermaid ERD diagrams for each public table. Lives in `supabase-tools/packages/plugin-erd/`.
 

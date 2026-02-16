@@ -42,6 +42,7 @@ function ensureProjectDirs(): void {
   const docsAbsolute = resolve(config.paths.docsOutput);
   fs.mkdirSync(docsAbsolute, { recursive: true });
   fs.mkdirSync(config.sbtDataDir, { recursive: true });
+  fs.mkdirSync(path.join(config.sbtDataDir, "artifacts"), { recursive: true });
   fs.mkdirSync(path.join(config.sbtDataDir, "schemaspy-out"), { recursive: true });
   const containerPrefix = sanitizeContainerPrefix(config.project.name);
   const functionsAbs = path.resolve(config.projectRoot, config.paths.functions);
@@ -58,11 +59,30 @@ function ensureProjectDirs(): void {
   fs.writeFileSync(composeEnv, envContent, "utf8");
 }
 
+function ensureGitignoreSbtEntry(): void {
+  const gitignorePath = path.join(config.projectRoot, ".gitignore");
+  const entry = ".sbt/";
+  if (!fs.existsSync(gitignorePath)) {
+    fs.writeFileSync(gitignorePath, entry + "\n", "utf8");
+    ui.detail(`Added ${entry} to .gitignore`);
+    return;
+  }
+  const content = fs.readFileSync(gitignorePath, "utf8");
+  const lines = content.split(/\r?\n/);
+  const hasEntry = lines.some((line) => /^\.sbt\/?$/m.test(line.trim()));
+  if (!hasEntry) {
+    const suffix = content.endsWith("\n") ? "" : "\n";
+    fs.writeFileSync(gitignorePath, content + suffix + entry + "\n", "utf8");
+    ui.detail(`Added ${entry} to .gitignore`);
+  }
+}
+
 function init(): void {
   const configPath = path.join(config.projectRoot, "supabase-tools.config.json");
   if (fs.existsSync(configPath)) {
     ui.info(`Config already exists at ${configPath}`);
     ensureProjectDirs();
+    ensureGitignoreSbtEntry();
     return;
   }
   const projectName = (() => {
@@ -81,11 +101,8 @@ function init(): void {
   fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2) + "\n", "utf8");
   ui.success(`Created ${configPath}`);
   ensureProjectDirs();
+  ensureGitignoreSbtEntry();
 }
-
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
 
 try {
   const loaded = await loadPlugins();

@@ -34,10 +34,12 @@ export function migrationAuditCardRendererJs(): string {
       var appliedStr = item.applied_at ? new Date(item.applied_at).toISOString().replace('T', ' ').slice(0, 19) : '-';
       var sizeStr = item.size_bytes != null ? (item.size_bytes + ' B') : '-';
 
+      var detailHref = (item.status !== 'missing') ? ('migration-audit/' + (item.filename || '').replace(/\\.sql$/i, '').replace(/[^a-z0-9_-]/gi, '_') + '.html') : '';
+      var titleHtml = detailHref ? '<a href="' + escapeHtml(detailHref) + '" target="_blank">' + escapeHtml(item.filename) + '</a>' : escapeHtml(item.filename);
       return '<details class="card db-card" data-kind="migration_audit" data-search="' + escapeHtml(search) + '">' +
         '<summary>' +
           '<div>' +
-            '<div class="card-title">' + escapeHtml(item.filename) + '</div>' +
+            '<div class="card-title">' + titleHtml + '</div>' +
             '<div class="card-sub">Applied: ' + escapeHtml(appliedStr) + ' | Size: ' + escapeHtml(sizeStr) + '</div>' +
           '</div>' +
           '<div class="badge-group">' + badge + '</div>' +

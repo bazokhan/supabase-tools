@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { ui, ensureDir, SbtError } from "@sbtools/sdk";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
 import type { SbtPlugin, PluginContext, PluginAtlasUI } from "@sbtools/sdk";
 import { atlasStyles } from "./atlas/styles/base.js";
 import { cardStyles } from "./atlas/styles/cards.js";
@@ -13,7 +17,7 @@ import { buildClientScript } from "./atlas/bootstrap.js";
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-atlas-html",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
 
   commands: [
     {
@@ -42,7 +46,12 @@ const plugin: SbtPlugin = {
           if (entry.getAtlasUI) {
             try {
               const uiData = entry.getAtlasUI();
-              Object.assign(mergedKindLabels, uiData.kindLabels);
+              for (const [key, label] of Object.entries(uiData.kindLabels)) {
+                if (key in mergedKindLabels) {
+                  ui.warn(`⚠️  Atlas kindLabel collision: "${key}" (plugin "${entry.name}" overwrites). Use unique namespaced keys.`);
+                }
+                mergedKindLabels[key] = label;
+              }
               mergedSectionHtml += uiData.sectionHtml;
               mergedCardRendererJs += "\n" + uiData.cardRendererJs;
               mergedInitJs += "\n      " + uiData.initJs;

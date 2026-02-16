@@ -1,32 +1,22 @@
 /**
- * pg.Client wrapper — all DB queries (read-only).
+ * Audit-specific DB queries. Shared utilities come from @sbtools/sdk.
  */
-import { Client } from "pg";
+import type { Client } from "pg";
+import {
+  createPgClient,
+  testConnection as sdkTestConnection,
+  disconnectClient as sdkDisconnectClient,
+} from "@sbtools/sdk";
 import type { AppliedMigration, SchemaSnapshot } from "./types.js";
 
-/** Resolve DB URL from env vars or default. */
-export function resolveDbUrl(): string {
-  return (
-    process.env.DATABASE_URL ||
-    process.env.SUPABASE_DB_URL ||
-    process.env.POSTGRES_URL ||
-    "postgresql://postgres:postgres@localhost:54322/postgres"
-  );
-}
-
-/** Create a pg.Client with the resolved connection string. */
+/** Create a pg.Client (uses SDK). */
 export function createClient(): Client {
-  return new Client({ connectionString: resolveDbUrl() });
+  return createPgClient() as Client;
 }
 
-/** Test connection by calling connect(). Returns true if successful. */
+/** Test connection (uses SDK). */
 export async function testConnection(client: Client): Promise<boolean> {
-  try {
-    await client.connect();
-    return true;
-  } catch {
-    return false;
-  }
+  return sdkTestConnection(client);
 }
 
 /** Check if app_migrations.schema_migrations table exists. */
@@ -99,11 +89,7 @@ export async function getSchemaSnapshot(client: Client): Promise<SchemaSnapshot>
   };
 }
 
-/** Safe disconnect. */
+/** Safe disconnect (uses SDK). */
 export async function disconnectClient(client: Client): Promise<void> {
-  try {
-    await client.end();
-  } catch {
-    // ignore
-  }
+  return sdkDisconnectClient(client);
 }

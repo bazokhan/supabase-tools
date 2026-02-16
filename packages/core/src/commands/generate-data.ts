@@ -134,6 +134,9 @@ export async function runGenerateData(): Promise<void> {
         const ctx = buildPluginContext(entry);
         const contribution = await entry.plugin.getAtlasData(ctx);
         for (const [key, items] of Object.entries(contribution.categories)) {
+          if (key in data.categories) {
+            ui.warn(`⚠️  Atlas category key collision: "${key}" (plugin "${entry.plugin.name}" overwrites existing). Use unique namespaced keys.`);
+          }
           data.categories[key] = items;
         }
         for (const stat of contribution.stats) {

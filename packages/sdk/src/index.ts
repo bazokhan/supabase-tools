@@ -36,7 +36,20 @@ export type {
     ResolvedPaths,
     PluginAtlasData,
     PluginAtlasUI,
+    ArtifactCapabilities,
 } from "./plugin-api.js";
+
+// Artifact helpers
+export {
+    writeArtifact,
+    readArtifact,
+    readArtifactOrNull,
+    validateArtifactEnvelope,
+    parseArtifactEnvelope,
+    artifactDir,
+    artifactLatestPath,
+} from "./artifacts.js";
+export type { ArtifactEnvelope, ReadArtifactResult } from "./artifacts.js";
 
 // CLI utilities
 export { hasFlag, getArg, openFile } from "./cli-utils.js";
@@ -75,3 +88,22 @@ export {
   sanitizeContainerPrefix,
   deriveContainerPrefix,
 } from "./container-utils.js";
+
+// SQL analyzer (shared by migration-audit and migration-studio)
+export { analyzeMigrationSql } from "./sql-analyzer.js";
+export type { OperationKind, ParsedOperation, MigrationSqlAnalysis } from "./sql-analyzer.js";
+
+// DB utilities (optional: plugins need pg installed)
+export {
+  resolveDbUrl,
+  createPgClient,
+  testConnection,
+  disconnectClient,
+} from "./db-utils.js";
+
+// Migration scanner
+export {
+  scanMigrationFiles,
+  parseTimestampPrefix,
+} from "./migration-scanner.js";
+export type { MigrationFileInfo } from "./migration-scanner.js";

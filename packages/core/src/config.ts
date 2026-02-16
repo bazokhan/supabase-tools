@@ -216,11 +216,24 @@ function loadOverrides(projectRoot: string): ConfigFile | null {
 // Build the config object
 // ---------------------------------------------------------------------------
 
+function findProjectRoot(): string {
+  // Walk up from cwd looking for supabase-tools.config.json (handles symlinked packages)
+  let dir = process.cwd();
+  while (true) {
+    if (fs.existsSync(path.join(dir, "supabase-tools.config.json"))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // reached filesystem root
+    dir = parent;
+  }
+  // Fallback: assume cwd is the project root
+  return process.cwd();
+}
+
 function buildConfig(): SupabaseToolsConfig {
   // toolsDir = core package root (where docker/, docker-compose.*.yml live)
   const toolsDir = path.resolve(__dirname, "..");
-  // projectRoot = consumer project (supabase-tools parent in workspace, or node_modules parent when npm)
-  const projectRoot = path.resolve(toolsDir, "..", "..", "..");
+  // projectRoot = consumer project, found by walking up from cwd
+  const projectRoot = findProjectRoot();
   const sbtDataDir = path.join(projectRoot, ".sbt");
 
   const overrides = loadOverrides(projectRoot);

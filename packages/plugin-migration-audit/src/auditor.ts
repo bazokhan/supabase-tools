@@ -1,6 +1,7 @@
 /**
  * Core audit logic: compare disk vs DB, detect issues.
  */
+import fs from "node:fs";
 import type {
   MigrationFile,
   AppliedMigration,
@@ -12,6 +13,7 @@ import type {
   SchemaSnapshot,
 } from "./types.js";
 import { parseTimestampPrefix } from "./migration-scanner.js";
+import { analyzeMigrationSql } from "@sbtools/sdk";
 
 export const ISSUE_CODES = {
   MISSING_FILE: "MISSING_FILE",
@@ -60,6 +62,15 @@ export function buildAuditResult(opts: BuildAuditResultOpts): AuditResult {
   for (const f of files) {
     const rec = appliedByVersion.get(f.filename);
     const status: MigrationStatus = rec ? "applied" : "pending";
+    let sqlAnalysis: MigrationEntry["sqlAnalysis"] | undefined;
+    try {
+      if (fs.existsSync(f.filePath) && f.sizeBytes > 0 && f.sizeBytes < 1024 * 1024) {
+        const sql = fs.readFileSync(f.filePath, "utf8");
+        sqlAnalysis = analyzeMigrationSql(sql);
+      }
+    } catch {
+      // Skip analysis on read error
+    }
     entries.push({
       filename: f.filename,
       status,
@@ -68,6 +79,7 @@ export function buildAuditResult(opts: BuildAuditResultOpts): AuditResult {
       sizeBytes: f.sizeBytes,
       fileModifiedAt: f.modifiedAt,
       filePath: f.filePath,
+      sqlAnalysis,
     });
   }
 

@@ -1,5 +1,5 @@
 /**
- * @sbt/plugin-deno-functions
+ * @sbtools/plugin-deno-functions
  *
  * Plugin for supabase-tools that documents Supabase Edge Functions
  * by statically analysing TypeScript source files in the functions directory.
@@ -7,7 +7,7 @@
  * Activated by adding an entry in supabase-tools.config.json:
  *
  *   "plugins": [{
- *     "path": "node_modules/@sbt/plugin-deno-functions",
+ *     "path": "node_modules/@sbtools/plugin-deno-functions",
  *     "config": {
  *       "baseUrl": "/functions/v1",
  *       "configTomlPath": "supabase/config.toml"
@@ -16,12 +16,17 @@
  */
 import path from "node:path";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { extractEdgeFunctions } from "./extractor.js";
+import { writeOpenApiPartialArtifact } from "./artifact.js";
 import { edgeFunctionSectionHtml } from "./atlas/sections.js";
 import { edgeFunctionCardRendererJs } from "./atlas/cards.js";
 import { edgeFunctionStyles } from "./atlas/styles.js";
 import { generateEdgeFunctionOpenApi } from "./openapi.js";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
 
 function resolveConfigTomlPath(ctx: PluginContext): string | undefined {
   const tomlRel = (ctx.pluginConfig.configTomlPath as string) ?? "supabase/config.toml";
@@ -31,7 +36,11 @@ function resolveConfigTomlPath(ctx: PluginContext): string | undefined {
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-deno-functions",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
+  artifactCapabilities: {
+    produces: ["openapi.partial.deno-functions"],
+    consumes: [],
+  },
 
   commands: [
     {
@@ -76,6 +85,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
           configTomlPath: resolveConfigTomlPath(ctx),
           baseUrl,
         });
+        if (items.length > 0) {
+          writeOpenApiPartialArtifact(ctx, items, { baseUrl, pluginVersion: PLUGIN_VERSION });
+        }
 
         if (items.length === 0) {
           console.log("No edge functions found.");
@@ -164,6 +176,9 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
+    if (items.length > 0) {
+      writeOpenApiPartialArtifact(ctx, items, { baseUrl, pluginVersion: PLUGIN_VERSION });
+    }
 
     return {
       categories: { edge_functions: items },
@@ -196,7 +211,6 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
       configTomlPath: resolveConfigTomlPath(ctx),
       baseUrl,
     });
-
     if (items.length === 0) {
       return ["  (no edge functions found)"];
     }

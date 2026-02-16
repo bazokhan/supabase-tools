@@ -1,5 +1,5 @@
 /**
- * @sbt/plugin-depgraph
+ * @sbtools/plugin-depgraph
  *
  * Plugin for supabase-tools that visualizes all backend dependency
  * relationships (tables, functions, triggers, policies, views, enums,
@@ -9,15 +9,20 @@
  * Activated by adding an entry in supabase-tools.config.json:
  *
  *   "plugins": [{
- *     "path": "node_modules/@sbt/plugin-depgraph",
+ *     "path": "node_modules/@sbtools/plugin-depgraph",
  *     "config": {}
  *   }]
  */
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { hasFlag, openFile, SbtError } from "@sbtools/sdk";
 import { buildGraph } from "./graph-builder.js";
+import { writeDepgraphArtifact } from "./artifact.js";
+
+const require = createRequire(import.meta.url);
+const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
 import { generateMermaid, writeMermaid } from "./mermaid-generator.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
 import { depgraphSectionHtml } from "./atlas/sections.js";
@@ -78,6 +83,13 @@ and supabase/current/ snapshot files. No running database is required.
   }
 
   const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
+  if (graph.nodes.length > 0) {
+    writeDepgraphArtifact(ctx, graph, {
+      atlasDataPath: paths.atlasDataPath,
+      snapshotDir: paths.snapshotDir,
+      pluginVersion: PLUGIN_VERSION,
+    });
+  }
 
   if (graph.nodes.length === 0) {
     console.error(
@@ -144,7 +156,11 @@ function getRelationshipCounts(
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-depgraph",
-  version: "1.0.0",
+  version: PLUGIN_VERSION,
+  artifactCapabilities: {
+    produces: ["depgraph.graph"],
+    consumes: [],
+  },
 
   commands: [
     {
@@ -158,6 +174,7 @@ const plugin: SbtPlugin = {
   getAtlasData: async (ctx: PluginContext) => {
     const paths = resolvePaths(ctx);
     const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
+    // Artifact is written by command - skip here to avoid redundant writes
 
     const relationshipCounts = getRelationshipCounts(graph.edges);
 
@@ -210,6 +227,7 @@ const plugin: SbtPlugin = {
   getStatusLines: async (ctx: PluginContext) => {
     const paths = resolvePaths(ctx);
     const graph = buildGraph(paths.atlasDataPath, paths.snapshotDir, paths.typesFilePath);
+    // Artifact is written by command - skip here to avoid redundant writes
 
     const lines: string[] = [];
     lines.push(

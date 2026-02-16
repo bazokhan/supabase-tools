@@ -1,4 +1,4 @@
-# @sbt/plugin-depgraph
+# @sbtools/plugin-depgraph
 
 ## Purpose
 
@@ -53,7 +53,7 @@ No configuration fields needed. Add to `supabase-tools.config.json`:
 
 ```json
 {
-  "path": "node_modules/@sbt/plugin-depgraph",
+  "path": "node_modules/@sbtools/plugin-depgraph",
   "config": {}
 }
 ```

@@ -1,4 +1,4 @@
-# @sbt/plugin-logs
+# @sbtools/plugin-logs
 
 Plugin for `supabase-tools` that provides live Docker log tailing, `pg_stat_statements` query performance monitoring, a standalone HTML log viewer, and Atlas integration. Lives at `supabase-tools/packages/plugin-logs/`.
 
@@ -19,7 +19,7 @@ Add to `supabase-tools.config.json`:
 {
   "plugins": [
     {
-      "path": "node_modules/@sbt/plugin-logs",
+      "path": "node_modules/@sbtools/plugin-logs",
       "config": {
         "viewerPort": 3333,
         "tailLines": 100,

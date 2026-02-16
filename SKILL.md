@@ -36,7 +36,13 @@ Development: `npm run dev` or `tsx packages/core/src/cli.ts <command>`
 - `generate-atlas` — Backend Atlas JSON (HTML via plugin-atlas-html)
 - `test` — pgTAP tests (live or `--mem` PGlite)
 - `docs` — Start Swagger, ReDoc, Atlas, SchemaSpy (plugin-docs-server)
-- `init` — Generate config file
+- `migration-audit` — Compare migrations vs DB; report + detail pages (plugin-migration-audit)
+- `migration-studio` — Schema-aware migration authoring UI (plugin-migration-studio)
+- `init` — Generate config file; appends `.sbt/` to `.gitignore` if missing
+
+## Versioned Artifacts
+
+Plugins produce versioned artifacts under `.sbt/artifacts/<id>/<version>/latest.json`. Used for cross-plugin collaboration (e.g. docs-server consumes `openapi.partial.deno-functions`; migration-audit produces `migration.analysis`). See `docs/architecture/` for registry and contract guide.
 
 ## Plugins
 
@@ -80,4 +86,32 @@ npm run clean   # rimraf dist in all packages
 npm test
 ```
 
-Vitest in `packages/core`. Tests use `@sbtools/sdk` from workspace.
+Vitest in `packages/sdk`, `packages/core`, and selected plugins. Tests use `@sbtools/sdk` from workspace.
+
+## CLI Verification
+
+Only Docker needs to be running. Run `sbt start` before tests; run `sbt stop` and `sbt docs stop` afterwards.
+
+Run all impacted commands against a consumer project with linked packages and full plugin config. Run `docs stop` last so docs containers stay up until all tests finish.
+
+| Command | Expected |
+|---------|----------|
+| `sbt help` | Help listing with plugin commands |
+| `sbt init` | Config exists or created; `.sbt/` added to `.gitignore` if missing |
+| `sbt migration-audit` | Audit summary; writes `migration.analysis` artifact; report + detail pages in docs |
+| `sbt migration-studio` | Schema-aware migration authoring UI at http://localhost:3335 |
+| `sbt edge-functions` | Edge function table; writes `openapi.partial.deno-functions` artifact |
+| `sbt frontend-usage` | Components/tables report; writes `frontend.usage` artifact |
+| `sbt status` | Service URLs, keys; plugin status lines |
+| `sbt generate-atlas` | Backend atlas JSON; plugin contributions |
+| `sbt depgraph` | HTML + Mermaid graphs; writes `depgraph.graph` artifact |
+| `sbt atlas-html` | Backend atlas HTML |
+| `sbt docs swagger` | OpenAPI merge; artifact consumed: `openapi.partial.deno-functions (artifact): N path(s) merged`; Swagger container started |
+| `sbt generate-erd` | ERD diagrams per table |
+| `sbt generate-types` | TypeScript types |
+| `sbt migrate` | Migrations applied or up to date |
+| `sbt snapshot` | DB objects exported to snapshot dir |
+| `sbt test` | pgTAP tests (may fail on project-specific fixtures) |
+| `sbt docs stop` | Docs containers stopped |
+
+Artifacts written: `migration.analysis`, `openapi.partial.deno-functions`, `depgraph.graph`, `frontend.usage` in `.sbt/artifacts/<id>/1.0.0/latest.json`.
