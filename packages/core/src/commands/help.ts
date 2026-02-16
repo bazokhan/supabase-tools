@@ -15,6 +15,7 @@ const CORE_COMMANDS: CommandMeta[] = [
   { name: "status", description: "Show service URLs, keys, and connection info", category: "Docker" },
   { name: "migrate", description: "Apply SQL migrations to running DB", category: "Database" },
   { name: "snapshot", description: "Export DB objects (functions, views, etc.) to filesystem", category: "Database" },
+  { name: "watch", description: "Watch DB/files and keep artifacts refreshed", category: "Database" },
   { name: "generate-atlas", description: "Generate Backend Atlas data (JSON)", category: "Code Generation" },
   { name: "init", description: "Generate supabase-tools.config.json with defaults", category: "Setup" },
   { name: "help", description: "Show this help", category: "Setup" },

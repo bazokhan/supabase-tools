@@ -11,6 +11,7 @@ import { runGenerateData } from "./commands/generate-data.js";
 import { runMigrate } from "./commands/migrate.js";
 import { runStatus } from "./commands/status.js";
 import { showHelp } from "./commands/help.js";
+import { runWatch } from "./commands/watch.js";
 
 const command = process.argv[2];
 const args = process.argv.slice(3);
@@ -147,6 +148,10 @@ try {
 
     case "init":
       init();
+      break;
+
+    case "watch":
+      await runWatch(args);
       break;
 
     case "help": case "--help": case "-h": case undefined:

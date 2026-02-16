@@ -74,6 +74,12 @@ sbt frontend-usage
 sbt docs [swagger|redoc|atlas|schemaspy|all]
   → reads: .sbt/openapi-spec.json, openapi.partial.* artifacts
   → serves: Swagger, ReDoc, Atlas, SchemaSpy
+
+sbt watch --scope migration
+  → listens: Postgres NOTIFY (sbt_watch_events), migrations dir changes
+  → runs: sbt migration-audit --no-open (debounced)
+  → writes: migration.analysis artifact, .sbt/watch/last-event.json
+  → signals: migration-studio /api/events (SSE)
 ```
 
 ## Migration Studio Dependencies (Real-Time Updates)

@@ -47,6 +47,7 @@ Starts the studio at `http://localhost:3335`. Use `--port N` to change the port.
 The studio serves a local HTTP server with:
 
 - `GET /` — Editor page
+- `GET /api/events` — Server-Sent Events refresh channel
 - `GET /api/schema` — Schema introspection (DB → atlas-data → artifact)
 - `GET /api/templates` — Migration template list
 - `GET /api/migrations` — Migration files with status
@@ -75,6 +76,9 @@ Apply path uses core migration execution; no duplicate engine.
 |---------|----------|---------|
 | Migrations list with status | `migration.analysis` artifact | `sbt migration-audit` |
 | Schema from atlas cache | `docs/backend-atlas-data.json` | `sbt generate-atlas` |
+| Live refresh push | `.sbt/watch/last-event.json` + artifact changes | `sbt watch` |
+
+Studio exposes `GET /api/events` (SSE). When watch updates arrive, Studio invalidates cache and refetches schema/migrations without full page reload.
 
 **Note:** `migration.analysis` is written only by `sbt migration-audit`, not by `sbt generate-atlas`. See [Package & Artifact Dependencies](../architecture/package-dependencies.md) for the full map.
 

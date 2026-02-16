@@ -25,11 +25,19 @@ Run `npx sbt help` to list available commands (including installed plugins).
 |---------|-------------|
 | `migrate` | Apply SQL migrations from `supabase/migrations/` |
 | `snapshot [schema...] [all]` | Export DB objects (functions, views, triggers, policies, types, enums) to filesystem |
+| `watch [--scope migration]` | Watch DB/files and keep migration artifacts fresh (`migration-audit --no-open`) |
 
 `migrate` env vars:
 
 - `MIGRATION_BASELINE=1` — record all migrations as applied without running them
 - `MIGRATION_REAPPLY=1` — force reapply even if DB has existing tables
+
+`watch` options:
+
+- `--scope migration` — phase-1 scope (default)
+- `--debounce-ms N` — debounce bursty events (default: `1500`)
+- `--no-db-hooks` — skip DB trigger/event-trigger helper install
+- `--verbose` — print event payloads
 
 ### Generation
 

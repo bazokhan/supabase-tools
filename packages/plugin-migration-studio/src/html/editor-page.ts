@@ -76,9 +76,12 @@ async function initEditor() {
   const { sql, PostgreSQL, schemaCompletionSource, keywordCompletionSource } = sqlPkg;
   const { oneDark } = await import('/lib/@codemirror/theme-one-dark/dist/index.js');
 
-  const schemaRes = await fetch('/api/schema').then(r => r.json()).catch(() => ({}));
-  const schemaSource = schemaRes.source || 'none';
-  document.getElementById('schema-status').textContent = schemaSource === 'database' ? 'Schema: Database' : schemaSource === 'atlas-data' ? 'Schema: Cached atlas' : schemaSource === 'artifact' ? 'Schema: Table names only' : 'Schema: None';
+  let schemaRes = await fetch('/api/schema').then(r => r.json()).catch(() => ({}));
+  const setSchemaStatus = () => {
+    const schemaSource = schemaRes.source || 'none';
+    document.getElementById('schema-status').textContent = schemaSource === 'database' ? 'Schema: Database' : schemaSource === 'atlas-data' ? 'Schema: Cached atlas' : schemaSource === 'artifact' ? 'Schema: Table names only' : 'Schema: None';
+  };
+  setSchemaStatus();
 
   // Convert flat tables to nested { schema: { table: [columns] } } so public. shows tables
   function toNestedSchema(tables) {
@@ -256,39 +259,63 @@ async function initEditor() {
     }
   };
 
-  const migRes = await fetch('/api/migrations').then(r => r.json()).catch(() => ({ migrations: [] }));
   const migEl = document.getElementById('context-migrations');
-  for (const m of migRes.migrations || []) {
-    const div = document.createElement('div');
-    div.className = 'context-item';
-    div.innerHTML = '<code>' + (m.filename || '').replace(/</g,'&lt;') + '</code> <span class="badge-' + (m.status || 'pending') + '" style="font-size:0.7rem;margin-left:4px">' + (m.status || '') + '</span>';
-    div.onclick = async () => {
-      const r = await fetch('/api/migration/' + encodeURIComponent(m.filename || '')).then(x => x.json()).catch(() => ({}));
-      if (r.sql) {
-        const full = editorView.state.doc.toString();
-        editorView.dispatch({ changes: { from: 0, to: full.length, insert: r.sql } });
-        window.__currentMigrationFilename = m.filename || null;
-        window.__currentMigrationStatus = m.status || 'pending';
-        window.__updateSaveButton();
-      }
-    };
-    migEl.appendChild(div);
-  }
-  window.__updateSaveButton();
-
   const schemaEl = document.getElementById('context-schema');
-  if (schemaRes.tables && Object.keys(schemaRes.tables).length > 0) {
-    for (const [tbl, cols] of Object.entries(schemaRes.tables)) {
+
+  const renderMigrations = async () => {
+    const migRes = await fetch('/api/migrations').then(r => r.json()).catch(() => ({ migrations: [] }));
+    migEl.innerHTML = '';
+    for (const m of migRes.migrations || []) {
       const div = document.createElement('div');
       div.className = 'context-item';
-      div.innerHTML = '<code>' + tbl.replace(/</g,'&lt;') + '</code>' + (cols && cols.length ? ' (' + cols.slice(0,3).join(', ') + (cols.length > 3 ? '...' : '') + ')' : '');
-      div.onclick = () => {
-        const len = editorView.state.doc.length;
-        editorView.dispatch({ changes: { from: len, to: len, insert: tbl } });
-        editorView.focus();
+      div.innerHTML = '<code>' + (m.filename || '').replace(/</g,'&lt;') + '</code> <span class="badge-' + (m.status || 'pending') + '" style="font-size:0.7rem;margin-left:4px">' + (m.status || '') + '</span>';
+      div.onclick = async () => {
+        const r = await fetch('/api/migration/' + encodeURIComponent(m.filename || '')).then(x => x.json()).catch(() => ({}));
+        if (r.sql) {
+          const full = editorView.state.doc.toString();
+          editorView.dispatch({ changes: { from: 0, to: full.length, insert: r.sql } });
+          window.__currentMigrationFilename = m.filename || null;
+          window.__currentMigrationStatus = m.status || 'pending';
+          window.__updateSaveButton();
+        }
       };
-      schemaEl.appendChild(div);
+      migEl.appendChild(div);
     }
+  };
+
+  const renderSchema = () => {
+    schemaEl.innerHTML = '';
+    if (schemaRes.tables && Object.keys(schemaRes.tables).length > 0) {
+      for (const [tbl, cols] of Object.entries(schemaRes.tables)) {
+        const div = document.createElement('div');
+        div.className = 'context-item';
+        div.innerHTML = '<code>' + tbl.replace(/</g,'&lt;') + '</code>' + (cols && cols.length ? ' (' + cols.slice(0,3).join(', ') + (cols.length > 3 ? '...' : '') + ')' : '');
+        div.onclick = () => {
+          const len = editorView.state.doc.length;
+          editorView.dispatch({ changes: { from: len, to: len, insert: tbl } });
+          editorView.focus();
+        };
+        schemaEl.appendChild(div);
+      }
+    }
+  };
+
+  await renderMigrations();
+  window.__updateSaveButton();
+  renderSchema();
+
+  const refreshFromServer = async () => {
+    schemaRes = await fetch('/api/schema').then(r => r.json()).catch(() => schemaRes || {});
+    setSchemaStatus();
+    renderSchema();
+    await renderMigrations();
+  };
+
+  try {
+    const events = new EventSource('/api/events');
+    events.onmessage = () => { refreshFromServer().catch(() => {}); };
+  } catch {
+    // SSE not available; studio still works with manual actions.
   }
 
   document.querySelectorAll('.context-tab').forEach(tab => {

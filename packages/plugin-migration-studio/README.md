@@ -8,6 +8,7 @@ Migration authoring UI for supabase-tools. Create migrations in a browser-based 
 - **Live analysis** — Analyze SQL to see operations and risk indicators (uses shared `analyzeMigrationSql` from SDK)
 - **Save / Update migration** — Create new or overwrite pending migration; dry run before apply; wrap in transaction
 - **Apply migrations** — Runs `sbt migrate` (requires confirmation)
+- **Live refresh bridge** — SSE endpoint (`/api/events`) refreshes migration/status context when `sbt watch` updates artifacts
 
 ## Setup
 

@@ -67,6 +67,9 @@ function checksForCommand(command: string, args: string[]): Check[] {
     case "migrate":
       return [migrationsDir()];
 
+    case "watch":
+      return [migrationsDir()];
+
     case "snapshot":
       return [composeDb()];
 
