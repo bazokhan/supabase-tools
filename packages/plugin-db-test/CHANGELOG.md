@@ -1,5 +1,15 @@
 # @sbtools/plugin-db-test
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [4cc1277]
+- Updated dependencies [4cc1277]
+- Updated dependencies [4cc1277]
+- Updated dependencies [4cc1277]
+  - @sbtools/sdk@0.5.0
+
 ## 0.3.0
 
 ### Patch Changes
