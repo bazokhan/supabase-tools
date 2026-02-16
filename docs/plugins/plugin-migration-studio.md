@@ -40,7 +40,7 @@ npm install @sbtools/plugin-migration-studio
 sbt migration-studio
 ```
 
-Starts the studio at http://localhost:3335. Use `--port N` to change the port. If the port is in use, the server automatically kills the existing process and restarts. Use `--restart` to force-kill before starting.
+Starts the studio at `http://localhost:3335`. Use `--port N` to change the port. If the port is in use, the server automatically kills the existing process and restarts. Use `--restart` to force-kill before starting.
 
 ## API Endpoints (internal)
 

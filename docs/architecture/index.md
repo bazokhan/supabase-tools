@@ -15,7 +15,3 @@ Versioned artifacts are the contract layer for cross-plugin collaboration. New i
 - [Artifact Compatibility Policy](./artifact-compatibility-policy.md) — Semver behavior and contributor checklist
 - [Implicit File Contracts](./implicit-file-contracts.md) — Documented output paths and merge semantics (legacy; prefer artifacts)
 
-## Related plans
-
-- [Versioned Artifacts Adoption Plan](../../VERSIONED_ARTIFACTS_ADOPTION_PLAN.md) — Full rollout specification
-- [Migration Platform Implementation Plan](../../MIGRATION_PLATFORM_IMPLEMENTATION_PLAN.md) — Migration features and platform outcomes

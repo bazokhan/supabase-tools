@@ -130,7 +130,7 @@ Produces `migration.analysis` artifact. Detail pages at `{docsOutput}/migration-
 
 | Command | Description |
 |---------|-------------|
-| `migration-studio` | Start schema-aware migration authoring UI at http://localhost:3335 |
+| `migration-studio` | Start schema-aware migration authoring UI at `http://localhost:3335` |
 | `migration-studio --port N` | Use custom port |
 | `migration-studio --restart` | Kill existing process on port, then start (auto-retry on port conflict) |
 
