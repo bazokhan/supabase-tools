@@ -1,4 +1,4 @@
-# @sbtools/sdk
+# @sbtools/plugin-migration-studio
 
 ## 0.5.0
 
@@ -68,46 +68,37 @@
   - **Phase 4**: Migration templates (8 templates). `GET /api/templates`. Template bar above editor.
   - **Phase 5**: Context sidebar (migrations + schema tabs). `GET /api/migrations`, `GET /api/migration/:filename`. Save with description prompt. Two-panel layout.
 
-- 4cc1277: Versioned artifacts: foundational SDK, core, and migration-audit adoption
+- 4cc1277: # Migration Studio Real-Time Validation
 
-  **SDK**: Add artifact envelope types, validation helpers, read/write APIs (`writeArtifact`, `readArtifact`, `readArtifactOrNull`), and plugin contract extension (`ArtifactCapabilities`, `artifactsDir` in `PluginContext`). `writeArtifact` validates envelopes before writing.
+  Adds PostgreSQL syntax validation to protect users before save/apply.
 
-  **Core**: Ensure `.sbt/artifacts/` directory, inject `artifactsDir` into plugin context. Auto-add `.sbt/` to `.gitignore` on init. Change `projectRoot` resolution to walk up from `cwd` looking for `supabase-tools.config.json` (handles symlinked packages).
+  ## New
 
-  **plugin-migration-audit**: Produce `migration.analysis` artifact (v1.0.0) on every audit run via command hook (not `getAtlasData`/`getStatusLines` to avoid redundant writes); add `artifactCapabilities`; fix version drift (0.1.0 → 0.4.0 to match package.json).
+  - **POST /api/validate** — Runs SQL in BEGIN/ROLLBACK transaction. Returns `{ valid, error?, line?, dbConnected }`. Degrades gracefully when DB unreachable.
+  - **Save guard** — Validates before writing; blocks save on syntax error with line number.
+  - **Analysis panel** — Shows validation errors (red) and "Validation unavailable" (amber) when DB disconnected.
+  - **Inline lint** — @codemirror/lint integration; squiggly underline on invalid SQL with PostgreSQL error message.
+  - **Function template** — New "Create function returning text" template with correct `RETURNS text` and `RETURN '...'` inside `$$`.
 
-  **plugin-scaffold**: Add commented `artifactCapabilities` template in generated plugin index.
+  ## Dependencies
 
-  **Docs**: Add architecture section with artifact registry, contract guide, and compatibility policy.
+  - Added `@codemirror/lint` for diagnostics.
 
 ### Patch Changes
+
+- 4cc1277: # Migration Studio: save-overwrite, dry run, wrap in transaction
+
+  - **Update pending migration** — When a pending migration is loaded from the sidebar, Save becomes "Update migration" and overwrites that file instead of always creating a new one. "Save as new" creates a new file when editing an existing migration.
+  - **Dry run** — Validates SQL using the same formatting as `sbt migrate` (transaction wrap, semicolon handling), so dry run accurately predicts apply success.
+  - **Wrap in transaction** — Button wraps selected (or full) SQL in `BEGIN;` and `COMMIT;`.
 
 - 4cc1277: # Security: address CodeQL / github-advanced-security findings
 
   - **plugin-migration-studio**: Validate handler is a function before invoking (CodeQL: unvalidated dynamic method call).
   - **sdk**: Replace ReDoS-vulnerable block comment regex in sql-analyzer with linear-time pattern (CodeQL: polynomial regular expression on uncontrolled data).
 
-## 0.3.0
-
-### Minor Changes
-
-- a6008c6: - SDK: Add `sanitizeContainerPrefix`, `deriveContainerPrefix`, `extractSupabaseKeys`, `sanitizeSlug`, `sanitizeIdentifier`; add compose/container/fs-utils tests
-  - Core: Remove `docs` command from core (now provided by plugin-docs-server); `stop` no longer stops docs compose stack; use SDK container/compose utilities
-  - plugin-docs-server: Add `docs` command with subcommands (swagger, redoc, atlas, schemaspy, all, stop); per-subcommand preflight
-  - Plugins: Use shared SDK utilities; improved error handling (SbtError with tips); remove redundant root index.ts
-  - Docs: Fix extractSupabaseKeys typo; clarify start/stop/restart operate on main stack; document plugin-docs-server requirement for docs commands
-
-## 0.2.0
-
-### Minor Changes
-
-- e05782b: Decouple plugin-specific config from core; add `ctx.paths` for shared infrastructure
-
-  **Breaking (0.1.0):**
-
-  - `ctx.functionsPath` and `ctx.docsOutput` removed from `PluginContext` — use `ctx.paths.functions` and `ctx.paths.docsOutput`
-  - `erdOutput`, `typesOutput` removed from root config `paths` — configure in `plugins[].config`
-  - `paths.tests` removed from root config — configure `testsDir` in plugin-db-test's `plugins[].config`
-  - `erd` section removed from root config — configure `displayColumns` in plugin-erd's `plugins[].config`
-
-  Core now only owns shared infrastructure paths (migrations, snapshot, docsOutput, functions). Plugins own their specific config via `pluginConfig`. Community plugins can manage their own settings without modifying core.
+- Updated dependencies [4cc1277]
+- Updated dependencies [4cc1277]
+- Updated dependencies [4cc1277]
+- Updated dependencies [4cc1277]
+  - @sbtools/sdk@0.5.0
