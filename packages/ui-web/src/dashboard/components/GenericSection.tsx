@@ -19,7 +19,7 @@ import { StatCard } from "./StatCard";
 import { Badge } from "./Badge";
 import { DataTable } from "./DataTable";
 import { CardGrid, ExpandableCard } from "./CardGrid";
-import { CodeBlock } from "./CodeBlock";
+import { ValueRenderer } from "./ValueRenderer";
 
 interface GenericSectionProps {
   section: DashboardSectionDef;
@@ -102,16 +102,19 @@ export function GenericSection({ section, data }: GenericSectionProps) {
             return (
               <ExpandableCard key={i} title={title} subtitle={subtitle} badges={badges}>
                 <div className="detail-grid">
-                  {section.card!.details?.map((d, k) => (
-                    <div key={k} className="detail-item">
-                      <h4>{d.label}</h4>
-                      {d.format === "code" ? (
-                        <CodeBlock>{formatFieldValue(resolve(item, d.field), d.format)}</CodeBlock>
-                      ) : (
-                        <code>{formatFieldValue(resolve(item, d.field), d.format)}</code>
-                      )}
-                    </div>
-                  ))}
+                  {section.card!.details?.map((d, k) => {
+                    const val = resolve(item, d.field);
+                    return (
+                      <div key={k} className="detail-item">
+                        <h4>{d.label}</h4>
+                        <ValueRenderer
+                          value={val}
+                          field={d.field}
+                          format={d.format === "code" ? "code" : "auto"}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </ExpandableCard>
             );

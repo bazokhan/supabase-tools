@@ -1,10 +1,13 @@
 import React from "react";
 import { IconExternal, IconFile } from "../components/Icons";
-import { formatValue, getPrimaryKey, prettyLabel, toRows, type CategoryMap } from "../lib/model";
+import { ValueRenderer } from "../components/ValueRenderer";
+import { findDetailTarget, getPrimaryKey, prettyLabel, type CategoryMap } from "../lib/model";
+import type { DashboardSectionDef } from "@sbtools/sdk";
 
 interface DetailsPageProps {
   categories: CategoryMap;
   search: URLSearchParams;
+  sections?: DashboardSectionDef[];
 }
 
 interface FileTarget {
@@ -105,17 +108,10 @@ function isWideField(field: string, value: unknown): boolean {
   return false;
 }
 
-export function DetailsPage({ categories, search }: DetailsPageProps) {
+export function DetailsPage({ categories, search, sections = [] }: DetailsPageProps) {
   const section = search.get("section") ?? "";
   const key = search.get("key") ?? "";
-  const rows = toRows(categories[section] ?? []);
-
-  const target = rows.find((row) => {
-    if (section === "dependency_graph") {
-      return String(row.source_id ?? "") === key || String(row.target_id ?? "") === key;
-    }
-    return getPrimaryKey(row) === key || String(row.name ?? "") === key || String(row.filename ?? "") === key;
-  });
+  const target = findDetailTarget(categories, section, key, sections);
 
   if (!target) {
     return (
@@ -126,13 +122,56 @@ export function DetailsPage({ categories, search }: DetailsPageProps) {
     );
   }
 
-  const fileTargets = getFileTargets(section, target);
+  if (target.type === "node") {
+    const { node, edges } = target;
+    const fileTargets = getFileTargets(section, { id: node.id });
+
+    return (
+      <div className="content-stack">
+        <section className="panel panel-accent">
+          <h2>Graph Node Detail</h2>
+          <p>{node.label}</p>
+          <p className="empty-state">{node.type} · {node.id}</p>
+          <div className="header-actions" style={{ marginTop: 10 }}>
+            {fileTargets.map((fileTarget) => (
+              <a key={fileTarget.label} className="header-action-link" href={fileTarget.href} target="_blank" rel="noreferrer">
+                <IconFile size={13} />
+                <span>{fileTarget.label}</span>
+                <IconExternal size={12} />
+              </a>
+            ))}
+            <a className="header-action-link" href="/api/fs/list?scope=snapshot" target="_blank" rel="noreferrer">
+              <IconFile size={13} />
+              <span>Browse Snapshot Tree</span>
+              <IconExternal size={12} />
+            </a>
+          </div>
+        </section>
+
+        <section className="panel">
+          <h3>Connected Edges ({edges.length})</h3>
+          <ul className="edge-list">
+            {edges.map((edge) => (
+              <li key={`${edge.source}-${edge.target}-${edge.label}`}>
+                <code>{edge.source}</code>
+                <span>{edge.label}</span>
+                <code>{edge.target}</code>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    );
+  }
+
+  const { row: targetRow } = target;
+  const fileTargets = getFileTargets(section, targetRow);
 
   return (
     <div className="content-stack">
       <section className="panel panel-accent">
         <h2>{prettyLabel(section)} Detail</h2>
-        <p>{getPrimaryKey(target)}</p>
+        <p>{getPrimaryKey(targetRow)}</p>
         <div className="header-actions" style={{ marginTop: 10 }}>
           {fileTargets.map((fileTarget) => (
             <a key={fileTarget.label} className="header-action-link" href={fileTarget.href} target="_blank" rel="noreferrer">
@@ -151,14 +190,12 @@ export function DetailsPage({ categories, search }: DetailsPageProps) {
 
       <section className="panel">
         <div className="detail-grid">
-          {Object.entries(target).map(([field, value]) => (
+          {Object.entries(targetRow).map(([field, value]) => (
             <article key={field} className={`detail-card ${isWideField(field, value) ? "wide" : ""}`}>
               <h4>{prettyLabel(field)}</h4>
-              {field.includes("sql") || field === "query" ? (
-                <pre><code>{formatValue(value)}</code></pre>
-              ) : (
-                <p>{formatValue(value)}</p>
-              )}
+              <div className="detail-value">
+                <ValueRenderer value={value} field={field} format="auto" />
+              </div>
             </article>
           ))}
         </div>

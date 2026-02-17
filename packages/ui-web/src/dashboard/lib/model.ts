@@ -1,4 +1,5 @@
 import type { DashboardSectionDef } from "@sbtools/sdk";
+import { resolve } from "./field-resolver";
 
 export type AtlasRow = Record<string, unknown>;
 export type CategoryMap = Record<string, unknown[]>;
@@ -149,7 +150,11 @@ export function formatValue(value: unknown): string {
   return String(value);
 }
 
-export function getPrimaryKey(item: AtlasRow): string {
+export function getPrimaryKey(item: AtlasRow, primaryKeyField?: string): string {
+  if (primaryKeyField) {
+    const v = resolve<unknown>(item, primaryKeyField);
+    if (v != null) return String(v);
+  }
   const candidates = ["id", "name", "filename", "component", "service", "source_id", "target_id", "signature", "query"];
   for (const key of candidates) {
     if (item[key] != null) return String(item[key]);
@@ -157,12 +162,36 @@ export function getPrimaryKey(item: AtlasRow): string {
   return JSON.stringify(item).slice(0, 64);
 }
 
-export function buildSearchIndex(categories: CategoryMap): SearchHit[] {
+export function getSectionPrimaryKeyField(sections: DashboardSectionDef[], dataKey: string): string | undefined {
+  return sections.find((s) => s.dataKey === dataKey)?.primaryKeyField;
+}
+
+export function buildSearchIndex(
+  categories: CategoryMap,
+  sections: DashboardSectionDef[] = []
+): SearchHit[] {
   const hits: SearchHit[] = [];
+
   for (const [section, value] of Object.entries(categories)) {
+    const primaryKeyField = getSectionPrimaryKeyField(sections, section);
+
+    if (section === "dependency_graph") {
+      const { nodes } = buildGraphModel(value ?? []);
+      for (const node of nodes) {
+        hits.push({
+          id: `${section}:${node.id}`,
+          title: node.label,
+          subtitle: node.type,
+          section,
+          keyField: node.id,
+        });
+      }
+      continue;
+    }
+
     for (const row of toRows(value)) {
       if (section === "migration_audit" && typeof row.total === "number") continue;
-      const keyField = getPrimaryKey(row);
+      const keyField = getPrimaryKey(row, primaryKeyField);
       const title =
         String(row.name ?? row.filename ?? row.component ?? row.service ?? row.source_label ?? row.query ?? keyField);
       const subtitle =
@@ -173,6 +202,37 @@ export function buildSearchIndex(categories: CategoryMap): SearchHit[] {
     }
   }
   return hits;
+}
+
+export type DetailTarget =
+  | { type: "row"; row: AtlasRow }
+  | { type: "node"; node: GraphNode; edges: GraphEdge[] };
+
+export function findDetailTarget(
+  categories: CategoryMap,
+  section: string,
+  key: string,
+  sections: DashboardSectionDef[] = []
+): DetailTarget | null {
+  const primaryKeyField = getSectionPrimaryKeyField(sections, section);
+
+  if (section === "dependency_graph") {
+    const { nodes, edges } = buildGraphModel(categories.dependency_graph ?? []);
+    const node = nodes.find((n) => n.id === key);
+    if (!node) return null;
+    const connectedEdges = edges.filter((e) => e.source === key || e.target === key);
+    return { type: "node", node, edges: connectedEdges };
+  }
+
+  const rows = toRows(categories[section] ?? []);
+  const row = rows.find((r) => {
+    if (getPrimaryKey(r, primaryKeyField) === key) return true;
+    if (String(r.name ?? "") === key) return true;
+    if (String(r.filename ?? "") === key) return true;
+    return false;
+  });
+  if (!row) return null;
+  return { type: "row", row };
 }
 
 export function readStudioUrl(): string {

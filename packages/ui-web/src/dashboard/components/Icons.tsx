@@ -124,3 +124,37 @@ export function IconSun(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function IconInfo(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </BaseIcon>
+  );
+}
+
+export function IconAlert(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4M12 17h.01" />
+    </BaseIcon>
+  );
+}
+
+export function IconCheck(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M20 6 9 17l-5-5" />
+    </BaseIcon>
+  );
+}
+
+export function IconX(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </BaseIcon>
+  );
+}

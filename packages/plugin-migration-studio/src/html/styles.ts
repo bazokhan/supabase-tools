@@ -1,33 +1,16 @@
 /**
- * CSS for Migration Studio. Dark elegant theme aligned with dashboard.
+ * CSS for Migration Studio. Uses shared dark tokens from ui-web.
  */
+import { SHARED_TOKENS_DARK } from "@sbtools/ui-web";
+
 export function getStyles(): string {
-  return `
-  :root {
-    --bg: #050607;
-    --bg-soft: #0b0d10;
-    --surface: #121519;
-    --surface-alt: #191e25;
-    --border: rgba(169, 183, 214, 0.2);
-    --text: #edf2fa;
-    --text-muted: #99a7bf;
-    --accent: #7fa9ff;
-    --accent-strong: #5a8dff;
-    --good: #56d5a8;
-    --warn: #f2bf69;
-    --bad: #ff8b99;
-    --shadow: 0 24px 48px rgba(0, 0, 0, 0.48);
-    --radius: 12px;
-  }
+  return SHARED_TOKENS_DARK + `
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: "Sora", "Avenir Next", "Segoe UI", sans-serif;
-    background:
-      radial-gradient(circle at 10% 5%, rgba(89, 129, 217, 0.2), transparent 30%),
-      radial-gradient(circle at 90% 10%, rgba(97, 193, 170, 0.12), transparent 24%),
-      linear-gradient(165deg, var(--bg) 0%, var(--bg-soft) 100%);
+    font-family: var(--font-sans);
+    background: var(--bg);
     color: var(--text);
     padding: 20px;
     line-height: 1.45;
@@ -42,47 +25,49 @@ export function getStyles(): string {
     flex-wrap: wrap;
     margin-bottom: 14px;
     padding: 12px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-subtle);
     border-radius: var(--radius);
-    background: rgba(18, 21, 25, 0.8);
-    box-shadow: var(--shadow);
+    background: var(--surface);
   }
 
   button {
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: 8px;
     font-weight: 500;
     cursor: pointer;
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    transition: background .15s ease, border-color .15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
 
   button:hover {
-    background: var(--surface-alt);
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: var(--surface-soft);
+    border-color: var(--border);
   }
 
   button.primary {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+    background: var(--accent);
     border-color: transparent;
-    color: #f9fbff;
+    color: #fff;
+  }
+
+  button.primary:hover {
+    background: #6366f1;
   }
 
   button.danger {
-    background: color-mix(in srgb, var(--bad) 20%, var(--surface));
-    border-color: color-mix(in srgb, var(--bad) 38%, var(--border));
-    color: #ffd7de;
+    background: color-mix(in srgb, var(--danger) 20%, var(--surface));
+    border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+    color: #fca5a5;
   }
 
   .panel {
-    background: rgba(18, 21, 25, 0.82);
-    border: 1px solid var(--border);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
     border-radius: var(--radius);
     padding: 14px;
     margin-bottom: 12px;
-    box-shadow: var(--shadow);
   }
 
   .panel h3 { font-size: 0.86rem; color: var(--text-muted); margin-bottom: 10px; }
@@ -94,42 +79,42 @@ export function getStyles(): string {
     border-radius: 999px;
     font-size: 0.72rem;
     margin: 2px 4px 2px 0;
-    border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    border: 1px solid var(--border-subtle);
+    background: var(--accent-muted);
   }
 
   .chip.destructive,
-  .chip.drop { background: color-mix(in srgb, var(--bad) 18%, var(--surface)); }
+  .chip.drop { background: color-mix(in srgb, var(--danger) 18%, var(--surface)); }
   .chip.safe,
-  .chip.create { background: color-mix(in srgb, var(--good) 16%, var(--surface)); }
-  .chip.alter { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+  .chip.create { background: color-mix(in srgb, var(--success) 16%, var(--surface)); }
+  .chip.alter { background: var(--accent-muted); }
 
   .msg {
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: 8px;
     margin-bottom: 10px;
     border: 1px solid var(--border);
   }
 
-  .msg.success { border-color: color-mix(in srgb, var(--good) 44%, var(--border)); background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
-  .msg.error { border-color: color-mix(in srgb, var(--bad) 44%, var(--border)); background: color-mix(in srgb, var(--bad) 14%, var(--surface)); }
-  .validation-error { color: var(--bad); margin-bottom: 8px; font-size: 0.84rem; }
-  .validation-warn { color: var(--warn); margin-bottom: 8px; font-size: 0.84rem; }
+  .msg.success { border-color: color-mix(in srgb, var(--success) 44%, transparent); background: color-mix(in srgb, var(--success) 14%, var(--surface)); }
+  .msg.error { border-color: color-mix(in srgb, var(--danger) 44%, transparent); background: color-mix(in srgb, var(--danger) 14%, var(--surface)); }
+  .validation-error { color: var(--danger); margin-bottom: 8px; font-size: 0.84rem; }
+  .validation-warn { color: var(--warning); margin-bottom: 8px; font-size: 0.84rem; }
 
-  code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.82rem; }
+  code { font-family: var(--font-mono); font-size: 0.82rem; }
 
   #editor-wrap {
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
     overflow: hidden;
     min-height: 320px;
-    background: #0f1319;
+    background: var(--bg-strong);
   }
 
   .cm-editor { height: 100%; }
-  .cm-scroller { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.86rem; }
+  .cm-scroller { font-family: var(--font-mono); font-size: 0.86rem; }
   .cm-content { min-height: 300px; padding: 12px; }
-  .cm-gutters { background: #090d13; border-right: 1px solid var(--border); }
+  .cm-gutters { background: #09090b; border-right: 1px solid var(--border-subtle); }
 
   .schema-status { font-size: 0.76rem; color: var(--text-muted); margin-left: auto; align-self: center; }
 
@@ -150,7 +135,7 @@ export function getStyles(): string {
     color: var(--text-muted);
   }
 
-  .template-chip:hover { background: var(--surface-alt); color: var(--text); }
+  .template-chip:hover { background: var(--surface-soft); color: var(--text); }
 
   .main-layout { display: flex; gap: 14px; margin-top: 12px; }
   .editor-column { flex: 1; min-width: 0; }
@@ -169,9 +154,9 @@ export function getStyles(): string {
   }
 
   .context-tab.active {
-    background: color-mix(in srgb, var(--accent) 18%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-    color: #eaf1ff;
+    background: var(--accent-muted);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    color: var(--accent);
   }
 
   .context-list { max-height: 360px; overflow-y: auto; }
@@ -186,14 +171,14 @@ export function getStyles(): string {
   }
 
   .context-item:hover {
-    background: var(--surface-alt);
-    border-color: var(--border);
+    background: var(--surface-soft);
+    border-color: var(--border-subtle);
   }
 
   .context-item code { font-size: 0.74rem; }
-  .badge-applied { color: var(--good); }
-  .badge-pending { color: var(--warn); }
-  .badge-missing { color: var(--bad); }
+  .badge-applied { color: var(--success); }
+  .badge-pending { color: var(--warning); }
+  .badge-missing { color: var(--danger); }
 
   .cm-tooltip-schema-hover .cm-schema-tooltip {
     background: var(--surface);

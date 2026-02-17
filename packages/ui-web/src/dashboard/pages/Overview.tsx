@@ -1,6 +1,6 @@
 import React from "react";
 import { AppDataTable } from "../components/AppDataTable";
-import { getPrimaryKey, prettyLabel, toRows } from "../lib/model";
+import { getPrimaryKey, getSectionPrimaryKeyField, prettyLabel, toRows } from "../lib/model";
 import type { PageProps } from "./page-types";
 
 const CORE_TABS = [
@@ -14,7 +14,7 @@ const CORE_TABS = [
   "edge_functions",
 ] as const;
 
-export function OverviewPage({ categories, onOpenDetail }: PageProps) {
+export function OverviewPage({ categories, sections = [], onOpenDetail }: PageProps) {
   const [activeTab, setActiveTab] = React.useState<string>(CORE_TABS[0]);
   const [query, setQuery] = React.useState("");
 
@@ -95,7 +95,13 @@ export function OverviewPage({ categories, onOpenDetail }: PageProps) {
             ))}
         </div>
 
-        <AppDataTable rows={rows} columns={columns} onRowClick={(row) => onOpenDetail(activeTab, getPrimaryKey(row))} />
+        <AppDataTable
+          rows={rows}
+          columns={columns}
+          onRowClick={(row) =>
+            onOpenDetail(activeTab, getPrimaryKey(row, getSectionPrimaryKeyField(sections, activeTab)))
+          }
+        />
       </section>
     </div>
   );

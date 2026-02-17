@@ -12,6 +12,7 @@ import {
   IconSearch,
   IconSun,
 } from "./components/Icons";
+import { Tooltip } from "./components/Tooltip";
 import { useAtlasData } from "./hooks/useAtlasData";
 import { useDashboardConfig } from "./hooks/useDashboardConfig";
 import {
@@ -102,7 +103,7 @@ export function App() {
   const availability = inferPluginAvailability(categories, dashboard.sections);
   const navItems = getNavItems(availability);
 
-  const globalSearch = buildSearchIndex(categories);
+  const globalSearch = buildSearchIndex(categories, dashboard.sections);
   const globalMatches = searchQuery.trim()
     ? globalSearch
         .filter((hit) => `${hit.title} ${hit.subtitle} ${hit.section}`.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -150,10 +151,12 @@ export function App() {
           ))}
         </nav>
 
-        <button type="button" className="theme-toggle" onClick={() => setDark((value) => !value)}>
-          {dark ? <IconSun size={14} /> : <IconMoon size={14} />}
-          <span>{dark ? "Light" : "Dark"}</span>
-        </button>
+        <Tooltip content={dark ? "Switch to light mode" : "Switch to dark mode"} className="tooltip-theme">
+          <button type="button" className="theme-toggle" onClick={() => setDark((value) => !value)}>
+            {dark ? <IconSun size={14} /> : <IconMoon size={14} />}
+            <span>{dark ? "Light" : "Dark"}</span>
+          </button>
+        </Tooltip>
       </aside>
 
       <main className="main-area">
@@ -216,7 +219,9 @@ export function App() {
           </section>
         ) : null}
 
-        {!atlas.error && route === "overview" ? <OverviewPage categories={categories} onOpenDetail={openDetail} /> : null}
+        {!atlas.error && route === "overview" ? (
+          <OverviewPage categories={categories} sections={dashboard.sections} onOpenDetail={openDetail} />
+        ) : null}
         {!atlas.error && route === "migrations" ? (
           <MigrationsPage categories={categories} onOpenDetail={openDetail} enabled={availability.migrations} />
         ) : null}
@@ -227,7 +232,9 @@ export function App() {
         {!atlas.error && route === "frontend" ? (
           <FrontendPage categories={categories} onOpenDetail={openDetail} enabled={availability.frontend} />
         ) : null}
-        {!atlas.error && route === "details" ? <DetailsPage categories={categories} search={searchParams} /> : null}
+        {!atlas.error && route === "details" ? (
+          <DetailsPage categories={categories} search={searchParams} sections={dashboard.sections} />
+        ) : null}
       </main>
     </div>
   );

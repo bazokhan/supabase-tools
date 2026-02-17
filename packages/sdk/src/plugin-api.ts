@@ -194,6 +194,11 @@ export interface DashboardSectionDef {
   /** Key in atlas-data categories. */
   dataKey: string;
   /**
+   * Optional dot-path for the primary key (e.g. "id", "schema.name").
+   * Used for detail lookup and search index. Falls back to heuristics when unset.
+   */
+  primaryKeyField?: string;
+  /**
    * Optional dot-path to extract items from the category value.
    * e.g. "0.edges" when category is [{ edges: [...] }].
    */
