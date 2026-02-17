@@ -14,6 +14,21 @@ interface MigrationPageProps extends PageProps {
   enabled: boolean;
 }
 
+function getSafeStudioUrl(rawUrl: string): string {
+  const fallback = DEFAULT_STUDIO_URL;
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return fallback;
+  try {
+    const url = new URL(trimmed, window.location.origin);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return url.toString();
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function MigrationsPage({ categories, onOpenDetail, enabled }: MigrationPageProps) {
   if (!enabled) {
     return (
@@ -62,7 +77,7 @@ function MigrationsEnabled({ categories, onOpenDetail }: PageProps) {
             <button type="button" className="btn" onClick={() => setEmbedStudio((value) => !value)}>
               {embedStudio ? "Hide Embedded Studio" : "Open Embedded Studio"}
             </button>
-            <a className="btn btn-primary" href={studioUrl.trim() || DEFAULT_STUDIO_URL} target="_blank" rel="noreferrer">
+            <a className="btn btn-primary" href={getSafeStudioUrl(studioUrl)} target="_blank" rel="noreferrer">
               Open Migration Studio
             </a>
           </div>
@@ -87,13 +102,13 @@ function MigrationsEnabled({ categories, onOpenDetail }: PageProps) {
               <h2>Embedded Migration Studio</h2>
               <p>Studio is embedded for a single unified workflow. Use pop-out if auth/cookies block iframe loading.</p>
             </div>
-            <a className="btn" href={studioUrl.trim() || DEFAULT_STUDIO_URL} target="_blank" rel="noreferrer">
+            <a className="btn" href={getSafeStudioUrl(studioUrl)} target="_blank" rel="noreferrer">
               Pop Out
             </a>
           </div>
           <iframe
             title="Migration Studio"
-            src={studioUrl.trim() || DEFAULT_STUDIO_URL}
+            src={getSafeStudioUrl(studioUrl)}
             className="studio-embed-frame"
           />
         </section>
