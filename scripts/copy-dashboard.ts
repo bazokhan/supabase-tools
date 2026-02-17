@@ -7,8 +7,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(import.meta.dirname, "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "packages", "ui-web", "dist", "dashboard");
 const DEST = path.join(ROOT, "packages", "core", "dist", "dashboard");
 

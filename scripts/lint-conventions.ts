@@ -10,6 +10,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ interface Warning {
 
 // ── File discovery ───────────────────────────────────────────────────────────
 
-const ROOT = path.resolve(import.meta.dirname, "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGES_DIR = path.join(ROOT, "packages");
 
 function walk(dir: string, ext: string): string[] {
