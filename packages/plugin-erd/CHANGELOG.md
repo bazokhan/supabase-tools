@@ -1,5 +1,18 @@
 # @sbtools/plugin-erd
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+  - @sbtools/sdk@0.6.0
+
 ## 0.5.0
 
 ### Patch Changes

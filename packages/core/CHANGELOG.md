@@ -1,5 +1,177 @@
 # @sbtools/core
 
+## 0.6.0
+
+### Minor Changes
+
+- 4b39da0: Refresh dashboard UX and Studio integration with live operations workflows.
+
+  **@sbtools/ui-web**
+
+  - Redesign dashboard shell with improved dark theme, icon-driven navigation, richer search UI, and clearer detail actions.
+  - Add embedded Migration Studio mode directly inside Migrations page.
+  - Add live logs tab in dashboard (service filters, stream status, inline search).
+  - Improve large dependency graph performance with focused neighborhood rendering and pagination/chunking behavior.
+  - Improve details layout for wide content and add quick-open links to related files/snapshots.
+
+  **@sbtools/core**
+
+  - Extend `sbt dashboard` server with live log stream APIs:
+    - `GET /api/logs/stream`
+    - `GET /api/logs/services`
+  - Add safe file browser/open APIs for project artifacts and snapshots:
+    - `GET /api/fs/list`
+    - `GET /api/fs/file`
+  - Keep SPA dashboard endpoints and static serving behavior intact.
+
+  **@sbtools/plugin-migration-studio**
+
+  - Refresh Studio styling to match the modern dark visual language used by dashboard.
+  - Improve Studio surface styling (panels, controls, chips, context tabs, editor shell) for better readability and consistency.
+
+- 4b39da0: # Phase 5: Merge plugin-docs-server and plugin-atlas-html into core
+
+  **Breaking**: Remove `@sbtools/plugin-docs-server` and `@sbtools/plugin-atlas-html` from your `supabase-tools.config.json` plugins array. The `docs` and `atlas-html` commands are now built into `@sbtools/core`.
+
+  ## Core changes
+
+  - **docs command**: Moved from plugin-docs-server into core. Starts Swagger UI, ReDoc, Backend Atlas, and SchemaSpy via Docker Compose. No plugin required.
+  - **atlas-html command**: Moved from plugin-atlas-html into core. Generates Backend Atlas HTML from `backend-atlas-data.json`. No plugin required.
+  - **buildCoreContext()**: Core commands that need plugin access (e.g. docs for OpenAPI merge, atlas-html for UI contributions) receive a context with `siblingPlugins`.
+  - **Command registry**: `run` now accepts optional second parameter `ctx` for commands that need plugin integration.
+
+  ## Migration
+
+  1. Remove from `supabase-tools.config.json` plugins:
+     - `{ "path": "@sbtools/plugin-docs-server" }`
+     - `{ "path": "@sbtools/plugin-atlas-html" }`
+  2. Uninstall (optional): `npm uninstall @sbtools/plugin-docs-server @sbtools/plugin-atlas-html`
+  3. Commands `sbt docs` and `sbt atlas-html` continue to work identically.
+
+  Package count: 14 → 12 (sdk + core + 10 plugins).
+
+- 4b39da0: Centralize browser UI rendering through the new shared `@sbtools/ui-web` package and migrate plugin/core HTML generators away from large page-local template strings.
+
+  ### Added
+
+  - New shared package: `@sbtools/ui-web` with reusable document primitives and renderer modules.
+  - New typed Atlas hook in SDK: `getAtlasView()` + `PluginAtlasView`.
+
+  ### Changed
+
+  - `atlas-html` in core now supports typed `getAtlasView()` contributions (preferred) while keeping `getAtlasUI()` compatibility.
+  - In-repo Atlas-producing plugins now use `getAtlasView()`.
+  - `plugin-scaffold --hooks` now scaffolds `getAtlasView()` stub.
+  - `frontend-usage`, `migration-audit` (including detail pages), `depgraph`, `logs` viewer page, and `migration-studio` page now render via shared `@sbtools/ui-web`.
+
+  ### Fixed
+
+  - `migration-studio` import-map ordering issue that caused bare module specifier resolution failures in browser (`@codemirror/state` not remapped).
+
+  ### Docs
+
+  - Updated VitePress docs and skill files for `getAtlasView()` guidance and new `@sbtools/ui-web` architecture.
+  - Updated architecture dependency docs to include `@sbtools/ui-web` and current package count.
+
+- 4b39da0: Remove legacy Atlas UI code (Phase 5 of ui-modernization-plan.md).
+
+  **Breaking**
+
+  - **SDK**: Remove `getAtlasView`, `PluginAtlasView`, `buildAtlasUI`, `AtlasSectionDef`, `AtlasCardDef`, `AtlasBadgeDef`, `AtlasDetailDef`, `AtlasSummaryDef`
+  - **Core**: Remove `sbt atlas-html` command and entire `src/atlas/` directory (12 files). Remove `atlas` subcommand from `sbt docs`.
+  - **Plugins**: Remove `getAtlasView`, `atlas.ts`, and `atlas/styles.ts` from depgraph, frontend-usage, logs, migration-audit, deno-functions.
+
+  **Replacement**
+
+  Use `sbt dashboard` instead of `sbt atlas-html`. Plugins contribute via `getDashboardView()` (JSON-serializable config). The dashboard aggregates `backend-atlas-data.json` and displays all plugin sections.
+
+- 4b39da0: Implement UI Dashboard overhaul per ui-modernization-plan.md.
+
+  **SDK**
+
+  - Add `getDashboardView()` hook and `DashboardView`, `DashboardSectionDef`, `DashboardStatDef`, `DashboardCardDef`, `DashboardTableDef`, and related types (JSON-serializable, zero JS strings)
+  - Add `itemsPath` and `itemsStartIndex` to `DashboardSectionDef` for nested/sliced item arrays
+  - Remove `getAtlasUI` and `PluginAtlasUI` (breaking for external plugins using legacy hook)
+
+  **Core**
+
+  - Add `sbt dashboard` command: serves Vite-built React SPA and APIs (`/api/atlas-data`, `/api/dashboard-config`, `/api/services`, `/api/events`)
+  - Add built-in dashboard section defs for functions, policies, triggers, views, types, enums
+  - Remove `getAtlasUI` fallback from `atlas-html` command
+
+  **ui-web**
+
+  - Add design token CSS with light/dark mode (`src/styles/tokens.css`)
+  - Add Vite-built React dashboard SPA (`src/dashboard/`): App shell with sidebar and dark mode toggle, pages (Overview, Migrations, Depgraph, Logs, FrontendUsage), shared components (StatCard, Badge, DataTable, CardGrid, SearchInput, CodeBlock, GenericSection), field resolver, data hooks
+  - Update `document.tsx` to use design token variables and Inter font
+
+  **Plugins**
+
+  - Add `getDashboardView()` to depgraph, frontend-usage, logs, migration-audit, deno-functions
+
+- 4b39da0: Add phase-1 real-time refresh for migration workflows.
+
+  **core**:
+
+  - Add `sbt watch` command to orchestrate migration refresh in near real time.
+  - Watch migration files and listen to PostgreSQL `LISTEN/NOTIFY` events (`sbt_watch_events`).
+  - Auto-install DB helper hooks for notifications (with graceful fallback for limited privileges).
+  - Add debounced single-flight scheduling for refresh runs.
+  - Write watch event stamp at `.sbt/watch/last-event.json`.
+  - Fix watch self-loop by ignoring artifact file writes as watch triggers.
+
+  **plugin-migration-studio**:
+
+  - Add SSE endpoint (`GET /api/events`) for live refresh notifications.
+  - Invalidate schema/migration caches on watch/artifact/file change bridge events.
+  - Refresh schema/migration context in UI without full page reload.
+
+### Patch Changes
+
+- 4b39da0: **Documentation:** Update VitePress docs to reflect refactoring changes — add `buildAtlasUI()`, `SchemaFilter`, `loadPackageVersion()`, and `withHelp()` to SDK docs; update writing-plugins guide with recommended `buildAtlasUI()` pattern; correct package count and note merged packages in architecture docs.
+
+  **Plugin loader:** Add graceful handling for `@sbtools/plugin-atlas-html` and `@sbtools/plugin-docs-server` — these packages were merged into core as of v0.3.0. The loader now detects them in config and prints a helpful warning instead of crashing.
+
+  **Convention linter:** Add `scripts/lint-conventions.ts` with 10 rules enforcing project conventions (use `ui.*` instead of `console.log`, use `SbtError` subclasses, wrap commands with `withHelp()`, use `buildAtlasUI()`, parameterized schema filters, avoid separator comment banners, etc.). Run via `npm run lint:conventions` — emits advisory warnings only, does not fail builds.
+
+- 4b39da0: # Phase 2: SDK consolidation (refactoring plan)
+
+  ## SDK
+
+  - **2A** `loadPackageVersion(import.meta.url)` — applied to plugin-migration-audit (removes createRequire boilerplate).
+  - **2E** `createArtifactWriter()` — factory for artifact envelope construction; reduces boilerplate in plugins.
+  - **2F** `snapshotFileHeader()` — shared template for snapshot file headers; all 7 core generators use it.
+  - Exports `CreateArtifactWriterOpts`, `WriteArtifactOpts`.
+
+  ## Core
+
+  - All generators (functions, enums, types, triggers, views, policies) use `snapshotFileHeader` from SDK instead of inline header strings.
+
+  ## Plugins
+
+  - **plugin-depgraph**: Import `AtlasData`, `FunctionItem`, `TriggerItem`, `PolicyItem`, `ViewItem`, `EnumItem`, `TypeItem` from SDK instead of re-declaring.
+  - **plugin-migration-audit**: Use `MigrationFileInfo` and `MigrationSqlAnalysis` from SDK; use `createPgClient`, `testConnection`, `disconnectClient` from SDK directly; remove pass-through wrappers from db-client.
+
+- 4b39da0: Refactoring plan implementation: small gaps (withHelp, console.log), C5 (schema filter parameterized queries), 4G (Atlas UI builder).
+
+  - **withHelp()** applied to plugin-db-test, plugin-typegen; core watch command
+  - **ui.info** replaces console.log in plugin-logs viewer
+  - **C5** — getSchemaFilter returns `{ clause, params }`; extractors use parameterized queries
+  - **4G** — sdk/atlas-ui.ts builder; plugin-logs, deno-functions, depgraph, migration-audit, frontend-usage migrated; scaffold uses buildAtlasUI([])
+  - Fixes D6 (DRY triad), C8 (escapeHtml implicit global)
+
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+  - @sbtools/ui-web@0.6.0
+  - @sbtools/sdk@0.6.0
+
 ## 0.5.0
 
 ### Minor Changes
