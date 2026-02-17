@@ -1,63 +1,102 @@
 import React from "react";
-import { useAtlasData } from "../hooks/useAtlasData";
-import { useDashboardConfig } from "../hooks/useDashboardConfig";
-import { GenericSection } from "../components/GenericSection";
-import { StatCard } from "../components/StatCard";
+import { AppDataTable } from "../components/AppDataTable";
+import { getPrimaryKey, prettyLabel, toRows } from "../lib/model";
+import type { PageProps } from "./page-types";
 
-export function Overview() {
-  const { data, loading, error } = useAtlasData();
-  const { sections } = useDashboardConfig();
-  const categories = data?.categories ?? {};
+const CORE_TABS = [
+  "functions",
+  "policies",
+  "triggers",
+  "views",
+  "materialized_views",
+  "types",
+  "enums",
+  "edge_functions",
+] as const;
 
-  if (loading) {
-    return (
-      <div className="page-overview">
-        <p className="page-placeholder">Loading atlas data...</p>
-      </div>
-    );
-  }
+export function OverviewPage({ categories, onOpenDetail }: PageProps) {
+  const [activeTab, setActiveTab] = React.useState<string>(CORE_TABS[0]);
+  const [query, setQuery] = React.useState("");
 
-  if (error) {
-    return (
-      <div className="page-overview">
-        <header className="page-header">
-          <h1 className="page-title">Overview</h1>
-        </header>
-        <p className="page-placeholder page-error">
-          {error}. Run <code>sbt dashboard</code> to start the server.
-        </p>
-      </div>
-    );
-  }
+  const stats = React.useMemo(() => {
+    const entries = CORE_TABS.map((name) => ({ name, count: categories[name]?.length ?? 0 }));
+    const extras = Object.entries(categories)
+      .filter(([name]) => !CORE_TABS.includes(name as (typeof CORE_TABS)[number]))
+      .map(([name, rows]) => ({ name, count: rows.length }));
+    return [...entries, ...extras].sort((a, b) => b.count - a.count).slice(0, 10);
+  }, [categories]);
 
-  const counts = data?.meta?.object_counts ?? {};
-  const coreStats = [
-    { label: "Functions", value: counts.functions ?? 0 },
-    { label: "Views", value: counts.views ?? 0 },
-    { label: "Materialized Views", value: counts.materialized_views ?? 0 },
-    { label: "Triggers", value: counts.triggers ?? 0 },
-    { label: "Policies", value: counts.policies ?? 0 },
-    { label: "Types", value: counts.types ?? 0 },
-    { label: "Enums", value: counts.enums ?? 0 },
-  ];
+  const rows = React.useMemo(() => {
+    const source = toRows(categories[activeTab] ?? []);
+    if (!query.trim()) return source.slice(0, 80);
+    const term = query.toLowerCase();
+    return source.filter((row) => JSON.stringify(row).toLowerCase().includes(term)).slice(0, 80);
+  }, [activeTab, categories, query]);
+
+  const columns = React.useMemo(() => {
+    const preferred = ["name", "schema", "signature", "table", "status", "type_kind", "returns", "component"];
+    const available = new Set<string>();
+
+    for (const row of rows.slice(0, 20)) {
+      for (const key of Object.keys(row)) available.add(key);
+    }
+
+    const ordered = preferred.filter((key) => available.has(key));
+    for (const key of available) {
+      if (!ordered.includes(key) && ordered.length < 8) ordered.push(key);
+    }
+    return ordered.length ? ordered : ["name"];
+  }, [rows]);
 
   return (
-    <div className="page-overview">
-      <header className="page-header">
-        <h1 className="page-title">Overview</h1>
-        <p className="page-subtitle">
-          Backend snapshot: functions, policies, triggers, views, types, and enums. Snapshot:{" "}
-          {data?.meta?.timestamp ? new Date(data.meta.timestamp).toLocaleString() : "—"}
-        </p>
-      </header>
-      <div className="dashboard-stats">
-        {coreStats.map((s) => (
-          <StatCard key={s.label} label={s.label} value={s.value} />
+    <div className="content-stack">
+      <section className="hero">
+        <h1>Supabase Workspace Intelligence</h1>
+        <p>Unified view of schema entities, migrations, dependency impact, runtime health, and frontend coupling.</p>
+      </section>
+
+      <section className="stat-grid">
+        {stats.map((entry) => (
+          <article key={entry.name} className="stat-panel" onClick={() => setActiveTab(entry.name)}>
+            <div className="stat-value">{entry.count.toLocaleString()}</div>
+            <div className="stat-label">{prettyLabel(entry.name)}</div>
+          </article>
         ))}
-      </div>
-      {sections.map((section) => (
-        <GenericSection key={section.id} section={section} data={categories} />
-      ))}
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <div>
+            <h2>Entity Explorer</h2>
+            <p>Search, inspect, and open details for schema objects.</p>
+          </div>
+          <input
+            type="search"
+            className="ui-input"
+            placeholder="Filter current tab"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+
+        <div className="tab-row">
+          {Object.keys(categories)
+            .filter((name) => categories[name]?.length)
+            .slice(0, 14)
+            .map((name) => (
+              <button
+                key={name}
+                type="button"
+                className={`tab-btn ${activeTab === name ? "active" : ""}`}
+                onClick={() => setActiveTab(name)}
+              >
+                {prettyLabel(name)}
+              </button>
+            ))}
+        </div>
+
+        <AppDataTable rows={rows} columns={columns} onRowClick={(row) => onOpenDetail(activeTab, getPrimaryKey(row))} />
+      </section>
     </div>
   );
 }

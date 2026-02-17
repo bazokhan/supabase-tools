@@ -26,6 +26,7 @@ Run `npx sbt help` to list available commands (including installed plugins).
 | `migrate` | Apply SQL migrations from `supabase/migrations/` |
 | `snapshot [schema...] [all]` | Export DB objects (functions, views, triggers, policies, types, enums) to filesystem |
 | `watch [--scope migration]` | Watch DB/files and keep migration artifacts fresh (`migration-audit --no-open`) |
+| `dashboard [--port N]` | Start unified dashboard UI (React) with APIs for atlas data, live logs, and file browsing |
 
 `migrate` env vars:
 
@@ -51,6 +52,15 @@ Run `npx sbt help` to list available commands (including installed plugins).
 | Command | Description |
 |---------|-------------|
 | `help` / `-h` / `--help` | Show all available commands |
+
+`dashboard` API routes:
+
+- `GET /api/atlas-data` — Backend Atlas JSON
+- `GET /api/dashboard-config` — Combined dashboard section definitions (core + plugins)
+- `GET /api/logs/services` — Current Docker service statuses
+- `GET /api/logs/stream?services=...` — Live SSE log stream from Docker
+- `GET /api/fs/list?scope=...&path=...` — Safe file listing (`snapshot`, `migrations`, `docs`, `project`)
+- `GET /api/fs/file?scope=...&path=...` — Safe file content view in browser
 
 ## Plugin Commands
 

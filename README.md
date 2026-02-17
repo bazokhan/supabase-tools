@@ -36,6 +36,7 @@ npx sbt generate-erd
 | `migrate` | Apply SQL migrations from `supabase/migrations/` |
 | `snapshot` | Export DB objects to filesystem |
 | `watch` | Watch DB/files and keep artifacts fresh |
+| `dashboard` | Start modern dashboard UI (overview, migrations, depgraph, live logs, frontend usage) |
 | `generate-atlas` | Generate Backend Atlas data (JSON) |
 | `atlas-html` | Generate Backend Atlas HTML visualization |
 | `docs` | Start documentation services (Swagger, ReDoc, Atlas, SchemaSpy) |

@@ -1,50 +1,56 @@
 import React from "react";
-import { useAtlasData } from "../hooks/useAtlasData";
-import { useDashboardConfig } from "../hooks/useDashboardConfig";
-import { GenericSection } from "../components/GenericSection";
+import { AppDataTable } from "../components/AppDataTable";
+import { EmptyPanel } from "../components/EmptyPanel";
+import { toRows } from "../lib/model";
+import type { PageProps } from "./page-types";
 
-export function FrontendUsage() {
-  const { data, loading, error } = useAtlasData();
-  const { sections } = useDashboardConfig();
-  const categories = data?.categories ?? {};
-  const frontendSections = sections.filter(
-    (s) => s.dataKey === "frontend_usage" || s.id.includes("frontend")
-  );
+interface FrontendPageProps extends PageProps {
+  enabled: boolean;
+}
 
-  if (loading) {
+export function FrontendPage({ categories, onOpenDetail, enabled }: FrontendPageProps) {
+  if (!enabled) {
     return (
-      <div className="page-overview">
-        <p className="page-placeholder">Loading...</p>
-      </div>
+      <EmptyPanel
+        title="Frontend Usage Plugin Not Active"
+        message="No frontend usage section is currently registered in this dashboard."
+        hint="Enable @sbtools/plugin-frontend-usage, run sbt frontend-usage or sbt generate-atlas, then refresh."
+      />
     );
   }
+  return <FrontendEnabled categories={categories} onOpenDetail={onOpenDetail} />;
+}
 
-  if (error) {
-    return (
-      <div className="page-overview">
-        <header className="page-header">
-          <h1 className="page-title">Frontend Usage</h1>
-        </header>
-        <p className="page-placeholder page-error">{error}</p>
-      </div>
-    );
-  }
+function FrontendEnabled({ categories, onOpenDetail }: PageProps) {
+  const [query, setQuery] = React.useState("");
+  const rows = toRows(categories.frontend_usage ?? []);
+  const filtered = rows.filter((row) => !query.trim() || JSON.stringify(row).toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="page-overview">
-      <header className="page-header">
-        <h1 className="page-title">Frontend Usage</h1>
-        <p className="page-subtitle">
-          Components and their Supabase SDK usage (tables, RPCs, auth, storage, edge functions).
-        </p>
-      </header>
-      {frontendSections.length > 0 ? (
-        frontendSections.map((section) => (
-          <GenericSection key={section.id} section={section} data={categories} />
-        ))
-      ) : (
-        <p className="page-placeholder">No frontend usage data. Run <code>sbt frontend-usage</code> and <code>sbt generate-atlas</code>.</p>
-      )}
+    <div className="content-stack">
+      <section className="panel panel-accent">
+        <div className="panel-head">
+          <div>
+            <h2>Frontend to Backend Usage Map</h2>
+            <p>Trace which components touch tables, RPCs, storage, auth, and edge functions.</p>
+          </div>
+          <input
+            type="search"
+            className="ui-input"
+            placeholder="Search by component or resource"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+      </section>
+
+      <section className="panel">
+        <AppDataTable
+          rows={filtered}
+          columns={["component", "hitCount", "resources"]}
+          onRowClick={(row) => onOpenDetail("frontend_usage", String(row.component ?? ""))}
+        />
+      </section>
     </div>
   );
 }
