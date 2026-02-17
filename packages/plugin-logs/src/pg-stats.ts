@@ -39,9 +39,10 @@ function psql(
 ): { ok: boolean; stdout: string; error?: string } {
   // Collapse to single line to avoid cmd.exe newline issues on Windows
   const oneLine = sql.replace(/\s+/g, " ").trim();
+  const escapedOneLine = oneLine.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   try {
     const stdout = execSync(
-      `docker exec "${dbContainer}" psql -U postgres -d postgres -At -F "${SEP}" -c "${oneLine.replace(/"/g, '\\"')}"`,
+      `docker exec "${dbContainer}" psql -U postgres -d postgres -At -F "${SEP}" -c "${escapedOneLine}"`,
       { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 10_000 },
     ).trim();
     return { ok: true, stdout };
