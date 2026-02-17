@@ -1,5 +1,126 @@
 # @sbtools/plugin-migration-studio
 
+## 0.6.0
+
+### Minor Changes
+
+- 4b39da0: Refresh dashboard UX and Studio integration with live operations workflows.
+
+  **@sbtools/ui-web**
+
+  - Redesign dashboard shell with improved dark theme, icon-driven navigation, richer search UI, and clearer detail actions.
+  - Add embedded Migration Studio mode directly inside Migrations page.
+  - Add live logs tab in dashboard (service filters, stream status, inline search).
+  - Improve large dependency graph performance with focused neighborhood rendering and pagination/chunking behavior.
+  - Improve details layout for wide content and add quick-open links to related files/snapshots.
+
+  **@sbtools/core**
+
+  - Extend `sbt dashboard` server with live log stream APIs:
+    - `GET /api/logs/stream`
+    - `GET /api/logs/services`
+  - Add safe file browser/open APIs for project artifacts and snapshots:
+    - `GET /api/fs/list`
+    - `GET /api/fs/file`
+  - Keep SPA dashboard endpoints and static serving behavior intact.
+
+  **@sbtools/plugin-migration-studio**
+
+  - Refresh Studio styling to match the modern dark visual language used by dashboard.
+  - Improve Studio surface styling (panels, controls, chips, context tabs, editor shell) for better readability and consistency.
+
+- 4b39da0: Centralize browser UI rendering through the new shared `@sbtools/ui-web` package and migrate plugin/core HTML generators away from large page-local template strings.
+
+  ### Added
+
+  - New shared package: `@sbtools/ui-web` with reusable document primitives and renderer modules.
+  - New typed Atlas hook in SDK: `getAtlasView()` + `PluginAtlasView`.
+
+  ### Changed
+
+  - `atlas-html` in core now supports typed `getAtlasView()` contributions (preferred) while keeping `getAtlasUI()` compatibility.
+  - In-repo Atlas-producing plugins now use `getAtlasView()`.
+  - `plugin-scaffold --hooks` now scaffolds `getAtlasView()` stub.
+  - `frontend-usage`, `migration-audit` (including detail pages), `depgraph`, `logs` viewer page, and `migration-studio` page now render via shared `@sbtools/ui-web`.
+
+  ### Fixed
+
+  - `migration-studio` import-map ordering issue that caused bare module specifier resolution failures in browser (`@codemirror/state` not remapped).
+
+  ### Docs
+
+  - Updated VitePress docs and skill files for `getAtlasView()` guidance and new `@sbtools/ui-web` architecture.
+  - Updated architecture dependency docs to include `@sbtools/ui-web` and current package count.
+
+- 4b39da0: Implement UI deep modernization plan: Details page fix, shared tokens, ValueRenderer, Tooltip, icons.
+
+  **SDK**
+
+  - Add optional `primaryKeyField` to `DashboardSectionDef` for section-aware detail lookup
+
+  **ui-web**
+
+  - Fix Details page 404 for dependency_graph: use buildGraphModel nodes for lookup, render node-centric view with connected edges
+  - Add `findDetailTarget`, `getSectionPrimaryKeyField`; update `getPrimaryKey` to accept optional `primaryKeyField`
+  - Add `buildSearchIndex` support for dependency_graph (nodes as search hits) and optional sections for primaryKeyField
+  - Extract shared tokens: `SHARED_TOKENS_CSS`, `SHARED_TOKENS_DARK` in `shared-tokens.ts`; document.tsx and plugin-migration-studio consume them
+  - Add `ValueRenderer`: collapsible JSON tree, SQL keyword highlighting, format auto-detection; integrate in Details and GenericSection
+  - Add `Tooltip` component; apply to theme toggle
+  - Add `IconInfo`, `IconAlert`, `IconCheck`, `IconX`
+  - Add search popover fade-in animation
+
+  **plugin-migration-studio**
+
+  - Import and use `SHARED_TOKENS_DARK` from ui-web; remove duplicate token definitions
+
+- 4b39da0: Unify UI design system across dashboard, SSR pages, and Migration Studio.
+
+  **ui-web**
+
+  - Rewrite `tokens.css`: modern neutral scale (slate/zinc), indigo accent palette, secondary teal, remove blue/green gradients and glassmorphism
+  - Reduce border overload: use `--border-subtle` (0.05 opacity) for most elements
+  - Reduce radius (12px max panels, 8px cards/inputs)
+  - Widen layout: remove `max-width: 1400px`, sidebar 240px, fluid padding
+  - Add styles for StatCard, Badge, CardGrid, ExpandableCard, GenericSection, DataTable, CodeBlock
+  - Align `document.tsx` baseCss to same tokens and Sora/IBM Plex Mono fonts
+  - Add `.dark` support to SSR baseCss
+
+  **plugin-migration-studio**
+
+  - Align `styles.ts` to dashboard dark tokens (same vars, no radial gradients)
+  - Solid backgrounds, softer borders, flat accent buttons
+
+- 4b39da0: Add phase-1 real-time refresh for migration workflows.
+
+  **core**:
+
+  - Add `sbt watch` command to orchestrate migration refresh in near real time.
+  - Watch migration files and listen to PostgreSQL `LISTEN/NOTIFY` events (`sbt_watch_events`).
+  - Auto-install DB helper hooks for notifications (with graceful fallback for limited privileges).
+  - Add debounced single-flight scheduling for refresh runs.
+  - Write watch event stamp at `.sbt/watch/last-event.json`.
+  - Fix watch self-loop by ignoring artifact file writes as watch triggers.
+
+  **plugin-migration-studio**:
+
+  - Add SSE endpoint (`GET /api/events`) for live refresh notifications.
+  - Invalidate schema/migration caches on watch/artifact/file change bridge events.
+  - Refresh schema/migration context in UI without full page reload.
+
+### Patch Changes
+
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+- Updated dependencies [4b39da0]
+  - @sbtools/ui-web@0.6.0
+  - @sbtools/sdk@0.6.0
+
 ## 0.5.0
 
 ### Minor Changes
