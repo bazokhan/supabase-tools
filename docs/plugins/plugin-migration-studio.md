@@ -9,6 +9,7 @@ Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dia
 ## Features
 
 - **CodeMirror 6 editor** — Syntax highlighting, line numbers, bracket matching, search (Ctrl+F), undo/redo
+- **Modern dark studio theme** — Black-first visual styling aligned with dashboard look and readability
 - **Schema-aware autocomplete** — Tables, columns, functions, types (from DB → atlas-data → artifact)
 - **Live analysis** — Operations, risk flags, touched objects (debounced, updates as you type)
 - **Migration templates** — Create table with RLS, add column, function, trigger, policy, index, FK, enum
@@ -17,6 +18,13 @@ Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dia
 - **Dry run** — Validates SQL (same format as migrate); shows success or error before apply
 - **Wrap in transaction** — Wraps selected or full SQL in `BEGIN;` … `COMMIT;`
 - **Apply** — Requires confirmation, runs `sbt migrate`
+
+## Dashboard Integration
+
+- Dashboard Migrations page supports opening Studio in two modes:
+- **Embedded Studio** (inline iframe inside dashboard workflow)
+- **Pop-out Studio** (dedicated Studio tab/window)
+- Dashboard also stores the Studio URL so teams can point to non-default ports.
 
 ## Installation
 
@@ -47,6 +55,7 @@ Starts the studio at `http://localhost:3335`. Use `--port N` to change the port.
 The studio serves a local HTTP server with:
 
 - `GET /` — Editor page
+- `GET /api/events` — Server-Sent Events refresh channel
 - `GET /api/schema` — Schema introspection (DB → atlas-data → artifact)
 - `GET /api/templates` — Migration template list
 - `GET /api/migrations` — Migration files with status
@@ -75,6 +84,9 @@ Apply path uses core migration execution; no duplicate engine.
 |---------|----------|---------|
 | Migrations list with status | `migration.analysis` artifact | `sbt migration-audit` |
 | Schema from atlas cache | `docs/backend-atlas-data.json` | `sbt generate-atlas` |
+| Live refresh push | `.sbt/watch/last-event.json` + artifact changes | `sbt watch` |
+
+Studio exposes `GET /api/events` (SSE). When watch updates arrive, Studio invalidates cache and refetches schema/migrations without full page reload.
 
 **Note:** `migration.analysis` is written only by `sbt migration-audit`, not by `sbt generate-atlas`. See [Package & Artifact Dependencies](../architecture/package-dependencies.md) for the full map.
 

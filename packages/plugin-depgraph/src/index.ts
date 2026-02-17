@@ -15,19 +15,15 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { hasFlag, openFile, SbtError } from "@sbtools/sdk";
+import { hasFlag, openFile, SbtError, ui, loadPackageVersion, resolveConfigPath, withHelp } from "@sbtools/sdk";
 import { buildGraph } from "./graph-builder.js";
 import { writeDepgraphArtifact } from "./artifact.js";
 
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
+const PLUGIN_VERSION = loadPackageVersion(import.meta.url);
 import { generateMermaid, writeMermaid } from "./mermaid-generator.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
-import { depgraphSectionHtml } from "./atlas/sections.js";
-import { depgraphCardRendererJs } from "./atlas/cards.js";
-import { depgraphStyles } from "./atlas/styles.js";
+import { getDepgraphDashboardView } from "./dashboard.js";
 
 // ---------------------------------------------------------------------------
 // Resolved paths
@@ -37,8 +33,7 @@ export function resolvePaths(ctx: PluginContext) {
   const docsDir = ctx.paths.docsOutput;
   const atlasDataPath = path.join(docsDir, "backend-atlas-data.json");
   const snapshotDir = ctx.paths.snapshot;
-  const typesFilePath = (ctx.pluginConfig.typesFilePath as string) ??
-    path.join(ctx.projectRoot, "src", "integrations", "supabase", "types.ts");
+  const typesFilePath = resolveConfigPath(ctx, "typesFilePath", "src/integrations/supabase/types.ts");
   const htmlOutput = path.join(docsDir, "dependency-graph.html");
   const mermaidOutput = path.join(docsDir, "dependency-graph.md");
 
@@ -49,10 +44,7 @@ export function resolvePaths(ctx: PluginContext) {
 // CLI: depgraph command
 // ---------------------------------------------------------------------------
 
-async function depgraphCommand(args: string[], ctx: PluginContext): Promise<void> {
-  // ---- Help ----
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const DEPGRAPH_HELP = `
 depgraph — Generate dependency graph visualizations
 
 Usage:
@@ -70,10 +62,9 @@ Options:
 
 The plugin reads from docs/backend-atlas-data.json (produced by 'sbt generate-atlas')
 and supabase/current/ snapshot files. No running database is required.
-`);
-    return;
-  }
+`;
 
+async function depgraphCommand(args: string[], ctx: PluginContext): Promise<void> {
   const paths = resolvePaths(ctx);
 
   if (!fs.existsSync(paths.atlasDataPath)) {
@@ -92,9 +83,7 @@ and supabase/current/ snapshot files. No running database is required.
   }
 
   if (graph.nodes.length === 0) {
-    console.error(
-      "No nodes found. Ensure 'sbt generate-atlas' has been run first.",
-    );
+    ui.error("No nodes found. Ensure 'sbt generate-atlas' has been run first.\n");
     return;
   }
 
@@ -104,34 +93,32 @@ and supabase/current/ snapshot files. No running database is required.
   const shouldOpen = !hasFlag(args, "--no-open");
 
   if (onlyJson) {
-    console.log(JSON.stringify(graph, null, 2));
+    ui.log(JSON.stringify(graph, null, 2));
     return;
   }
 
   if (onlyHtml) {
     writeHtml(graph, paths.htmlOutput);
-    console.log(`HTML graph written to ${paths.htmlOutput}`);
+    ui.info(`HTML graph written to ${paths.htmlOutput}`);
     if (shouldOpen) openFile(paths.htmlOutput);
     return;
   }
 
   if (onlyMermaid) {
     writeMermaid(graph, paths.mermaidOutput);
-    console.log(`Mermaid graph written to ${paths.mermaidOutput}`);
+    ui.info(`Mermaid graph written to ${paths.mermaidOutput}`);
     if (shouldOpen) openFile(paths.mermaidOutput);
     return;
   }
 
   // Default: generate both, open HTML
   writeHtml(graph, paths.htmlOutput);
-  console.log(`HTML graph written to ${paths.htmlOutput}`);
+  ui.info(`HTML graph written to ${paths.htmlOutput}`);
 
   writeMermaid(graph, paths.mermaidOutput);
-  console.log(`Mermaid graph written to ${paths.mermaidOutput}`);
+  ui.info(`Mermaid graph written to ${paths.mermaidOutput}`);
 
-  console.log(
-    `\nGraph: ${graph.nodes.length} nodes, ${graph.edges.length} edges`,
-  );
+  ui.detail(`Graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges`);
 
   if (shouldOpen) openFile(paths.htmlOutput);
 }
@@ -165,9 +152,8 @@ const plugin: SbtPlugin = {
   commands: [
     {
       name: "depgraph",
-      description:
-        "Generate dependency graph visualizations (HTML + Mermaid)",
-      run: depgraphCommand,
+      description: "Generate dependency graph visualizations (HTML + Mermaid)",
+      run: withHelp(DEPGRAPH_HELP, depgraphCommand),
     },
   ],
 
@@ -211,18 +197,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => ({
-    kindLabels: {
-      dependency_graph: "Dependency Graph",
-    },
-    sectionHtml: depgraphSectionHtml(),
-    cardRendererJs: depgraphCardRendererJs(),
-    initJs: [
-      "renderDepgraphSummary(data);",
-      'renderSection("depgraph-rel-list", (data.categories.dependency_graph && data.categories.dependency_graph[0] && data.categories.dependency_graph[0].edges) || [], renderDepgraphRelCard, "relationships");',
-    ].join("\n    "),
-    styles: depgraphStyles(),
-  }),
+  getDashboardView: () => getDepgraphDashboardView(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const paths = resolvePaths(ctx);

@@ -3,9 +3,8 @@ import {
   sanitizeDbUrl,
   parseSchemaArgs,
   getSchemaFilter,
-  normalizeWhitespace,
-  splitArgs,
 } from "../src/utils/index.js";
+import { normalizeWhitespace, splitArgs } from "../src/parsers/string-utils.js";
 
 describe("sanitizeDbUrl", () => {
   it("masks password in standard URL", () => {
@@ -36,21 +35,26 @@ describe("parseSchemaArgs", () => {
 });
 
 describe("getSchemaFilter", () => {
-  it("returns empty string for null (all schemas)", () => {
-    expect(getSchemaFilter(null, "nspname")).toBe("");
+  it("returns empty clause for null (all schemas)", () => {
+    const result = getSchemaFilter(null, "nspname");
+    expect(result).toEqual({ clause: "", params: [] });
   });
   it("defaults to public for empty array", () => {
-    expect(getSchemaFilter([], "nspname")).toBe("AND n.nspname = 'public'");
+    const result = getSchemaFilter([], "nspname");
+    expect(result.clause).toBe("AND n.nspname = $1");
+    expect(result.params).toEqual(["public"]);
   });
-  it("builds IN clause for multiple schemas", () => {
+  it("builds IN clause with params for multiple schemas", () => {
     const result = getSchemaFilter(["a", "b"], "schemaname");
-    expect(result).toContain("IN");
-    expect(result).toContain("'a'");
-    expect(result).toContain("'b'");
+    expect(result.clause).toContain("IN");
+    expect(result.clause).toContain("$1");
+    expect(result.clause).toContain("$2");
+    expect(result.params).toEqual(["a", "b"]);
   });
-  it("escapes single quotes in schema names", () => {
+  it("passes schema names as params (safe from injection)", () => {
     const result = getSchemaFilter(["it's"], "nspname");
-    expect(result).toContain("it''s");
+    expect(result.clause).toContain("$1");
+    expect(result.params).toEqual(["it's"]);
   });
 });
 

@@ -109,11 +109,17 @@ export interface PolicyRow {
     with_check?: string;
 }
 
+/** Parameterized schema filter for safe SQL queries. */
+export interface SchemaFilter {
+    clause: string;
+    params: string[];
+}
+
 /** Context passed to each extractor: output dir, schema filters, and mutable metadata. */
 export interface SnapshotContext {
     outDir: string;
-    schemaFilterNsp: string;
-    schemaFilterSchemaname: string;
+    schemaFilterNsp: SchemaFilter;
+    schemaFilterSchemaname: SchemaFilter;
     meta: SnapshotMeta;
 }
 

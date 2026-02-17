@@ -8,6 +8,12 @@ description: Live Docker log tailing, pg_stat_statements query monitoring, and s
 
 Plugin that adds live Docker log tailing, `pg_stat_statements` query monitoring, and a standalone HTML log viewer.
 
+## Dashboard Integration
+
+- The unified `sbt dashboard` also exposes live logs directly in the Logs page.
+- Live stream is served by dashboard APIs (`/api/logs/stream`, `/api/logs/services`) so you can monitor logs without leaving the dashboard shell.
+- `logs viewer` remains available as a standalone, dedicated viewer.
+
 ## Quick Start
 
 ```bash

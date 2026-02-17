@@ -1,16 +1,7 @@
 /**
  * Types for the migration audit plugin.
- * Types only — no runtime code.
+ * Uses MigrationFileInfo from @sbtools/sdk for disk file info.
  */
-
-/** Disk file info for a migration. */
-export interface MigrationFile {
-  filename: string;
-  filePath: string;
-  sizeBytes: number;
-  modifiedAt: Date;
-  timestampPrefix: string | null;
-}
 
 /** DB record from app_migrations.schema_migrations. */
 export interface AppliedMigration {
@@ -20,26 +11,6 @@ export interface AppliedMigration {
 
 /** Migration status relative to disk and DB. */
 export type MigrationStatus = "applied" | "pending" | "missing";
-
-/** Per-migration SQL analysis (from regex-based classifier). */
-export interface MigrationSqlAnalysis {
-  operations: Array<{
-    kind: string;
-    objectKey: string;
-    schema?: string;
-    name?: string;
-  }>;
-  touchedObjectKeys: string[];
-  riskFlags: {
-    hasTransaction: boolean;
-    hasDestructive: boolean;
-    hasIfExists: boolean;
-    hasIfNotExists: boolean;
-    hasTruncate: boolean;
-    hasDrop: boolean;
-  };
-  confidence: "high" | "medium" | "low";
-}
 
 /** Combined disk + DB entry for a migration. */
 export interface MigrationEntry {
@@ -51,7 +22,7 @@ export interface MigrationEntry {
   fileModifiedAt: Date | null;
   filePath: string;
   /** SQL analysis when content was readable (disk migrations only). */
-  sqlAnalysis?: MigrationSqlAnalysis;
+  sqlAnalysis?: import("@sbtools/sdk").MigrationSqlAnalysis;
 }
 
 /** Audit issue severity. */

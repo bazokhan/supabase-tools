@@ -25,20 +25,30 @@ Entry point: `npx sbt <command>` (runs compiled `packages/core/dist/cli.js`)
 
 Development: `npm run dev` or `tsx packages/core/src/cli.ts <command>`
 
-### Commands
+### Core Commands
 
 - `start`, `stop`, `restart` — Docker services
 - `status` — Service URLs, JWT keys, DB connection string
 - `migrate` — Apply SQL migrations
 - `snapshot` — Export DB objects to snapshot directory
-- `generate-types` — Fetch types from PostgREST
-- `generate-erd` — Per-table Mermaid ERD
-- `generate-atlas` — Backend Atlas JSON (HTML via plugin-atlas-html)
-- `test` — pgTAP tests (live or `--mem` PGlite)
-- `docs` — Start Swagger, ReDoc, Atlas, SchemaSpy (plugin-docs-server)
+- `watch` — Watch DB/files and keep artifacts fresh (e.g. `--scope migration`)
+- `generate-atlas` — Backend Atlas JSON (used by dashboard)
+- `dashboard` — Development dashboard UI (React SPA, port 3400)
+- `docs` — Start Swagger, ReDoc, SchemaSpy (core)
+- `init` — Generate config file; appends `.sbt/` to `.gitignore` if missing
+
+### Plugin Commands
+
+- `generate-types` — Fetch types from PostgREST (plugin-typegen)
+- `generate-erd` — Per-table Mermaid ERD (plugin-erd)
+- `test` — pgTAP tests (live or `--mem` PGlite) (plugin-db-test)
+- `edge-functions` — List/document edge functions (plugin-deno-functions)
+- `depgraph` — Dependency graph visualization (plugin-depgraph)
+- `frontend-usage` — Scan frontend for SDK usage (plugin-frontend-usage)
+- `logs` — Docker log tailing, pg_stat_statements, log viewer (plugin-logs)
 - `migration-audit` — Compare migrations vs DB; report + detail pages (plugin-migration-audit)
 - `migration-studio` — Schema-aware migration authoring UI (plugin-migration-studio)
-- `init` — Generate config file; appends `.sbt/` to `.gitignore` if missing
+- `scaffold-plugin` — Scaffold new plugins (plugin-scaffold)
 
 ## Versioned Artifacts
 
@@ -80,13 +90,16 @@ npm run build   # SDK first, then all workspaces
 npm run clean   # rimraf dist in all packages
 ```
 
-## Testing
+## Testing & Linting
 
 ```bash
-npm test
+npm test                  # 199 tests across 9 suites
+npm run lint:conventions  # Convention linter (advisory warnings)
 ```
 
 Vitest in `packages/sdk`, `packages/core`, and selected plugins. Tests use `@sbtools/sdk` from workspace.
+
+The convention linter (`scripts/lint-conventions.ts`) checks 10 rules: use `ui.*` instead of `console.log`, use `SbtError` subclasses, wrap commands with `withHelp()`, prefer `getDashboardView()` for dashboard UI, parameterized schema filters, etc.
 
 ## CLI Verification
 
@@ -105,7 +118,7 @@ Run all impacted commands against a consumer project with linked packages and fu
 | `sbt status` | Service URLs, keys; plugin status lines |
 | `sbt generate-atlas` | Backend atlas JSON; plugin contributions |
 | `sbt depgraph` | HTML + Mermaid graphs; writes `depgraph.graph` artifact |
-| `sbt atlas-html` | Backend atlas HTML |
+| `sbt dashboard` | Dashboard UI at http://localhost:3400 |
 | `sbt docs swagger` | OpenAPI merge; artifact consumed: `openapi.partial.deno-functions (artifact): N path(s) merged`; Swagger container started |
 | `sbt generate-erd` | ERD diagrams per table |
 | `sbt generate-types` | TypeScript types |

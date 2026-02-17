@@ -24,7 +24,9 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 - **Filesystem** — `ensureDir`, `readText`, `writeFileInDir`, `safeName`, `safeFileName`, `sanitizeSlug`, `sanitizeIdentifier`
 - **Container** — `sanitizeContainerPrefix`, `deriveContainerPrefix` — Docker project prefix from config
 - **Compose** — `extractComposeKey`, `extractSupabaseKeys` — Extract keys from docker-compose files
-- **CLI** — `hasFlag`, `getArg`, `openFile`
+- **CLI** — `hasFlag`, `getArg`, `openFile`, `withHelp`, `loadPackageVersion`
+- **Dashboard** — `DashboardView`, `DashboardSectionDef`, etc. — JSON-serializable plugin UI contributions for `sbt dashboard`
+- **Schema** — `SchemaFilter` — Parameterized SQL filter type (`{ clause, params }`)
 
 ## Dependencies
 

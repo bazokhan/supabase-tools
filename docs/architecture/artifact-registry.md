@@ -23,8 +23,8 @@ This document is the **single source of truth** for official artifact IDs in sup
 | Artifact ID | Owner Package | Schema Version | Status | Description |
 |-------------|---------------|----------------|--------|-------------|
 | `atlas.data` | core | — | Planned | Optional wrapper for backend atlas data contract |
-| `docs.route-manifest` | plugin-atlas-html, plugin-docs-server | — | Planned | Plugin-generated page routes and labels |
-| `openapi.partial.deno-functions` | plugin-deno-functions | 1.0.0 | Active | Deno functions partial OpenAPI spec (consumed by docs-server) |
+| `docs.route-manifest` | core | — | Planned | Plugin-generated page routes and labels |
+| `openapi.partial.deno-functions` | plugin-deno-functions | 1.0.0 | Active | Deno functions partial OpenAPI spec (consumed by core docs) |
 | `openapi.partial.<plugin>` | (producing plugin) | — | Convention | Plugin partial OpenAPI specs; merged deterministically |
 | `migration.analysis` | plugin-migration-audit | 1.0.0 | Active | Migration audit result; per-migration sqlAnalysis; consumed by migration-studio |
 | `migration.lineage` | plugin-migration-audit | — | Planned | Migration dependency/lineage graph |

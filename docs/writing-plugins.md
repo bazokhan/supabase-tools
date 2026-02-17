@@ -94,11 +94,11 @@ Hooks let your plugin contribute to core commands. All are optional.
 | Hook | Called by | Returns |
 |------|-----------|---------|
 | `getAtlasData(ctx)` | `sbt generate-atlas` | `{ categories: Record<string, any[]>, stats: { label, value }[] }` |
-| `getAtlasUI()` | `sbt atlas-html` | `{ kindLabels, sectionHtml, cardRendererJs, initJs, styles }` |
+| `getDashboardView()` | `sbt dashboard` | `{ sections: DashboardSectionDef[] }` — JSON-serializable |
 | `getStatusLines(ctx)` | `sbt status` | `string[]` — lines appended to status output |
 | `getOpenApiSpec(ctx)` | `sbt docs` | Partial OpenAPI 3.0 object (deep-merged into the PostgREST spec) |
 
-Example:
+### getStatusLines Example
 
 ```ts
 const plugin: SbtPlugin = {
@@ -109,6 +109,16 @@ const plugin: SbtPlugin = {
   async getStatusLines(ctx) {
     return ["  My Plugin: 3 items tracked"];
   },
+};
+```
+
+### getAtlasData Example
+
+```ts
+const plugin: SbtPlugin = {
+  name: "@sbtools/plugin-example",
+  version: "1.0.0",
+  commands: [/* ... */],
 
   async getAtlasData(ctx) {
     return {
@@ -118,6 +128,51 @@ const plugin: SbtPlugin = {
   },
 };
 ```
+
+### getDashboardView Example
+
+Create a `dashboard.ts` file in your plugin:
+
+```ts
+// src/dashboard.ts
+import type { DashboardSectionDef, DashboardView } from "@sbtools/sdk";
+
+export function getMyPluginDashboardView(): DashboardView {
+  return {
+    sections: [
+      {
+        id: "my-items",
+        title: "My Items",
+        description: "Items extracted from the database.",
+        dataKey: "my_items",
+        layout: "cards",
+        card: {
+          titleField: "name",
+          subtitleField: "type",
+          searchFields: ["name", "description"],
+          badges: [{ field: "status", toneMap: { active: "good", inactive: "warn" } }],
+          details: [{ label: "Description", field: "description" }],
+        },
+      },
+    ],
+  };
+}
+```
+
+Then in `src/index.ts`:
+
+```ts
+import { getMyPluginDashboardView } from "./dashboard.js";
+
+const plugin: SbtPlugin = {
+  name: "@sbtools/plugin-example",
+  version: "1.0.0",
+  commands: [/* ... */],
+  getDashboardView: () => getMyPluginDashboardView(),
+};
+```
+
+See [SDK API — Dashboard View](/sdk/#dashboard-view) for full documentation.
 
 ## SDK Utilities
 

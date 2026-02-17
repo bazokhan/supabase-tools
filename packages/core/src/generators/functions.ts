@@ -1,3 +1,5 @@
+import { snapshotFileHeader } from "@sbtools/sdk";
+
 /**
  * Builds the full file content for a function snapshot.
  *
@@ -10,11 +12,13 @@ export function formatFunctionFile(row: {
   identity_args: string;
   ddl: string;
 }): string {
-  return `-- GENERATED: current function definition
--- Schema: ${row.schema}
--- Function: ${row.name}(${row.identity_args})
--- Do not edit manually. Regenerate via: npm run db:snapshot
-
-${row.ddl}
-`;
+  return (
+    snapshotFileHeader({
+      objectType: "function definition",
+      headers: {
+        Schema: row.schema,
+        Function: `${row.name}(${row.identity_args})`,
+      },
+    }) + row.ddl + "\n"
+  );
 }

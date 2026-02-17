@@ -1,11 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
+import { SbtError } from "@sbtools/sdk";
 
 /** Read a SQL test file relative to testsDir. */
 export function readSqlFile(testsDir: string, filePath: string): string {
   const fullPath = path.resolve(testsDir, filePath);
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`Test file not found: ${fullPath}`);
+    throw new SbtError("PREFLIGHT_FAILED", `Test file not found: ${fullPath}`, {
+      tips: ["Ensure the test file exists and the path is correct."],
+    });
   }
   return fs.readFileSync(fullPath, "utf8");
 }
@@ -53,12 +56,13 @@ export function processSqlFile(content: string, baseDir: string): string {
       const normalizedPath = path.normalize(resolvedPath);
 
       if (!fs.existsSync(normalizedPath)) {
-        throw new Error(
-          `Included file not found: ${normalizedPath}\n` +
-            `  Base directory: ${baseDir}\n` +
-            `  Include path: ${cleanPath}\n` +
-            `  Original line: ${line}`
-        );
+        throw new SbtError("PREFLIGHT_FAILED", `Included file not found: ${normalizedPath}`, {
+          tips: [
+            `Base directory: ${baseDir}`,
+            `Include path: ${cleanPath}`,
+            `Original line: ${line}`,
+          ],
+        });
       }
 
       const includedContent = fs.readFileSync(normalizedPath, "utf8");

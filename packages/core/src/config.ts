@@ -14,9 +14,6 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { ConfigError, ui } from "@sbtools/sdk";
 
-// ---------------------------------------------------------------------------
-// __dirname (ESM)
-// ---------------------------------------------------------------------------
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -262,14 +259,4 @@ export const config = buildConfig();
 /** Resolve a config-relative path to an absolute path from project root. */
 export function resolve(relPath: string): string {
   return path.resolve(config.projectRoot, relPath);
-}
-
-/** Get DB URL from env vars or config default. */
-export function getDbUrl(): string {
-  return (
-    process.env.DATABASE_URL ||
-    process.env.SUPABASE_DB_URL ||
-    process.env.POSTGRES_URL ||
-    config.db.url
-  );
 }

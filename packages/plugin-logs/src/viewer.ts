@@ -32,19 +32,16 @@ import {
 } from "./pg-stats.js";
 
 import type { PluginContext } from "@sbtools/sdk";
+import { getConfigNumber, ui } from "@sbtools/sdk";
 
 export async function startViewer(
   ctx: PluginContext,
   opts: { port?: number } = {},
 ): Promise<void> {
-  const port =
-    opts.port ??
-    (ctx.pluginConfig.viewerPort as number | undefined) ??
-    3333;
-  const tailLines =
-    (ctx.pluginConfig.tailLines as number | undefined) ?? 100;
+  const port = opts.port ?? getConfigNumber(ctx, "viewerPort", 3333);
+  const tailLines = getConfigNumber(ctx, "tailLines", 100);
   const prefix = deriveContainerPrefix(ctx.projectRoot);
-  const dbContainer = getDbContainerName(ctx.projectRoot, ctx.pluginConfig);
+  const dbContainer = getDbContainerName(ctx);
 
   // Pre-build the HTML once (it's static for a given port)
   const html = buildViewerHtml(port);
@@ -114,8 +111,8 @@ export async function startViewer(
 
   return new Promise((resolve) => {
     server.listen(port, () => {
-      console.log(`\nLog viewer running at: http://localhost:${port}`);
-      console.log("Press Ctrl+C to stop.\n");
+      ui.info(`\nLog viewer running at: http://localhost:${port}`);
+      ui.info("Press Ctrl+C to stop.\n");
     });
 
     // Keep the server running until killed

@@ -1,3 +1,5 @@
+import { snapshotFileHeader } from "@sbtools/sdk";
+
 /**
  * Builds the full file content for an enum snapshot.
  *
@@ -9,11 +11,10 @@ export function formatEnumFile(
   row: { schema: string; name: string },
   ddl: string
 ): string {
-  return `-- GENERATED: current enum definition
--- Schema: ${row.schema}
--- Enum: ${row.name}
--- Do not edit manually. Regenerate via: npm run db:snapshot
-
-${ddl}
-`;
+  return (
+    snapshotFileHeader({
+      objectType: "enum definition",
+      headers: { Schema: row.schema, Enum: row.name },
+    }) + ddl + "\n"
+  );
 }

@@ -6,7 +6,8 @@
  * child processes with proper lifecycle management.
  */
 import { spawn, execSync, type ChildProcess } from "node:child_process";
-import { deriveContainerPrefix } from "@sbtools/sdk";
+import { deriveContainerPrefix, getConfigString, SbtError } from "@sbtools/sdk";
+import type { PluginContext } from "@sbtools/sdk";
 
 export { deriveContainerPrefix };
 
@@ -35,7 +36,11 @@ export const SERVICE_NAMES = Object.keys(SERVICE_MAP);
 
 export function getContainerName(prefix: string, service: string): string {
   const suffix = SERVICE_MAP[service];
-  if (!suffix) throw new Error(`Unknown service: ${service}`);
+  if (!suffix) {
+    throw new SbtError("COMMAND_FAILED", `Unknown service: ${service}`, {
+      tips: [`Available: ${SERVICE_NAMES.join(", ")}`],
+    });
+  }
   return `${prefix}-${suffix}`;
 }
 
@@ -79,13 +84,9 @@ export function getServiceStatuses(projectRoot: string): ContainerStatus[] {
   });
 }
 
-export function getDbContainerName(
-  projectRoot: string,
-  pluginConfig: Record<string, unknown>,
-): string {
-  const prefix = deriveContainerPrefix(projectRoot);
-  const dbSuffix =
-    (pluginConfig.dbContainer as string) ?? "supabase-db";
+export function getDbContainerName(ctx: PluginContext): string {
+  const prefix = deriveContainerPrefix(ctx.projectRoot);
+  const dbSuffix = getConfigString(ctx, "dbContainer", "supabase-db");
   return `${prefix}-${dbSuffix}`;
 }
 

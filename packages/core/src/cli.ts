@@ -1,108 +1,13 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
-import fs from "node:fs";
-import path from "node:path";
-import { ui, SbtError, handleError, sanitizeContainerPrefix } from "@sbtools/sdk";
-import { config, resolve } from "./config.js";
-import { loadPlugins, buildPluginContext } from "./plugin-loader.js";
+import { ui, handleError } from "@sbtools/sdk";
+import { loadPlugins, buildPluginContext, buildCoreContext } from "./plugin-loader.js";
 import { preflight } from "./preflight.js";
-import { runSnapshot } from "./commands/snapshot.js";
-import { runGenerateData } from "./commands/generate-data.js";
-import { runMigrate } from "./commands/migrate.js";
-import { runStatus } from "./commands/status.js";
+import { getCommand } from "./command-registry.js";
 import { showHelp } from "./commands/help.js";
+import "./commands/register-core.js";
 
 const command = process.argv[2];
 const args = process.argv.slice(3);
-
-const COMPOSE_DB = path.join(config.toolsDir, "docker-compose.db.yml");
-const SBT_ENV_FILE = path.join(config.sbtDataDir, ".env");
-
-function run(cmd: string): void {
-  try {
-    execSync(cmd, { stdio: "inherit", cwd: config.toolsDir, env: { ...process.env } });
-  } catch (err) {
-    const stderr = (err as { stderr?: Buffer })?.stderr?.toString().trim();
-    if (stderr?.includes("docker") || stderr?.includes("pipe") || stderr?.includes("daemon")) {
-      throw new SbtError("DOCKER_NOT_RUNNING", "Docker is not running.", {
-        tips: ["Start Docker Desktop and try again."], cause: err,
-      });
-    }
-    throw new SbtError("COMMAND_FAILED", `Command failed: ${cmd}`, { cause: err });
-  }
-}
-
-function ensureProjectDirs(): void {
-  const functionsDir = resolve(config.paths.functions);
-  fs.mkdirSync(functionsDir, { recursive: true });
-  const fnEnvFile = path.join(functionsDir, ".env");
-  if (!fs.existsSync(fnEnvFile)) {
-    fs.writeFileSync(fnEnvFile, "# Edge function environment variables\n", "utf8");
-  }
-  const docsAbsolute = resolve(config.paths.docsOutput);
-  fs.mkdirSync(docsAbsolute, { recursive: true });
-  fs.mkdirSync(config.sbtDataDir, { recursive: true });
-  fs.mkdirSync(path.join(config.sbtDataDir, "artifacts"), { recursive: true });
-  fs.mkdirSync(path.join(config.sbtDataDir, "schemaspy-out"), { recursive: true });
-  const containerPrefix = sanitizeContainerPrefix(config.project.name);
-  const functionsAbs = path.resolve(config.projectRoot, config.paths.functions);
-  const openapiSpec = path.join(config.sbtDataDir, "openapi-spec.json");
-  const schemaspyOut = path.join(config.sbtDataDir, "schemaspy-out");
-  const composeEnv = path.join(config.sbtDataDir, ".env");
-  const envContent = [
-    `SBT_PREFIX=${containerPrefix}`,
-    `SBT_DOCS_DIR=${docsAbsolute}`,
-    `SBT_FUNCTIONS_DIR=${functionsAbs}`,
-    `SBT_OPENAPI_SPEC=${openapiSpec}`,
-    `SBT_SCHEMASPY_OUT=${schemaspyOut}`,
-  ].join("\n") + "\n";
-  fs.writeFileSync(composeEnv, envContent, "utf8");
-}
-
-function ensureGitignoreSbtEntry(): void {
-  const gitignorePath = path.join(config.projectRoot, ".gitignore");
-  const entry = ".sbt/";
-  if (!fs.existsSync(gitignorePath)) {
-    fs.writeFileSync(gitignorePath, entry + "\n", "utf8");
-    ui.detail(`Added ${entry} to .gitignore`);
-    return;
-  }
-  const content = fs.readFileSync(gitignorePath, "utf8");
-  const lines = content.split(/\r?\n/);
-  const hasEntry = lines.some((line) => /^\.sbt\/?$/m.test(line.trim()));
-  if (!hasEntry) {
-    const suffix = content.endsWith("\n") ? "" : "\n";
-    fs.writeFileSync(gitignorePath, content + suffix + entry + "\n", "utf8");
-    ui.detail(`Added ${entry} to .gitignore`);
-  }
-}
-
-function init(): void {
-  const configPath = path.join(config.projectRoot, "supabase-tools.config.json");
-  if (fs.existsSync(configPath)) {
-    ui.info(`Config already exists at ${configPath}`);
-    ensureProjectDirs();
-    ensureGitignoreSbtEntry();
-    return;
-  }
-  const projectName = (() => {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(path.join(config.projectRoot, "package.json"), "utf8"));
-      return pkg.name || path.basename(config.projectRoot);
-    } catch { return path.basename(config.projectRoot); }
-  })();
-  const defaultConfig = {
-    paths: { migrations: "supabase/migrations", snapshot: "supabase/current",
-      docsOutput: "docs", functions: "supabase/functions" },
-    db: { url: "postgresql://postgres:postgres@localhost:54322/postgres", container: "supabase-db" },
-    api: { url: "http://localhost:54321", studioUrl: "http://localhost:54323", inbucketUrl: "http://localhost:54324" },
-    project: { name: projectName }, plugins: [],
-  };
-  fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2) + "\n", "utf8");
-  ui.success(`Created ${configPath}`);
-  ensureProjectDirs();
-  ensureGitignoreSbtEntry();
-}
 
 try {
   const loaded = await loadPlugins();
@@ -112,48 +17,14 @@ try {
 
   if (command) preflight(command, args);
 
-  switch (command) {
-    case "start":
-      ensureProjectDirs();
-      run(`docker compose -f "${COMPOSE_DB}" --env-file "${SBT_ENV_FILE}" up -d`);
-      await runStatus();
-      break;
-
-    case "stop":
-      ensureProjectDirs();
-      run(`docker compose -f "${COMPOSE_DB}" --env-file "${SBT_ENV_FILE}" down`);
-      break;
-
-    case "restart":
-      ensureProjectDirs();
-      run(`docker compose -f "${COMPOSE_DB}" --env-file "${SBT_ENV_FILE}" restart`);
-      break;
-
-    case "status":
-      await runStatus();
-      break;
-
-    case "migrate":
-      await runMigrate();
-      break;
-
-    case "snapshot":
-      await runSnapshot();
-      break;
-
-    case "generate-atlas":
-      await runGenerateData();
-      break;
-
-    case "init":
-      init();
-      break;
-
-    case "help": case "--help": case "-h": case undefined:
-      showHelp(pluginCommands);
-      break;
-
-    default: {
+  if (command === "help" || command === "--help" || command === "-h" || command === undefined) {
+    showHelp(pluginCommands);
+  } else {
+    const coreEntry = getCommand(command);
+    if (coreEntry) {
+      const coreCtx = buildCoreContext(loaded);
+      await coreEntry.run(args, coreCtx);
+    } else {
       const match = pluginCommands.find((pc) => pc.cmd.name === command);
       if (match) {
         const ctx = buildPluginContext(match.loaded, loaded);

@@ -5,9 +5,12 @@ Migration authoring UI for supabase-tools. Create migrations in a browser-based 
 ## Features
 
 - **SQL editor** — Write migration SQL in the browser
+- **Modern dark theme** — Black-first visual style aligned with dashboard aesthetics
 - **Live analysis** — Analyze SQL to see operations and risk indicators (uses shared `analyzeMigrationSql` from SDK)
 - **Save / Update migration** — Create new or overwrite pending migration; dry run before apply; wrap in transaction
 - **Apply migrations** — Runs `sbt migrate` (requires confirmation)
+- **Live refresh bridge** — SSE endpoint (`/api/events`) refreshes migration/status context when `sbt watch` updates artifacts
+- **Dashboard embedding support** — Works both as standalone Studio and embedded inside dashboard migrations flow
 
 ## Setup
 

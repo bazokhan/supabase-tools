@@ -6,13 +6,9 @@
  */
 import http from "node:http";
 import { execSync } from "node:child_process";
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { ui, hasFlag, getArg } from "@sbtools/sdk";
+import { ui, hasFlag, getArg, loadPackageVersion, withHelp } from "@sbtools/sdk";
 import { createRequestHandler } from "./server.js";
-
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
 const DEFAULT_PORT = 3335;
 
 function killProcessOnPort(port: number): boolean {
@@ -33,9 +29,7 @@ function killProcessOnPort(port: number): boolean {
   }
 }
 
-async function migrationStudioCommand(args: string[], ctx: PluginContext): Promise<void> {
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const MIGRATION_STUDIO_HELP = `
 migration-studio — Migration authoring UI
 
 Usage:
@@ -47,10 +41,9 @@ Options:
   -h, --help    Show this help
   --port N      HTTP server port (default: 3335)
   --restart     Kill process using the port before starting (cross-platform)
-`);
-    return;
-  }
+`;
 
+async function migrationStudioCommand(args: string[], ctx: PluginContext): Promise<void> {
   const port = parseInt(getArg(args, "--port") ?? String(DEFAULT_PORT), 10) || DEFAULT_PORT;
   const doRestart = hasFlag(args, "--restart");
 
@@ -91,7 +84,7 @@ Options:
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-migration-studio",
-  version: PLUGIN_VERSION,
+  version: loadPackageVersion(import.meta.url),
   artifactCapabilities: {
     produces: ["migration.studio.draft"],
     consumes: ["migration.analysis"],
@@ -100,7 +93,7 @@ const plugin: SbtPlugin = {
     {
       name: "migration-studio",
       description: "Migration authoring UI — create migrations, analyze SQL, apply via sbt migrate",
-      run: migrationStudioCommand,
+      run: withHelp(MIGRATION_STUDIO_HELP, migrationStudioCommand),
     },
   ],
 };

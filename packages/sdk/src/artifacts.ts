@@ -8,6 +8,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import type { PluginContext } from "./plugin-api.js";
+import { SbtError } from "./errors.js";
 import { ensureDir, readText } from "./fs-utils.js";
 
 // ---------------------------------------------------------------------------
@@ -111,7 +112,7 @@ export function writeArtifact<T>(
 ): void {
   if (!validateArtifactEnvelope<T>(envelope)) {
     const e = envelope as unknown as { id?: unknown; version?: unknown };
-    throw new Error(`Invalid artifact envelope: id=${e.id}, version=${e.version}`);
+    throw new SbtError("COMMAND_FAILED", `Invalid artifact envelope: id=${e.id}, version=${e.version}`);
   }
   const dir = artifactDir(ctx.sbtDataDir, envelope.id, envelope.version);
   ensureDir(dir);
@@ -159,4 +160,52 @@ export function readArtifactOrNull<T>(
 ): ArtifactEnvelope<T> | null {
   const result = readArtifact<T>(ctx, id, version);
   return result.ok ? result.envelope : null;
+}
+
+// ---------------------------------------------------------------------------
+// Artifact writer factory (fixes D5)
+// ---------------------------------------------------------------------------
+
+export interface CreateArtifactWriterOpts {
+  id: string;
+  version: string;
+  producer: string;
+  schemaRef?: string;
+}
+
+export interface WriteArtifactOpts {
+  inputs?: Record<string, string>;
+  meta?: Record<string, string>;
+  generatedAt?: string;
+}
+
+/**
+ * Create an artifact writer for a given artifact type.
+ * Reduces boilerplate in plugins that produce versioned artifacts.
+ */
+export function createArtifactWriter<T>(opts: CreateArtifactWriterOpts) {
+  const { id, version, producer, schemaRef } = opts;
+  const defaultSchemaRef = schemaRef ?? `https://sbtools.dev/contracts/${id}/${version}`;
+
+  return (
+    ctx: Pick<PluginContext, "projectRoot" | "sbtDataDir">,
+    data: T,
+    writeOpts?: WriteArtifactOpts
+  ): void => {
+    const inputs = { projectRoot: ctx.projectRoot, ...writeOpts?.inputs };
+    const meta = writeOpts?.meta;
+    const generatedAt = writeOpts?.generatedAt ?? new Date().toISOString();
+
+    const envelope: ArtifactEnvelope<T> = {
+      id,
+      version,
+      producer,
+      generatedAt,
+      schemaRef: defaultSchemaRef,
+      inputs,
+      ...(meta && { meta }),
+      data,
+    };
+    writeArtifact(ctx, envelope);
+  };
 }

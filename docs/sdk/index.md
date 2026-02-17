@@ -93,8 +93,44 @@ const jwtSecret = extractComposeKey(composePath, [/JWT_SECRET:\s*([^\s]+)/]);
 ## CLI Utilities
 
 - `hasFlag(args, ...names)` — Check for CLI flags (e.g. `--help`, `-h`)
-- `getArg(args, name)` — Get CLI argument value
+- `getArg(args, name)` — Get CLI argument value (e.g. `--port 3000` → `"3000"`)
 - `openFile(path)` — Open file in default editor
+- `withHelp(helpText, fn)` — Wrap a command handler to provide `--help` / `-h` support
+- `loadPackageVersion(importMetaUrl)` — Load version from nearest package.json (use `import.meta.url`)
+
+### withHelp Example
+
+```ts
+import { withHelp } from "@sbtools/sdk";
+
+const HELP = `
+my-command — does something useful
+
+Usage:
+  sbt my-command [--flag] [--arg VALUE]
+
+Options:
+  --flag       Enable feature
+  --arg VALUE  Set value
+  -h, --help   Show this help
+`;
+
+const myCommand = withHelp(HELP, async (args: string[], ctx: PluginContext) => {
+  // Command implementation
+});
+```
+
+### loadPackageVersion Example
+
+```ts
+import { loadPackageVersion } from "@sbtools/sdk";
+
+const plugin: SbtPlugin = {
+  name: "@sbtools/plugin-example",
+  version: loadPackageVersion(import.meta.url), // Reads ../package.json
+  commands: [/* ... */],
+};
+```
 
 ## DB Utilities
 
@@ -133,6 +169,75 @@ const ts = parseTimestampPrefix("20240101120000_foo.sql"); // "20240101120000"
 - `analyzeMigrationSql(sql)` — Regex-based DDL classifier. Returns `MigrationSqlAnalysis` with `operations`, `touchedObjectKeys`, `riskFlags`, `confidence`.
 
 Used by migration-audit and migration-studio. No Node.js deps; can run in browser.
+
+## Dashboard View
+
+Use **`getDashboardView()`** to contribute sections to the `sbt dashboard` UI. Returns JSON-serializable config — no JS strings.
+
+### Interfaces
+
+- **`DashboardSectionDef`** — section config (id, title, description, dataKey, layout, stats, card, table, link)
+- **`DashboardCardDef`** — card layout (titleField, subtitleField, searchFields, badges, details)
+- **`DashboardTableDef`** — table layout (columns with header, field, format)
+- **`DashboardStatDef`** — stat row (label, field, tone)
+- **`DashboardBadgeDef`** — badge (field, toneMap)
+- **`DashboardDetailDef`** — detail row (label, field, format)
+- **`DashboardView`** — `{ sections: DashboardSectionDef[] }`
+
+### Example
+
+```ts
+import type { DashboardSectionDef, DashboardView } from "@sbtools/sdk";
+
+export function getMyPluginDashboardView(): DashboardView {
+  return {
+    sections: [
+      {
+        id: "my-items",
+        title: "My Items",
+        description: "Items from the database.",
+        dataKey: "my_items",
+        layout: "cards",
+        stats: [
+          { label: "Total", field: "summary.total", tone: "good" },
+        ],
+        card: {
+          titleField: "name",
+          subtitleField: "type",
+          searchFields: ["name", "description"],
+          badges: [{ field: "status", toneMap: { active: "good", inactive: "warn" } }],
+          details: [
+            { label: "Description", field: "description" },
+            { label: "Created", field: "created_at", format: "date" },
+          ],
+        },
+      },
+    ],
+  };
+}
+```
+
+Formats: `text`, `code`, `date`, `bytes`, `ms`, `number`. Tones: `default`, `good`, `warn`, `bad`, `accent`.
+
+## Schema Filters (Parameterized Queries)
+
+**`SchemaFilter`** — `{ clause: string; params: string[] }` — used by snapshot extractors to inject schema filters into SQL queries using parameterized placeholders (`$1`, `$2`, ...) instead of string interpolation.
+
+```ts
+import type { SchemaFilter } from "@sbtools/sdk";
+
+const filter: SchemaFilter = {
+  clause: "AND n.nspname IN ($1, $2)",
+  params: ["public", "extensions"],
+};
+
+const result = await client.query(
+  `SELECT * FROM pg_namespace n WHERE true ${filter.clause}`,
+  filter.params
+);
+```
+
+**Core utility:** `getSchemaFilter(schemas, column)` in `@sbtools/core` generates these filters from user config.
 
 ## Building Plugins
 

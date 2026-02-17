@@ -1,45 +1,49 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
-import { ui, SbtError, extractSupabaseKeys } from "@sbtools/sdk";
+import { ui, SbtError, extractSupabaseKeys, loadPackageVersion, resolveConfigPath, COMPOSE_DB_FILE, withHelp } from "@sbtools/sdk";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION = (require("../package.json") as { version: string }).version;
 
 /** Resolve the types output file path from plugin context. */
 export function resolveTypesOutput(ctx: PluginContext): string {
-  const typesOutput = (ctx.pluginConfig.typesOutput as string) ??
-    path.join(ctx.projectRoot, "src", "integrations", "supabase", "types.ts");
-  return path.isAbsolute(typesOutput)
-    ? typesOutput
-    : path.resolve(ctx.projectRoot, typesOutput);
+  return resolveConfigPath(ctx, "typesOutput", "src/integrations/supabase/types.ts");
 }
+
+const GENERATE_TYPES_HELP = `
+generate-types — Generate TypeScript types from the running Supabase instance
+
+Usage:
+  sbt generate-types
+
+Output: src/integrations/supabase/types.ts (or configured typesOutput)
+
+Requires the database to be running (sbt start).
+Set SUPABASE_TYPES_SCHEMAS to restrict schemas (e.g. public,auth).
+`;
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-typegen",
-  version: PLUGIN_VERSION,
+  version: loadPackageVersion(import.meta.url),
 
   commands: [
     {
       name: "generate-types",
       description: "Generate TypeScript types from the running Supabase instance",
-      async run(_args: string[], ctx: PluginContext): Promise<void> {
+      run: withHelp(GENERATE_TYPES_HELP, async (_args: string[], ctx: PluginContext): Promise<void> => {
         const OUT_PATH = resolveTypesOutput(ctx);
 
-        const composePath = path.join(ctx.toolsDir, "docker-compose.db.yml");
+        const composePath = path.join(ctx.toolsDir, COMPOSE_DB_FILE);
 
         if (!fs.existsSync(composePath)) {
           throw new SbtError("COMMAND_FAILED", `Could not read ${composePath}`, {
-            tips: ["Ensure docker-compose.db.yml exists in the supabase-tools directory"],
+            tips: [`Ensure ${COMPOSE_DB_FILE} exists in the supabase-tools directory`],
           });
         }
 
         const { serviceKey } = extractSupabaseKeys(composePath);
 
         if (!serviceKey) {
-          throw new SbtError("COMMAND_FAILED", "Service role key not found in docker-compose.db.yml.", {
-            tips: ["Ensure docker-compose.db.yml contains SUPABASE_SERVICE_ROLE_KEY"],
+          throw new SbtError("COMMAND_FAILED", `Service role key not found in ${COMPOSE_DB_FILE}.`, {
+            tips: [`Ensure ${COMPOSE_DB_FILE} contains SUPABASE_SERVICE_ROLE_KEY`],
           });
         }
 
@@ -84,7 +88,7 @@ const plugin: SbtPlugin = {
         fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
         fs.writeFileSync(OUT_PATH, body, "utf8");
         ui.success(`Generated types at ${path.relative(ctx.projectRoot, OUT_PATH)}`);
-      },
+      }),
     },
   ],
 };

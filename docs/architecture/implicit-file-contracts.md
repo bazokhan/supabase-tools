@@ -7,7 +7,6 @@ This document catalogs the implicit file conventions used by core and plugins. T
 | Path | Producer | Purpose |
 |------|----------|---------|
 | `{docsOutput}/backend-atlas-data.json` | `sbt generate-atlas` | Atlas JSON data; plugins contribute via `getAtlasData` |
-| `{docsOutput}/backend-atlas.html` | `sbt atlas-html` | Atlas HTML page; plugins contribute via `getAtlasUI` |
 
 ## Plugin output paths (by convention)
 
@@ -16,7 +15,7 @@ This document catalogs the implicit file conventions used by core and plugins. T
 | `{docsOutput}/migration-audit.html` | plugin-migration-audit | Full migration audit report |
 | `{docsOutput}/migration-audit/<slug>.html` | plugin-migration-audit | Per-migration detail pages (SQL viewer, operations, risk) |
 | `{docsOutput}/entity-relations/*.md` | plugin-erd | Mermaid ERD diagrams |
-| `{docsOutput}/openapi-spec.json` | plugin-docs-server | Merged OpenAPI spec |
+| `{docsOutput}/openapi-spec.json` | core (docs) | Merged OpenAPI spec |
 
 ## Artifact paths (versioned, preferred)
 
@@ -33,7 +32,7 @@ See [artifact registry](./artifact-registry.md) for the full contract set.
 
 - **Atlas categories**: Plugins add keys to `data.categories`. Key collision overwrites previous value. Use unique, namespaced keys (e.g. `migration_audit`, not `migrations`).
 - **Atlas stats**: Stats are appended; `countKey` collision updates `meta.object_counts`. Use lowercase-with-underscores for labels to avoid collision.
-- **Atlas UI**: `kindLabels`, `sectionHtml`, `cardRendererJs`, `initJs`, `styles` are concatenated. Use unique function names and section IDs (e.g. `migration-audit-summary`, `renderMigrationAuditCard`).
+- **Dashboard**: Plugins contribute sections via `getDashboardView()` returning JSON-serializable `DashboardSectionDef[]`.
 - **OpenAPI**: Deep merge of paths/components. Path collisions are overwritten; plugin should namespace or avoid PostgREST paths.
 
 ## Migration path

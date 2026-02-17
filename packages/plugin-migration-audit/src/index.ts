@@ -13,27 +13,23 @@
  *   }]
  */
 import path from "node:path";
-import { createRequire } from "node:module";
 import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
-import { hasFlag, openFile, ui } from "@sbtools/sdk";
-
-const require = createRequire(import.meta.url);
-const PLUGIN_VERSION: string = (require("../package.json") as { version: string }).version;
-import { scanMigrationFiles } from "./migration-scanner.js";
+import { hasFlag, openFile, ui, loadPackageVersion, withHelp } from "@sbtools/sdk";
 import {
-  createClient,
+  createPgClient,
   testConnection,
+  disconnectClient,
+  scanMigrationFiles,
+} from "@sbtools/sdk";
+import {
   checkTrackingTable,
   getAppliedMigrations,
   getSchemaSnapshot,
-  disconnectClient,
 } from "./db-client.js";
 import { buildAuditResult } from "./auditor.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
 import { writeMigrationAnalysisArtifact } from "./artifact.js";
-import { migrationAuditSectionHtml } from "./atlas/sections.js";
-import { migrationAuditCardRendererJs } from "./atlas/cards.js";
-import { migrationAuditStyles } from "./atlas/styles.js";
+import { getMigrationAuditDashboardView } from "./dashboard.js";
 import type { AuditResult, SchemaSnapshot } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -61,7 +57,7 @@ export async function runAudit(ctx: PluginContext): Promise<AuditResult> {
   let applied: { version: string; appliedAt: Date }[] = [];
   let schema: SchemaSnapshot | null = null;
 
-  const client = createClient();
+  const client = createPgClient();
 
   try {
     databaseReachable = await testConnection(client);
@@ -90,9 +86,7 @@ export async function runAudit(ctx: PluginContext): Promise<AuditResult> {
 // CLI: migration-audit command
 // ---------------------------------------------------------------------------
 
-async function migrationAuditCommand(args: string[], ctx: PluginContext): Promise<void> {
-  if (hasFlag(args, "--help", "-h")) {
-    console.log(`
+const MIGRATION_AUDIT_HELP = `
 migration-audit — Compare migration files with database tracking
 
 Usage:
@@ -109,26 +103,25 @@ Options:
 
 Read-only: no schema modifications. Uses DATABASE_URL, SUPABASE_DB_URL, or
 POSTGRES_URL (default: postgresql://postgres:postgres@localhost:54322/postgres).
-`);
-    return;
-  }
+`;
 
+async function migrationAuditCommand(args: string[], ctx: PluginContext): Promise<void> {
   const paths = resolvePaths(ctx);
   const onlyJson = hasFlag(args, "--json");
   const onlyHtml = hasFlag(args, "--html");
   const shouldOpen = !hasFlag(args, "--no-open");
 
   const result = await runAudit(ctx);
-  writeMigrationAnalysisArtifact(ctx, result, { pluginVersion: PLUGIN_VERSION });
+  writeMigrationAnalysisArtifact(ctx, result, { pluginVersion: loadPackageVersion(import.meta.url) });
 
   if (onlyJson) {
-    console.log(JSON.stringify(result, null, 2));
+    ui.log(JSON.stringify(result, null, 2));
     return;
   }
 
   if (onlyHtml) {
     writeHtml(result, paths.htmlOutput);
-    console.log(`HTML report written to ${paths.htmlOutput}`);
+    ui.info(`HTML report written to ${paths.htmlOutput}`);
     if (shouldOpen) openFile(paths.htmlOutput);
     return;
   }
@@ -156,7 +149,7 @@ POSTGRES_URL (default: postgresql://postgres:postgres@localhost:54322/postgres).
 
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-migration-audit",
-  version: PLUGIN_VERSION,
+  version: loadPackageVersion(import.meta.url),
   artifactCapabilities: {
     produces: ["migration.analysis"],
   },
@@ -165,7 +158,7 @@ const plugin: SbtPlugin = {
     {
       name: "migration-audit",
       description: "Audit migration files vs database tracking (read-only)",
-      run: migrationAuditCommand,
+      run: withHelp(MIGRATION_AUDIT_HELP, migrationAuditCommand),
     },
   ],
 
@@ -202,20 +195,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => ({
-    kindLabels: {
-      migration_audit: "Migration Audit",
-    },
-    sectionHtml: migrationAuditSectionHtml(),
-    cardRendererJs: migrationAuditCardRendererJs(),
-    initJs: [
-      "renderMigrationAuditSummary(data);",
-      'var ma = data.categories.migration_audit;',
-      'var maCards = ma && ma.length > 1 ? ma.slice(1) : [];',
-      'renderSection("migration-audit-list", maCards, renderMigrationAuditCard, "migrations");',
-    ].join("\n    "),
-    styles: migrationAuditStyles(),
-  }),
+  getDashboardView: () => getMigrationAuditDashboardView(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const result = await runAudit(ctx);

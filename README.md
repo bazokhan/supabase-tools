@@ -25,6 +25,8 @@ npx sbt generate-erd
 
 ## Commands
 
+### Core
+
 | Command | Description |
 |---------|-------------|
 | `start` | Start Supabase stack |
@@ -33,11 +35,29 @@ npx sbt generate-erd
 | `status` | Show service URLs, keys, connection info |
 | `migrate` | Apply SQL migrations from `supabase/migrations/` |
 | `snapshot` | Export DB objects to filesystem |
-| `generate-types` | Generate TypeScript types from the DB schema |
+| `watch` | Watch DB/files and keep artifacts fresh |
+| `dashboard` | Start modern dashboard UI (overview, migrations, depgraph, live logs, frontend usage) |
 | `generate-atlas` | Generate Backend Atlas data (JSON) |
+| `atlas-html` | Generate Backend Atlas HTML visualization |
+| `docs` | Start documentation services (Swagger, ReDoc, Atlas, SchemaSpy) |
 | `init` | Generate `supabase-tools.config.json` with defaults |
 
-Plugin commands (generate-erd, docs, atlas-html, test, etc.) — [documentation](https://bazokhan.github.io/supabase-tools/plugins/).
+### Plugin Commands
+
+| Command | Plugin | Description |
+|---------|--------|-------------|
+| `generate-erd` | plugin-erd | Mermaid ERD diagrams per table |
+| `generate-types` | plugin-typegen | TypeScript types from DB schema |
+| `test` | plugin-db-test | pgTAP tests (live or `--mem` PGlite) |
+| `edge-functions` | plugin-deno-functions | List/document edge functions |
+| `depgraph` | plugin-depgraph | Dependency graph (HTML + Mermaid) |
+| `frontend-usage` | plugin-frontend-usage | Scan frontend for SDK usage |
+| `logs` | plugin-logs | Docker logs, pg_stat_statements |
+| `migration-audit` | plugin-migration-audit | Migration drift detection |
+| `migration-studio` | plugin-migration-studio | Migration authoring UI |
+| `scaffold-plugin` | plugin-scaffold | Scaffold new plugins |
+
+Full reference: [documentation](https://bazokhan.github.io/supabase-tools/plugins/).
 
 All commands: `npx sbt <command>`
 
@@ -48,6 +68,14 @@ Run `init` to create `supabase-tools.config.json` at project root. Override DB U
 ## Error Handling
 
 Structured errors with codes: `ConfigError`, `DatabaseError`, `SnapshotError`, `PluginError`, `SbtError`. Set `SBT_DEBUG=1` for stack traces.
+
+## Development
+
+```bash
+npm run build           # Build SDK first, then all workspaces
+npm test                # Run all tests (199 tests across 9 suites)
+npm run lint:conventions  # Check project conventions (advisory warnings)
+```
 
 ## Requirements
 
@@ -62,16 +90,18 @@ Full docs: [docs site](https://bazokhan.github.io/supabase-tools/) (or run `npm 
 
 | Plugin | npm | Description |
 |--------|-----|-------------|
-| plugin-erd | `@sbtools/plugin-erd` | Mermaid ERD diagrams |
-| plugin-typegen | `@sbtools/plugin-typegen` | TypeScript type generation |
-| plugin-atlas-html | `@sbtools/plugin-atlas-html` | Backend Atlas HTML |
 | plugin-db-test | `@sbtools/plugin-db-test` | pgTAP + PGlite test runner |
-| plugin-deno-functions | `@sbtools/plugin-deno-functions` | Edge function docs |
+| plugin-deno-functions | `@sbtools/plugin-deno-functions` | Edge function docs + OpenAPI |
 | plugin-depgraph | `@sbtools/plugin-depgraph` | Dependency graph visualization |
-| plugin-docs-server | `@sbtools/plugin-docs-server` | Swagger UI, ReDoc, Backend Atlas, SchemaSpy |
+| plugin-erd | `@sbtools/plugin-erd` | Mermaid ERD diagrams |
 | plugin-frontend-usage | `@sbtools/plugin-frontend-usage` | Frontend SDK usage scanner |
 | plugin-logs | `@sbtools/plugin-logs` | Docker logs, pg_stat_statements |
+| plugin-migration-audit | `@sbtools/plugin-migration-audit` | Migration drift detection |
+| plugin-migration-studio | `@sbtools/plugin-migration-studio` | Migration authoring UI |
 | plugin-scaffold | `@sbtools/plugin-scaffold` | Scaffold new plugins |
+| plugin-typegen | `@sbtools/plugin-typegen` | TypeScript type generation |
+
+> **Note:** `@sbtools/plugin-atlas-html` and `@sbtools/plugin-docs-server` have been merged into `@sbtools/core`. The `atlas-html` and `docs` commands are now built-in.
 
 ## License
 

@@ -10,13 +10,7 @@ export function generateIndexTs(name: string, external: boolean, hooks: boolean)
     return { categories: {}, stats: [] };
   },
 
-  getAtlasUI: () => ({
-    kindLabels: {},
-    sectionHtml: "",
-    cardRendererJs: "",
-    initJs: "",
-    styles: "",
-  }),
+  getDashboardView: () => ({ sections: [] }),
 
   getStatusLines: async () => ["  (no status)"],
 

@@ -8,7 +8,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { SbtError } from "@sbtools/sdk";
+import { SbtError, COMPOSE_DB_FILE } from "@sbtools/sdk";
 import { config, resolve } from "./config.js";
 
 // ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ interface Check {
 // ---------------------------------------------------------------------------
 
 const composeDb = (): Check => ({
-  path: path.join(config.toolsDir, "docker-compose.db.yml"),
+  path: path.join(config.toolsDir, COMPOSE_DB_FILE),
   label: "Docker Compose DB config",
   fix: "This file ships with supabase-tools. Re-clone or restore it.",
   kind: "file",
@@ -67,6 +67,9 @@ function checksForCommand(command: string, args: string[]): Check[] {
     case "migrate":
       return [migrationsDir()];
 
+    case "watch":
+      return [migrationsDir()];
+
     case "snapshot":
       return [composeDb()];
 
@@ -75,6 +78,9 @@ function checksForCommand(command: string, args: string[]): Check[] {
 
     case "generate-atlas":
       return [snapshotMeta()];
+
+    case "docs":
+      return [composeDb()];
 
     default:
       return [];

@@ -15,6 +15,8 @@ import { TEMPLATES } from "./templates.js";
 import { scanMigrationFiles } from "@sbtools/sdk";
 import { readArtifactOrNull } from "@sbtools/sdk";
 
+const WATCH_STAMP_PATH_REL = path.join("watch", "last-event.json");
+
 function generateMigrationFilename(description?: string): string {
   const now = new Date();
   const ts =
@@ -86,14 +88,16 @@ async function validateSql(sql: string): Promise<{ valid: boolean; error?: strin
     return { valid: true, dbConnected: true };
   } catch (e) {
     try {
-      await client.query("ROLLBACK").catch(() => {});
+      await client.query("ROLLBACK").catch((err) => {
+        if (process.env.SBT_DEBUG === "1") console.warn("ROLLBACK failed:", (err as Error).message);
+      });
     } catch {
       // ignore
     }
     try {
       await disconnectClient(client);
-    } catch {
-      // ignore
+    } catch (err) {
+      if (process.env.SBT_DEBUG === "1") console.warn("disconnectClient failed:", (err as Error).message);
     }
     const msg = (e as { message?: string }).message ?? String(e);
     if (msg.includes("connect") || msg.includes("ECONNREFUSED") || msg.includes("timeout")) {
@@ -187,6 +191,25 @@ const handleSave: RouteHandler = async (req, res, ctx) => {
 };
 
 let schemaCache: Awaited<ReturnType<typeof loadSchema>> | null = null;
+const sseClients = new Set<http.ServerResponse>();
+let fsBridgeStarted = false;
+const fsBridgeWatchers: fs.FSWatcher[] = [];
+
+function broadcastRefresh(reason: string): void {
+  const payload = JSON.stringify({ type: "refresh", reason, at: new Date().toISOString() });
+  for (const res of sseClients) {
+    try {
+      res.write(`data: ${payload}\n\n`);
+    } catch {
+      sseClients.delete(res);
+    }
+  }
+}
+
+function invalidateStudioCaches(reason: string): void {
+  schemaCache = null;
+  broadcastRefresh(reason);
+}
 
 const handleSchema: RouteHandler = async (req, res, ctx) => {
   if (!schemaCache) schemaCache = await loadSchema(ctx);
@@ -197,6 +220,19 @@ const handleSchema: RouteHandler = async (req, res, ctx) => {
 const handleTemplates: RouteHandler = async (req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ templates: TEMPLATES }));
+};
+
+const handleEvents: RouteHandler = async (_req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.write(`data: ${JSON.stringify({ type: "connected", at: new Date().toISOString() })}\n\n`);
+  sseClients.add(res);
+  res.on("close", () => {
+    sseClients.delete(res);
+  });
 };
 
 const handleMigrations: RouteHandler = async (req, res, ctx) => {
@@ -285,10 +321,51 @@ function serveLibFile(req: http.IncomingMessage, res: http.ServerResponse): bool
   return false;
 }
 
+function initStudioFsBridge(ctx: PluginContext): void {
+  if (fsBridgeStarted) return;
+  fsBridgeStarted = true;
+
+  const watchStampPath = path.join(ctx.sbtDataDir, WATCH_STAMP_PATH_REL);
+  const watchStampDir = path.dirname(watchStampPath);
+  const artifactPath = path.join(ctx.sbtDataDir, "artifacts", "migration.analysis", "1.0.0", "latest.json");
+  const artifactDir = path.dirname(artifactPath);
+
+  fs.mkdirSync(watchStampDir, { recursive: true });
+  fs.mkdirSync(artifactDir, { recursive: true });
+  fs.mkdirSync(ctx.paths.migrations, { recursive: true });
+
+  const watchDir = (dir: string, onChange: (filename: string) => void) => {
+    const watcher = fs.watch(dir, (_eventType, filename) => onChange(filename?.toString() ?? ""));
+    fsBridgeWatchers.push(watcher);
+  };
+
+  watchDir(path.dirname(watchStampPath), (filename) => {
+    if (filename !== path.basename(watchStampPath)) return;
+    invalidateStudioCaches("watch_event");
+  });
+
+  watchDir(path.dirname(artifactPath), (filename) => {
+    if (filename !== path.basename(artifactPath)) return;
+    invalidateStudioCaches("artifact_changed");
+  });
+
+  watchDir(ctx.paths.migrations, (filename) => {
+    if (!filename.endsWith(".sql")) return;
+    invalidateStudioCaches("migration_file_changed");
+  });
+
+  process.once("exit", () => {
+    for (const w of fsBridgeWatchers) w.close();
+  });
+}
+
 export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMessage, res: http.ServerResponse) => void {
+  initStudioFsBridge(ctx);
+
   const routes = new Map<string, RouteHandler>([
     ["GET:/", handleIndex],
     ["GET:/index.html", handleIndex],
+    ["GET:/api/events", handleEvents],
     ["GET:/api/schema", handleSchema],
     ["GET:/api/templates", handleTemplates],
     ["GET:/api/migrations", handleMigrations],
