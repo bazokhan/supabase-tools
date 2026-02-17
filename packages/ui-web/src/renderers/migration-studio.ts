@@ -2,6 +2,17 @@ import { renderRawDocument } from "../components/document.js";
 
 const importMap = `{"imports":{"@codemirror/view":"/lib/@codemirror/view/dist/index.js","@codemirror/state":"/lib/@codemirror/state/dist/index.js","@codemirror/commands":"/lib/@codemirror/commands/dist/index.js","@codemirror/lang-sql":"/lib/@codemirror/lang-sql/dist/index.js","@codemirror/theme-one-dark":"/lib/@codemirror/theme-one-dark/dist/index.js","@codemirror/language":"/lib/@codemirror/language/dist/index.js","@codemirror/autocomplete":"/lib/@codemirror/autocomplete/dist/index.js","@codemirror/lint":"/lib/@codemirror/lint/dist/index.js","@lezer/highlight":"/lib/@lezer/highlight/dist/index.js","@lezer/lr":"/lib/@lezer/lr/dist/index.js","@lezer/common":"/lib/@lezer/common/dist/index.js","style-mod":"/lib/style-mod/src/style-mod.js","w3c-keyname":"/lib/w3c-keyname/index.js","crelt":"/lib/crelt/index.js","@marijn/find-cluster-break":"/lib/@marijn/find-cluster-break/src/index.js"}}`;
 
+/**
+ * Safely encode a string value for inclusion in an inline <script> block.
+ * This uses JSON.stringify to preserve the original value semantics and
+ * additionally neutralizes any occurrence of "</script" to avoid prematurely
+ * terminating the script element.
+ */
+function escapeForInlineScript(value: string): string {
+  const json = JSON.stringify(value);
+  return json.replace(/<\/script/gi, "<\\/script");
+}
+
 export function renderMigrationStudioPage(opts: { migrationsDir: string; styles: string }): string {
   const bodyHtml = `
 <script type="importmap">${importMap}</script>
@@ -48,7 +59,7 @@ export function renderMigrationStudioPage(opts: { migrationsDir: string; styles:
 </div>`;
 
   const script = `
-const MIGRATIONS_DIR = ${JSON.stringify(opts.migrationsDir)};
+const MIGRATIONS_DIR = ${escapeForInlineScript(opts.migrationsDir)};
 
 async function initEditor() {
   const view = await import('/lib/@codemirror/view/dist/index.js');
