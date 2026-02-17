@@ -6,11 +6,16 @@ const importMap = `{"imports":{"@codemirror/view":"/lib/@codemirror/view/dist/in
  * Safely encode a string value for inclusion in an inline <script> block.
  * This uses JSON.stringify to preserve the original value semantics and
  * additionally neutralizes any occurrence of "</script" to avoid prematurely
- * terminating the script element.
+ * terminating the script element, as well as U+2028/U+2029 which can
+ * otherwise behave like line terminators in some JavaScript contexts.
  */
 function escapeForInlineScript(value: string): string {
   const json = JSON.stringify(value);
-  return json.replace(/<\/script/gi, "<\\/script");
+  // Neutralize </script sequences and Unicode line/paragraph separators.
+  return json
+    .replace(/<\/script/gi, "<\\/script")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 export function renderMigrationStudioPage(opts: { migrationsDir: string; styles: string }): string {
