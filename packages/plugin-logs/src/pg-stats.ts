@@ -4,7 +4,7 @@
  * Zero external dependencies -- queries Postgres by shelling out to psql
  * inside the running database container.
  */
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,8 +41,22 @@ function psql(
   const oneLine = sql.replace(/\s+/g, " ").trim();
   const escapedOneLine = oneLine.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   try {
-    const stdout = execSync(
-      `docker exec "${dbContainer}" psql -U postgres -d postgres -At -F "${SEP}" -c "${escapedOneLine}"`,
+    const stdout = execFileSync(
+      "docker",
+      [
+        "exec",
+        dbContainer,
+        "psql",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-At",
+        "-F",
+        SEP,
+        "-c",
+        escapedOneLine,
+      ],
       { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 10_000 },
     ).trim();
     return { ok: true, stdout };
