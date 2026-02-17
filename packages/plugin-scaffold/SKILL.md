@@ -7,7 +7,7 @@ Plugin that scaffolds new supabase-tools plugins. Lives in `supabase-tools/packa
 Use this plugin when the user needs to:
 - Create a new internal or external plugin
 - Get consistent boilerplate (package.json, tsconfig, README, SKILL, SbtPlugin structure)
-- Start with Atlas hook stubs (getAtlasData, getAtlasUI, getStatusLines, getOpenApiSpec)
+- Start with Atlas hook stubs (getAtlasData, getDashboardView, getStatusLines, getOpenApiSpec)
 
 ## CLI Commands
 

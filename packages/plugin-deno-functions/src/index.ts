@@ -20,7 +20,7 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { loadPackageVersion, resolveConfigPath, getConfigString, ui, withHelp } from "@sbtools/sdk";
 import { extractEdgeFunctions } from "./extractor.js";
 import { writeOpenApiPartialArtifact } from "./artifact.js";
-import { getEdgeFunctionAtlasUI } from "./atlas.js";
+import { getEdgeFunctionDashboardView } from "./dashboard.js";
 import { generateEdgeFunctionOpenApi } from "./openapi.js";
 
 const PLUGIN_VERSION = loadPackageVersion(import.meta.url);
@@ -179,7 +179,7 @@ Plugin config (in supabase-tools.config.json → plugins[].config):
     };
   },
 
-  getAtlasUI: () => getEdgeFunctionAtlasUI(),
+  getDashboardView: () => getEdgeFunctionDashboardView(),
 
   getOpenApiSpec: async (ctx: PluginContext) => {
     const baseUrl = getConfigString(ctx, "baseUrl", "/functions/v1");

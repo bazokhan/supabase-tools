@@ -1,6 +1,6 @@
 # @sbtools/plugin-logs
 
-Plugin for [supabase-tools](../../) that adds live Docker log tailing, `pg_stat_statements` query performance monitoring, and a standalone HTML log viewer. Zero external dependencies.
+Plugin for [supabase-tools](../../) that adds live Docker log tailing, `pg_stat_statements` query performance monitoring, and a browser log viewer rendered via shared `@sbtools/ui-web`.
 
 ## Quick Start
 
@@ -94,11 +94,9 @@ plugin-logs/
 │   ├── formatter.ts  # Log parsing and ANSI colourisation
 │   ├── pg-stats.ts   # pg_stat_statements via docker exec psql
 │   ├── viewer.ts     # HTTP + SSE server
-│   ├── viewer-html.ts # Single-page HTML builder
+│   ├── viewer-html.ts # Delegates page rendering to @sbtools/ui-web
 │   └── atlas/
-│       ├── cards.ts  # Card renderers for Backend Atlas
-│       ├── sections.ts # HTML section stubs
-│       └── styles.ts # Additional CSS
+│       └── styles.ts # Additional CSS for atlas sections
 ├── package.json
 ├── SKILL.md
 └── README.md

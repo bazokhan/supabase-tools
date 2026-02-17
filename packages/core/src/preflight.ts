@@ -51,13 +51,6 @@ const migrationsDir = (): Check => ({
   kind: "dir",
 });
 
-const atlasDataFile = (): Check => ({
-  path: path.join(resolve(config.paths.docsOutput), "backend-atlas-data.json"),
-  label: "backend-atlas-data.json",
-  fix: "Run `sbt generate-atlas` first to generate the atlas data.",
-  kind: "file",
-});
-
 // ---------------------------------------------------------------------------
 // Command → checks mapping
 // ---------------------------------------------------------------------------
@@ -88,9 +81,6 @@ function checksForCommand(command: string, args: string[]): Check[] {
 
     case "docs":
       return [composeDb()];
-
-    case "atlas-html":
-      return [atlasDataFile()];
 
     default:
       return [];

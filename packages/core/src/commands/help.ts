@@ -5,7 +5,7 @@ import { allCommands } from "../command-registry.js";
 const CATEGORY_ORDER = ["Docker", "Database", "Code Generation", "Testing", "Docs", "Setup", "Plugins"];
 
 function inferCategory(cmdName: string): string {
-  if (cmdName.startsWith("generate-") || cmdName === "atlas-html") return "Code Generation";
+  if (cmdName.startsWith("generate-")) return "Code Generation";
   if (cmdName === "test") return "Testing";
   if (cmdName.includes("docs")) return "Docs";
   return "Plugins";

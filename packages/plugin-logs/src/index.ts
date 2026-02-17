@@ -38,7 +38,7 @@ import {
   formatStatsTable,
 } from "./pg-stats.js";
 import { startViewer } from "./viewer.js";
-import { getLogsAtlasUI } from "./atlas.js";
+import { getLogsDashboardView } from "./dashboard.js";
 
 // ---------------------------------------------------------------------------
 // CLI: logs command
@@ -266,7 +266,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => getLogsAtlasUI(),
+  getDashboardView: () => getLogsDashboardView(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const statuses = getServiceStatuses(ctx.projectRoot);

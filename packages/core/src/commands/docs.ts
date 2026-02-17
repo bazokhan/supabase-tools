@@ -1,5 +1,5 @@
 /**
- * docs command — Start API documentation services (Swagger, ReDoc, Atlas, SchemaSpy).
+ * docs command — Start API documentation services (Swagger, ReDoc, SchemaSpy).
  * Moved from plugin-docs-server into core.
  */
 import { execSync } from "node:child_process";
@@ -22,14 +22,13 @@ const OPENAPI_PARTIAL_ARTIFACTS: Array<{ id: string; version: string; skipPlugin
   { id: "openapi.partial.deno-functions", version: "1.0.0", skipPlugin: "@sbtools/plugin-deno-functions" },
 ];
 
-type DocsSubcommand = "swagger" | "redoc" | "atlas" | "schemaspy" | "all" | "stop";
+type DocsSubcommand = "swagger" | "redoc" | "schemaspy" | "all" | "stop";
 
-const VALID_SUBCOMMANDS = new Set<string>(["swagger", "redoc", "atlas", "schemaspy", "all", "stop"]);
+const VALID_SUBCOMMANDS = new Set<string>(["swagger", "redoc", "schemaspy", "all", "stop"]);
 
 const SERVICE_MAP: Record<string, string[]> = {
   swagger: ["swagger-ui"],
   redoc: ["redoc"],
-  atlas: ["docs-server"],
   schemaspy: ["schemaspy", "docs-server"],
   all: [],
 };
@@ -37,7 +36,6 @@ const SERVICE_MAP: Record<string, string[]> = {
 const SERVICE_URLS: Record<string, [string, string]> = {
   swagger: ["Swagger UI", "http://localhost:8081"],
   redoc: ["ReDoc", "http://localhost:8082"],
-  atlas: ["Backend Atlas", "http://localhost:8083/atlas/"],
   schemaspy: ["SchemaSpy", "http://localhost:8083/schemaspy/"],
 };
 
@@ -51,22 +49,6 @@ function preflightOpenApi(ctx: PluginContext, specPath: string, dbComposePath: s
   if (!existsSync(path.join(ctx.sbtDataDir, ".env"))) {
     throw new SbtError("PREFLIGHT_FAILED", ".env file not found in .sbt/.", {
       tips: ["Run `sbt init` to create project directories and env file."],
-    });
-  }
-}
-
-function preflightAtlas(ctx: PluginContext): void {
-  const dataFile = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
-  const htmlFile = path.join(ctx.paths.docsOutput, "backend-atlas.html");
-  const missing: string[] = [];
-  if (!existsSync(dataFile)) missing.push("backend-atlas-data.json");
-  if (!existsSync(htmlFile)) missing.push("backend-atlas.html");
-  if (missing.length > 0) {
-    throw new SbtError("PREFLIGHT_FAILED", `Atlas files missing: ${missing.join(", ")}`, {
-      tips: [
-        "Run `sbt generate-atlas` to generate the data file.",
-        "Run `sbt atlas-html` to generate the HTML page.",
-      ],
     });
   }
 }
@@ -215,7 +197,6 @@ Usage:
 Subcommands:
   swagger    Swagger UI only (port 8081). Needs openapi-spec.
   redoc      ReDoc only (port 8082). Needs openapi-spec.
-  atlas      Backend Atlas only (port 8083/atlas/). Needs sbt generate-atlas + sbt atlas-html.
   schemaspy  SchemaSpy only (port 8083/schemaspy/). Needs DB running.
   all        All services (default if no subcommand).
   stop       Stop all docs containers.
@@ -246,10 +227,8 @@ export async function runDocs(args: string[], ctx: PluginContext): Promise<void>
   }
 
   const needsOpenApi = subcommand === "swagger" || subcommand === "redoc" || subcommand === "all";
-  const needsAtlas = subcommand === "atlas" || subcommand === "all";
 
   preflightOpenApi(ctx, specPath, dbComposePath);
-  if (needsAtlas) preflightAtlas(ctx);
 
   if (needsOpenApi) {
     await ensureOpenApiSpec(ctx, specPath, dbComposePath);

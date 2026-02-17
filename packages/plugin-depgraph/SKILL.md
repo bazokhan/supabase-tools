@@ -43,9 +43,12 @@ sbt depgraph -h/--help    Show help
 ## Atlas Integration
 
 When `sbt generate-atlas` runs, this plugin contributes:
-- A "Dependency Graph" section with summary stat cards (total nodes, edges, relationship counts)
-- A link to open the full interactive graph
-- Relationship detail cards expandable in the Atlas HTML
+- `dependency_graph` category with total nodes, edges, relationship counts
+- Edge summaries for the dashboard
+
+When `sbt dashboard` runs, contributes:
+- "Dependency Graph" section with summary stats and link to interactive graph
+- Relationship detail cards expandable in the dashboard
 
 ## Configuration
 

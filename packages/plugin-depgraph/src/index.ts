@@ -23,7 +23,7 @@ import { writeDepgraphArtifact } from "./artifact.js";
 const PLUGIN_VERSION = loadPackageVersion(import.meta.url);
 import { generateMermaid, writeMermaid } from "./mermaid-generator.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
-import { getDepgraphAtlasUI } from "./atlas.js";
+import { getDepgraphDashboardView } from "./dashboard.js";
 
 // ---------------------------------------------------------------------------
 // Resolved paths
@@ -197,7 +197,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => getDepgraphAtlasUI(),
+  getDashboardView: () => getDepgraphDashboardView(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const paths = resolvePaths(ctx);

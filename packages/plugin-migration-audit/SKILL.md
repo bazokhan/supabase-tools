@@ -43,9 +43,9 @@ When `sbt generate-atlas` runs, contributes:
 - `migration_audit` category: summary object + migration cards
 - Stats: migrations_total, migrations_applied, migrations_pending, migrations_missing
 
-When `sbt atlas-html` runs, contributes:
+When `sbt dashboard` runs, contributes:
 - "Migration Audit" section with summary stats and link to full report
-- Migration cards rendered via `renderMigrationAuditCard`
+- Migration cards rendered via GenericSection
 
 ## Configuration
 

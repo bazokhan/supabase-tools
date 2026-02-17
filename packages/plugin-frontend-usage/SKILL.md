@@ -26,13 +26,11 @@ Use this plugin when the user needs to:
 plugin-frontend-usage/
 ├── src/
 │   ├── index.ts         # SbtPlugin: frontend-usage command + hooks
-│   ├── atlas.ts         # Atlas UI via buildAtlasUI() — frontend usage section
-│   ├── scanner.ts       # File discovery, line-by-line scan
-│   ├── patterns.ts      # Regex patterns, UsageHit, FrontendUsageData
-│   ├── analyzer.ts      # Aggregation
-│   ├── html-generator.ts # Self-contained HTML (dark theme)
-│   └── atlas/
-│       └── styles.ts    # Additional CSS for Atlas cards
+│   ├── dashboard.ts    # Dashboard sections via getDashboardView()
+│   ├── scanner.ts      # File discovery, line-by-line scan
+│   ├── patterns.ts     # Regex patterns, UsageHit, FrontendUsageData
+│   ├── analyzer.ts     # Aggregation
+│   └── html-generator.ts # Delegates to shared @sbtools/ui-web renderer
 ├── package.json
 └── SKILL.md
 ```

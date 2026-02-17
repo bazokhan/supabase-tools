@@ -36,8 +36,18 @@ export type {
     PluginContext,
     ResolvedPaths,
     PluginAtlasData,
-    PluginAtlasUI,
     ArtifactCapabilities,
+    DashboardView,
+    DashboardSectionDef,
+    DashboardSectionLayout,
+    DashboardStatDef,
+    DashboardCardDef,
+    DashboardTableDef,
+    DashboardTableColumnDef,
+    DashboardDetailDef,
+    DashboardBadgeDef,
+    DashboardTone,
+    DashboardFieldFormat,
 } from "./plugin-api.js";
 
 // Artifact helpers
@@ -132,12 +142,3 @@ export { COMPOSE_DB_FILE, COMPOSE_API_DOCS_FILE } from "./constants.js";
 // Templates
 export { snapshotFileHeader } from "./templates.js";
 
-// Atlas UI builder
-export { buildAtlasUI } from "./atlas-ui.js";
-export type {
-  AtlasSectionDef,
-  AtlasCardDef,
-  AtlasBadgeDef,
-  AtlasDetailDef,
-  AtlasSummaryDef,
-} from "./atlas-ui.js";

@@ -32,9 +32,9 @@ Development: `npm run dev` or `tsx packages/core/src/cli.ts <command>`
 - `migrate` — Apply SQL migrations
 - `snapshot` — Export DB objects to snapshot directory
 - `watch` — Watch DB/files and keep artifacts fresh (e.g. `--scope migration`)
-- `generate-atlas` — Backend Atlas JSON (HTML via `atlas-html` command)
-- `atlas-html` — Generate Backend Atlas HTML (core)
-- `docs` — Start Swagger, ReDoc, Atlas, SchemaSpy (core)
+- `generate-atlas` — Backend Atlas JSON (used by dashboard)
+- `dashboard` — Development dashboard UI (React SPA, port 3400)
+- `docs` — Start Swagger, ReDoc, SchemaSpy (core)
 - `init` — Generate config file; appends `.sbt/` to `.gitignore` if missing
 
 ### Plugin Commands
@@ -99,7 +99,7 @@ npm run lint:conventions  # Convention linter (advisory warnings)
 
 Vitest in `packages/sdk`, `packages/core`, and selected plugins. Tests use `@sbtools/sdk` from workspace.
 
-The convention linter (`scripts/lint-conventions.ts`) checks 10 rules: use `ui.*` instead of `console.log`, use `SbtError` subclasses, wrap commands with `withHelp()`, use `buildAtlasUI()`, parameterized schema filters, etc.
+The convention linter (`scripts/lint-conventions.ts`) checks 10 rules: use `ui.*` instead of `console.log`, use `SbtError` subclasses, wrap commands with `withHelp()`, prefer `getDashboardView()` for dashboard UI, parameterized schema filters, etc.
 
 ## CLI Verification
 
@@ -118,7 +118,7 @@ Run all impacted commands against a consumer project with linked packages and fu
 | `sbt status` | Service URLs, keys; plugin status lines |
 | `sbt generate-atlas` | Backend atlas JSON; plugin contributions |
 | `sbt depgraph` | HTML + Mermaid graphs; writes `depgraph.graph` artifact |
-| `sbt atlas-html` | Backend atlas HTML |
+| `sbt dashboard` | Dashboard UI at http://localhost:3400 |
 | `sbt docs swagger` | OpenAPI merge; artifact consumed: `openapi.partial.deno-functions (artifact): N path(s) merged`; Swagger container started |
 | `sbt generate-erd` | ERD diagrams per table |
 | `sbt generate-types` | TypeScript types |

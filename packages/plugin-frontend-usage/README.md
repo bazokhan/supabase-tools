@@ -62,7 +62,7 @@ No Docker or database required.
 ## Atlas Integration
 
 - **getAtlasData()**: Component → resource mapping as `frontend_usage` category
-- **getAtlasUI()**: Section HTML, card renderer, styles
+- **getAtlasView()**: Typed Atlas section definitions compiled by core
 - **getStatusLines()**: Summary line in `sbt status`
 
 ## Project Structure
@@ -75,10 +75,8 @@ plugin-frontend-usage/
 │   ├── scanner.ts     # File discovery + scanning
 │   ├── patterns.ts    # Regex patterns
 │   ├── analyzer.ts    # Aggregation
-│   ├── html-generator.ts
+│   ├── html-generator.ts # Delegates to shared @sbtools/ui-web renderer
 │   └── atlas/
-│       ├── cards.ts
-│       ├── sections.ts
 │       └── styles.ts
 ├── package.json
 ├── tsconfig.json

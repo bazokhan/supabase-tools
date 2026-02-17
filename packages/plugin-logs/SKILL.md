@@ -111,7 +111,7 @@ Uses `child_process.spawn` to run `docker logs -f --tail N <container>`. Each se
 Queries the database via `docker exec <db-container> psql -U postgres -d postgres -At -c "..."`. No `pg` npm dependency needed. The extension is bootstrapped with `CREATE EXTENSION IF NOT EXISTS` on first use.
 
 ### Log Viewer
-A Node.js HTTP server using only the built-in `http` module. The SSE endpoint spawns `docker logs -f` for each requested service and pipes parsed log lines as JSON events. The HTML page is a self-contained single-page app with inline CSS and JS.
+A Node.js HTTP server using only the built-in `http` module. The SSE endpoint spawns `docker logs -f` for each requested service and pipes parsed log lines as JSON events. The viewer page markup is rendered through shared `@sbtools/ui-web`.
 
 ### Container Discovery
 Reads `supabase-tools.config.json` to get `project.name`, then derives the Docker container prefix via `@sbtools/sdk` (`deriveContainerPrefix` or `sanitizeContainerPrefix`). Same logic used by core `cli.ts` and migrate.
@@ -122,14 +122,12 @@ Reads `supabase-tools.config.json` to get `project.name`, then derives the Docke
 plugin-logs/
 ├── src/
 │   ├── index.ts       # SbtPlugin with logs command + hooks
-│   ├── atlas.ts       # Atlas UI via buildAtlasUI() — query perf + service health sections
+│   ├── dashboard.ts   # Dashboard sections via getDashboardView() — query perf + service health
 │   ├── docker-logs.ts # Container discovery, log tailing, process lifecycle
 │   ├── formatter.ts   # Per-service log parsing and ANSI colourisation
 │   ├── pg-stats.ts    # pg_stat_statements queries via docker exec psql
 │   ├── viewer.ts      # HTTP + SSE server for live log viewer
-│   ├── viewer-html.ts # Single-page HTML builder (dark theme, matching Atlas)
-│   └── atlas/
-│       └── styles.ts  # Additional CSS for Atlas cards
+│   └── viewer-html.ts # Delegates to shared @sbtools/ui-web renderer
 ├── package.json
 └── SKILL.md
 ```

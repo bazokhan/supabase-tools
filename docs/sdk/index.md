@@ -170,73 +170,54 @@ const ts = parseTimestampPrefix("20240101120000_foo.sql"); // "20240101120000"
 
 Used by migration-audit and migration-studio. No Node.js deps; can run in browser.
 
-## Atlas UI Builder
+## Dashboard View
 
-**`buildAtlasUI(sections, styles?)`** — declarative builder for Backend Atlas UI contributions. Generates section HTML, card renderer JavaScript, init JS, and styles from a single configuration object. Replaces the old manual "triad pattern" (separate `sections.ts`, `cards.ts`, `styles.ts` files).
+Use **`getDashboardView()`** to contribute sections to the `sbt dashboard` UI. Returns JSON-serializable config — no JS strings.
 
 ### Interfaces
 
-- **`AtlasSectionDef`** — section configuration (id, title, description, data key, card/summary definitions)
-- **`AtlasCardDef`** — card rendering config (title, subtitle, badges, details) — all fields are JS expressions evaluated in the renderer
-- **`AtlasBadgeDef`** — badge config (label, cssClass, condition)
-- **`AtlasDetailDef`** — detail row config (heading, value, pre?)
-- **`AtlasSummaryDef`** — optional summary block config (customJs or heading/items)
+- **`DashboardSectionDef`** — section config (id, title, description, dataKey, layout, stats, card, table, link)
+- **`DashboardCardDef`** — card layout (titleField, subtitleField, searchFields, badges, details)
+- **`DashboardTableDef`** — table layout (columns with header, field, format)
+- **`DashboardStatDef`** — stat row (label, field, tone)
+- **`DashboardBadgeDef`** — badge (field, toneMap)
+- **`DashboardDetailDef`** — detail row (label, field, format)
+- **`DashboardView`** — `{ sections: DashboardSectionDef[] }`
 
 ### Example
 
 ```ts
-import { buildAtlasUI, type AtlasSectionDef } from "@sbtools/sdk";
+import type { DashboardSectionDef, DashboardView } from "@sbtools/sdk";
 
-const sections: AtlasSectionDef[] = [
-  {
-    id: "my-items",
-    title: "My Items",
-    description: "Items extracted from the database.",
-    kind: "my_item",
-    kindLabel: "My Item",
-    listId: "my-items-list",
-    dataKey: "my_items",
-    rendererName: "renderMyItemCard",
-    emptyLabel: "items",
-    card: {
-      searchFields: ["item.name", "item.description"],
-      title: "item.name",
-      subtitle: "item.type + ' — ' + item.count + ' rows'",
-      badges: [
-        { label: "'active'", cssClass: "badge-green", condition: "item.active" },
-      ],
-      details: [
-        { heading: "Description", value: "item.description" },
-        { heading: "Created", value: "item.created_at" },
-      ],
-    },
-  },
-];
-
-export function getMyPluginAtlasUI() {
-  return buildAtlasUI(sections, myCustomStyles());
+export function getMyPluginDashboardView(): DashboardView {
+  return {
+    sections: [
+      {
+        id: "my-items",
+        title: "My Items",
+        description: "Items from the database.",
+        dataKey: "my_items",
+        layout: "cards",
+        stats: [
+          { label: "Total", field: "summary.total", tone: "good" },
+        ],
+        card: {
+          titleField: "name",
+          subtitleField: "type",
+          searchFields: ["name", "description"],
+          badges: [{ field: "status", toneMap: { active: "good", inactive: "warn" } }],
+          details: [
+            { label: "Description", field: "description" },
+            { label: "Created", field: "created_at", format: "date" },
+          ],
+        },
+      },
+    ],
+  };
 }
 ```
 
-### Advanced: Custom JS Overrides
-
-For complex card rendering (tables, nested loops), use `customCardRendererJs`:
-
-```ts
-{
-  id: "complex-section",
-  // ... other fields ...
-  card: {
-    searchFields: ["item.name"],
-    customCardRendererJs: `
-      const rows = item.rows.map(r => \`<tr><td>\${esc(r.col1)}</td></tr>\`).join('');
-      return \`<details class="card"><summary>...</summary><table>\${rows}</table></details>\`;
-    `,
-  },
-}
-```
-
-**Note:** `buildAtlasUI` automatically injects `var esc = escapeHtml;` into all card renderers, making the `esc()` function available without implicit globals.
+Formats: `text`, `code`, `date`, `bytes`, `ms`, `number`. Tones: `default`, `good`, `warn`, `bad`, `accent`.
 
 ## Schema Filters (Parameterized Queries)
 

@@ -80,12 +80,10 @@ Place a `metadata.json` next to `index.ts` in any function directory to override
 plugin-deno-functions/
 ├── src/
 │   ├── index.ts       # SbtPlugin with edge-functions command + hooks
-│   ├── atlas.ts       # Atlas UI via buildAtlasUI() — edge function section
+│   ├── dashboard.ts   # Dashboard sections via getDashboardView() — edge function section
 │   ├── extractor.ts   # Static analysis of TypeScript edge functions
 │   ├── toml-parser.ts # Minimal TOML parser for config.toml
-│   ├── openapi.ts     # OpenAPI 3.0 spec generator
-│   └── atlas/
-│       └── styles.ts  # Method badge CSS
+│   └── openapi.ts     # OpenAPI 3.0 spec generator
 ├── package.json
 └── SKILL.md
 ```

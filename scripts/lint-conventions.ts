@@ -83,12 +83,6 @@ function isCliEntrypoint(filePath: string): boolean {
   return relPath(filePath).endsWith("core/src/cli.ts");
 }
 
-/** True if the file is an atlas bootstrap JS string (runs in browser context). */
-function isAtlasBrowserCode(filePath: string): boolean {
-  const rel = relPath(filePath);
-  return rel.includes("/atlas/") && !rel.includes("/atlas.ts");
-}
-
 // ── Rules ────────────────────────────────────────────────────────────────────
 
 const rules: Rule[] = [
@@ -121,8 +115,7 @@ const rules: Rule[] = [
     id: "no-bare-error",
     description: "Use SbtError/ConfigError/DatabaseError/SnapshotError instead of `new Error()`",
     check(filePath, _content, lines) {
-      // Atlas bootstrap JS runs in the browser — no SbtError available
-      if (isAtlasBrowserCode(filePath) || isTemplate(filePath)) return [];
+      if (isTemplate(filePath)) return [];
       const warnings: string[] = [];
       for (let i = 0; i < lines.length; i++) {
         if (/\bnew Error\s*\(/.test(lines[i])) {
@@ -164,27 +157,17 @@ const rules: Rule[] = [
     },
   },
 
-  // R4: Use buildAtlasUI() for Atlas UI contributions
+  // R4: Plugins with getAtlasData should implement getDashboardView for dashboard UI
   {
-    id: "atlas-use-builder",
-    description: "Atlas UI contributions should use `buildAtlasUI()` from @sbtools/sdk",
+    id: "dashboard-use-hook",
+    description: "Plugins that contribute atlas data should implement getDashboardView() for the dashboard",
     check(filePath, content, _lines) {
       const rel = relPath(filePath);
       if (!rel.match(/plugin-[^/]+\/src\/index\.ts$/)) return [];
-      // Skip scaffold — it references getAtlasUI in template strings, not as its own hook
       if (rel.includes("plugin-scaffold")) return [];
-      // If plugin has getAtlasUI hook, check that atlas.ts exists with buildAtlasUI
-      if (!content.includes("getAtlasUI")) return [];
-      const pluginDir = path.dirname(filePath);
-      const atlasFile = path.join(pluginDir, "atlas.ts");
-      if (!fs.existsSync(atlasFile)) {
-        return [`1: plugin has getAtlasUI but no atlas.ts module using buildAtlasUI()`];
-      }
-      const atlasContent = fs.readFileSync(atlasFile, "utf8");
-      if (!atlasContent.includes("buildAtlasUI")) {
-        return [`1: atlas.ts does not use buildAtlasUI() from @sbtools/sdk`];
-      }
-      return [];
+      if (!content.includes("getAtlasData")) return [];
+      if (content.includes("getDashboardView")) return [];
+      return [`1: plugin has getAtlasData but no getDashboardView — add getDashboardView for dashboard UI`];
     },
   },
 
@@ -267,14 +250,14 @@ const rules: Rule[] = [
     },
   },
 
-  // R9: Old atlas triad pattern — atlas/sections.ts or atlas/cards.ts should not exist
+  // R9: No legacy atlas.ts or atlas/styles.ts — use getDashboardView + dashboard.ts
   {
-    id: "no-atlas-triad-leftovers",
-    description: "Old atlas/sections.ts and atlas/cards.ts should be replaced by atlas.ts + buildAtlasUI()",
+    id: "no-atlas-leftovers",
+    description: "atlas.ts and atlas/styles.ts are removed — use dashboard.ts + getDashboardView()",
     check(filePath, _content, _lines) {
       const rel = relPath(filePath);
-      if (/\/atlas\/(sections|cards)\.ts$/.test(rel)) {
-        return [`1: legacy atlas triad file — migrate to buildAtlasUI() in atlas.ts`];
+      if (rel.endsWith("/atlas.ts") || rel.match(/\/atlas\/styles\.ts$/)) {
+        return [`1: legacy atlas file — migrate to dashboard.ts + getDashboardView()`];
       }
       return [];
     },

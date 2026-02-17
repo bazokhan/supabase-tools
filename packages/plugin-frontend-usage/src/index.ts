@@ -12,7 +12,7 @@ import { scanDirectory } from "./scanner.js";
 import { analyze } from "./analyzer.js";
 import { writeFrontendUsageArtifact } from "./artifact.js";
 import { generateHtml } from "./html-generator.js";
-import { getFrontendUsageAtlasUI } from "./atlas.js";
+import { getFrontendUsageDashboardView } from "./dashboard.js";
 
 function getScanPaths(ctx: PluginContext): string[] {
   return getConfigStringArray(ctx, "scanPaths", ["src/"]);
@@ -137,7 +137,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => getFrontendUsageAtlasUI(),
+  getDashboardView: () => getFrontendUsageDashboardView(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const scanPaths = getScanPaths(ctx);

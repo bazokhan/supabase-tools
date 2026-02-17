@@ -29,7 +29,7 @@ import {
 import { buildAuditResult } from "./auditor.js";
 import { generateHtml, writeHtml } from "./html-generator.js";
 import { writeMigrationAnalysisArtifact } from "./artifact.js";
-import { getMigrationAuditAtlasUI } from "./atlas.js";
+import { getMigrationAuditDashboardView } from "./dashboard.js";
 import type { AuditResult, SchemaSnapshot } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ const plugin: SbtPlugin = {
     };
   },
 
-  getAtlasUI: () => getMigrationAuditAtlasUI(),
+  getDashboardView: () => getMigrationAuditDashboardView(),
 
   getStatusLines: async (ctx: PluginContext) => {
     const result = await runAudit(ctx);

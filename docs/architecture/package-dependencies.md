@@ -1,6 +1,6 @@
 # Package & Artifact Dependencies
 
-Dependency map for all 12 packages (sdk + core + 10 plugins): npm dependencies, artifact produce/consume, filesystem I/O, and command flows. Use this to understand real-time update requirements (e.g. Migration Studio needs fresh `migration.analysis` to show migration list/status).
+Dependency map for all 13 packages (sdk + core + ui-web + 10 plugins): npm dependencies, artifact produce/consume, filesystem I/O, and command flows. Use this to understand real-time update requirements (e.g. Migration Studio needs fresh `migration.analysis` to show migration list/status).
 
 **Note:** `@sbtools/plugin-atlas-html` and `@sbtools/plugin-docs-server` were previously separate packages but have been merged into `@sbtools/core` as of v0.3.0. The `atlas-html` and `docs` commands are now built-in.
 
@@ -9,16 +9,17 @@ Dependency map for all 12 packages (sdk + core + 10 plugins): npm dependencies, 
 | Package | Depends On |
 |---------|------------|
 | `@sbtools/sdk` | — |
-| `@sbtools/core` | `@sbtools/sdk`, `dotenv`, `pg`, `zod` |
-| `@sbtools/plugin-migration-studio` | `@sbtools/sdk`, `pg`, `@codemirror/*` |
-| `@sbtools/plugin-migration-audit` | `@sbtools/sdk`, `pg` |
+| `@sbtools/ui-web` | `react`, `react-dom` |
+| `@sbtools/core` | `@sbtools/sdk`, `@sbtools/ui-web`, `dotenv`, `pg`, `zod` |
+| `@sbtools/plugin-migration-studio` | `@sbtools/sdk`, `@sbtools/ui-web`, `pg`, `@codemirror/*` |
+| `@sbtools/plugin-migration-audit` | `@sbtools/sdk`, `@sbtools/ui-web`, `pg` |
 | `@sbtools/plugin-deno-functions` | `@sbtools/sdk` |
-| `@sbtools/plugin-depgraph` | `@sbtools/sdk` |
+| `@sbtools/plugin-depgraph` | `@sbtools/sdk`, `@sbtools/ui-web` |
 | `@sbtools/plugin-erd` | `@sbtools/sdk`, `pg` |
 | `@sbtools/plugin-typegen` | `@sbtools/sdk` |
 | `@sbtools/plugin-db-test` | `@sbtools/sdk`, `pg`, `@electric-sql/pglite` |
-| `@sbtools/plugin-logs` | `@sbtools/sdk` |
-| `@sbtools/plugin-frontend-usage` | `@sbtools/sdk` |
+| `@sbtools/plugin-logs` | `@sbtools/sdk`, `@sbtools/ui-web` |
+| `@sbtools/plugin-frontend-usage` | `@sbtools/sdk`, `@sbtools/ui-web` |
 | `@sbtools/plugin-scaffold` | `@sbtools/sdk` |
 
 ## Artifact Produce / Consume

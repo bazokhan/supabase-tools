@@ -10,7 +10,7 @@ export function generateIndexTs(name: string, external: boolean, hooks: boolean)
     return { categories: {}, stats: [] };
   },
 
-  getAtlasUI: () => buildAtlasUI([]),
+  getDashboardView: () => ({ sections: [] }),
 
   getStatusLines: async () => ["  (no status)"],
 
@@ -18,7 +18,7 @@ export function generateIndexTs(name: string, external: boolean, hooks: boolean)
 `;
   }
 
-  return `import type { SbtPlugin, PluginContext } from "@sbtools/sdk"${hooks ? ';\nimport { buildAtlasUI } from "@sbtools/sdk"' : ""};
+  return `import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 
 const plugin: SbtPlugin = {
   name: "${pluginName}",

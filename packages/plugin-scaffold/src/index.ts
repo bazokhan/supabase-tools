@@ -33,13 +33,13 @@ Arguments:
 
 Options:
   --external  Create plugin-<name>/ as sibling in project root (external plugin)
-  --hooks     Include stub getAtlasData, getAtlasUI, getStatusLines, getOpenApiSpec
+  --hooks     Include stub getAtlasData, getDashboardView, getStatusLines, getOpenApiSpec
   -h, --help  Show this help
 
 Examples:
   sbt scaffold-plugin analytics           → packages/plugin-analytics/
   sbt scaffold-plugin my-plugin --external  → plugin-my-plugin/
-  sbt scaffold-plugin dashboard --hooks   → Internal plugin with Atlas hooks
+  sbt scaffold-plugin dashboard --hooks   → Internal plugin with dashboard hooks
 `;
 
 async function scaffoldCommand(args: string[], ctx: PluginContext): Promise<void> {
