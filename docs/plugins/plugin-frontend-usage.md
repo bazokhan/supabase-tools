@@ -29,9 +29,6 @@ npx sbt frontend-usage
 | `frontend-usage --json` | Output raw JSON |
 | `frontend-usage --no-open` | Skip opening report |
 
-![Frontend usage HTML report](../images/plugin-frontend-usage-html-output.jpg)
-*Frontend usage HTML report*
-
 ## Patterns Detected
 
 Tables (`.from()`), RPCs (`.rpc()`), auth, storage, edge functions, REST calls.

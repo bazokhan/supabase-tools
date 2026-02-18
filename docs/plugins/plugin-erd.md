@@ -74,6 +74,9 @@ Global ERD display columns can also be set at the root level under `erd.displayC
 
 ## Dashboard Integration
 
+![ERD Diagrams dashboard page](../images/dashboard-erd.png)
+*ERD page — Mermaid entity-relationship diagram with table list sidebar*
+
 When active, the ERD plugin contributes to the dashboard automatically — no extra commands needed.
 
 - **`getAtlasData()`** — reads the generated `.md` files from `erdOutput` at `sbt generate-atlas` time and adds an `erd_diagrams` category to `backend-atlas-data.json`

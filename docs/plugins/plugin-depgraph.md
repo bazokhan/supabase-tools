@@ -35,8 +35,8 @@ npx sbt depgraph
 | `depgraph --mermaid` | Mermaid only |
 | `depgraph --json` | Raw JSON output |
 
-![Dependency graph HTML report](../images/plugin-depgraph-html-output.jpg)
-*Dependency graph HTML report*
+![Dependency graph dashboard page](../images/dashboard-dependencies.png)
+*Dependencies page — interactive graph with focus depth, palette presets, and node detail panel*
 
 ## Relationships
 

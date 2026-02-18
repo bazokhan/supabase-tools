@@ -21,7 +21,18 @@
       "Bash(npm run docs:build:*)",
       "Bash(test:*)",
       "Bash(powershell.exe -Command:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(cmd /c:*)",
+      "Bash(node --version:*)",
+      "Bash(node:*)",
+      "mcp__MCP_DOCKER__browser_navigate",
+      "mcp__MCP_DOCKER__browser_resize",
+      "mcp__MCP_DOCKER__browser_take_screenshot",
+      "mcp__MCP_DOCKER__browser_click",
+      "mcp__MCP_DOCKER__browser_run_code",
+      "mcp__MCP_DOCKER__fetch",
+      "Bash(docker ps:*)",
+      "mcp__MCP_DOCKER__browser_snapshot"
     ]
   }
 }

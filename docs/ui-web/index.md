@@ -55,6 +55,9 @@ These provide the same light/dark mode CSS custom properties used by the dashboa
 
 The dashboard SPA at `sbt dashboard` (`http://localhost:3400`) is a Vite-built React application. It includes:
 
+![Dashboard overview page](../images/dashboard-overview.png)
+*Overview — entity stats, mini charts, and the Entity Explorer table*
+
 ### Pages
 
 | Page | Route | Description |

@@ -57,9 +57,6 @@ Available services:
   ✓ studio       (running)
 ```
 
-![Log viewer UI](../images/plugin-logs-viewer-html-output.jpg)
-*Log viewer UI*
-
 ## Configuration
 
 | Key | Default | Description |

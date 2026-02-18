@@ -55,8 +55,8 @@ Each migration has a detail page with SQL viewer, parsed operations, risk flags,
 | `migration-audit --html` | Generate HTML only |
 | `migration-audit --no-open` | Skip opening browser |
 
-![Migration audit HTML report](../images/plugin-migration-audit-html-output.jpg)
-*Migration audit HTML report*
+![Migrations dashboard page](../images/dashboard-migrations.png)
+*Migrations page — audit summary, inventory table with applied/pending/missing filters*
 
 ## Issues Detected
 
