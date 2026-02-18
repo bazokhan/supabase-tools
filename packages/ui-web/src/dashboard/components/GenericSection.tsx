@@ -15,8 +15,9 @@ function getItems(data: Record<string, unknown[]>, section: DashboardSectionDef)
   const start = section.itemsStartIndex ?? 0;
   return start > 0 ? arr.slice(start) : arr;
 }
-import { StatCard } from "./StatCard";
 import { Badge } from "./Badge";
+import { StatCard } from "./StatCard";
+import { Tooltip } from "./Tooltip";
 import { DataTable } from "./DataTable";
 import { CardGrid, ExpandableCard } from "./CardGrid";
 import { ValueRenderer } from "./ValueRenderer";
@@ -24,6 +25,16 @@ import { ValueRenderer } from "./ValueRenderer";
 interface GenericSectionProps {
   section: DashboardSectionDef;
   data: Record<string, unknown[]>;
+}
+
+function getBadgeTooltip(field: string, value: string): string {
+  const f = field.toLowerCase();
+  if (f === "volatility") return value === "volatile" ? "Volatile: result may change between calls" : value;
+  if (f === "status") return `Status: ${value}`;
+  if (f === "type" || f === "type_kind") return `Type: ${value}`;
+  if (f === "command") return `SQL command: ${value}`;
+  if (f === "timing") return `Timing: ${value}`;
+  return value ? `${field}: ${value}` : field;
 }
 
 function formatFieldValue(value: unknown, format?: string): string {
@@ -97,7 +108,14 @@ export function GenericSection({ section, data }: GenericSectionProps) {
             const badges = section.card!.badges?.map((b, j) => {
               const v = String(resolve(item, b.field) ?? "");
               const tone = (b.toneMap?.[v] ?? "default") as DashboardTone;
-              return <Badge key={j} tone={tone}>{v}</Badge>;
+              const tooltip = getBadgeTooltip(b.field, v);
+              return (
+                <Tooltip key={j} content={tooltip}>
+                  <span>
+                    <Badge tone={tone}>{v}</Badge>
+                  </span>
+                </Tooltip>
+              );
             });
             return (
               <ExpandableCard key={i} title={title} subtitle={subtitle} badges={badges}>

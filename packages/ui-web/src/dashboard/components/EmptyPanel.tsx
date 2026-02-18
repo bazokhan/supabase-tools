@@ -1,4 +1,5 @@
 import React from "react";
+import { EmptyState } from "./EmptyState";
 
 interface EmptyPanelProps {
   title: string;
@@ -9,9 +10,11 @@ interface EmptyPanelProps {
 export function EmptyPanel({ title, message, hint }: EmptyPanelProps) {
   return (
     <section className="panel">
-      <h2>{title}</h2>
-      <p className="empty-state">{message}</p>
-      {hint ? <p className="empty-state">{hint}</p> : null}
+      <EmptyState
+        title={title}
+        message={hint ? `${message} ${hint}`.trim() : message}
+        iconType="alert"
+      />
     </section>
   );
 }

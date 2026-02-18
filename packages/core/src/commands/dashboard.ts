@@ -293,6 +293,27 @@ function handleLogStream(req: http.IncomingMessage, res: http.ServerResponse, ct
   });
 }
 
+function resolveErdDir(ctx: PluginContext): string {
+  try {
+    const configPath = path.join(ctx.projectRoot, "supabase-tools.config.json");
+    if (fs.existsSync(configPath)) {
+      const cfg = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+        plugins?: Array<{ path: string; config?: Record<string, unknown> }>;
+      };
+      const erdEntry = cfg.plugins?.find((p) => String(p.path).includes("plugin-erd"));
+      const erdOutput = erdEntry?.config?.erdOutput;
+      if (typeof erdOutput === "string") {
+        return path.isAbsolute(erdOutput)
+          ? erdOutput
+          : path.resolve(ctx.projectRoot, erdOutput);
+      }
+    }
+  } catch {
+    // fall through to default
+  }
+  return path.join(ctx.paths.docsOutput, "entity-relations");
+}
+
 function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
   const atlasDataPath = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
 
@@ -305,7 +326,29 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
         sendJson(res, 404, { error: "backend-atlas-data.json not found. Run sbt generate-atlas." });
         return;
       }
-      sendJson(res, 200, JSON.parse(fs.readFileSync(atlasDataPath, "utf8")));
+      const data = JSON.parse(fs.readFileSync(atlasDataPath, "utf8")) as {
+        meta?: unknown;
+        schemas?: string[];
+        categories?: Record<string, unknown[]>;
+      };
+      // Runtime fallback: if erd_diagrams missing/empty, read from entity-relations on disk
+      const erdDir = resolveErdDir(ctx);
+      const hasErdInAtlas = Array.isArray(data.categories?.erd_diagrams) && data.categories.erd_diagrams.length > 0;
+      if (!hasErdInAtlas && fs.existsSync(erdDir) && fs.statSync(erdDir).isDirectory()) {
+        const files = fs.readdirSync(erdDir).filter((f) => f.endsWith(".md"));
+        const diagrams = files.map((f) => {
+          const content = fs.readFileSync(path.join(erdDir, f), "utf8");
+          const tableName = f.replace(/\.md$/, "");
+          const mermaidMatch = content.match(/```mermaid\n([\s\S]*?)```/);
+          const mermaid = mermaidMatch?.[1]?.trim() ?? "";
+          return { table: tableName, mermaid, markdown: content };
+        });
+        if (diagrams.length > 0) {
+          if (!data.categories) data.categories = {};
+          data.categories.erd_diagrams = diagrams;
+        }
+      }
+      sendJson(res, 200, data);
       return;
     }
 
@@ -415,6 +458,15 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       const interval = setInterval(() => res.write(": ping\n\n"), 30000);
       req.on("close", () => clearInterval(interval));
       return;
+    }
+
+    if (pathname === "/dependency-graph.html" || pathname === "/migration-audit.html") {
+      const docsPath = path.join(ctx.paths.docsOutput, pathname.replace(/^\//, ""));
+      if (fs.existsSync(docsPath) && fs.statSync(docsPath).isFile()) {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(fs.readFileSync(docsPath, "utf8"));
+        return;
+      }
     }
 
     const filePath = pathname === "/" ? "/index.html" : pathname;

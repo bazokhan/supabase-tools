@@ -158,3 +158,166 @@ export function IconX(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function IconTable(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <path d="M3 10h18M8 4v16M16 4v16" />
+    </BaseIcon>
+  );
+}
+
+export function IconFunction(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 10h4l2 4-2 4H4" />
+      <path d="M20 10h-4l-2 4 2 4h4" />
+      <path d="M12 4v16" />
+    </BaseIcon>
+  );
+}
+
+export function IconView(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="4" width="18" height="14" rx="1" />
+      <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6" />
+    </BaseIcon>
+  );
+}
+
+export function IconTrigger(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 8l4-4 4 4" />
+      <path d="M8 4v6a4 4 0 0 0 8 0V4" />
+      <path d="M12 20v-6" />
+    </BaseIcon>
+  );
+}
+
+export function IconPolicy(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+    </BaseIcon>
+  );
+}
+
+export function IconKey(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="8" cy="15" r="3" />
+      <path d="m10.5 12.5 6-6" />
+      <path d="m15 8 2 2 3-3-2-2" />
+    </BaseIcon>
+  );
+}
+
+export function IconFilter(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3" />
+    </BaseIcon>
+  );
+}
+
+export function IconEnum(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M8 10h8M8 14h5" />
+    </BaseIcon>
+  );
+}
+
+export function IconType(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 7V4h16v3" />
+      <path d="M9 20h6M12 4v16" />
+    </BaseIcon>
+  );
+}
+
+export function IconColumn(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="4" y="4" width="4" height="16" rx="1" />
+      <rect x="10" y="4" width="4" height="16" rx="1" />
+      <rect x="16" y="4" width="4" height="16" rx="1" />
+    </BaseIcon>
+  );
+}
+
+export function IconDatabase(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <ellipse cx="12" cy="6" rx="8" ry="3" />
+      <path d="M4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6" />
+      <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" />
+    </BaseIcon>
+  );
+}
+
+export function IconErd(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="5" width="7" height="5" rx="1" />
+      <rect x="14" y="5" width="7" height="5" rx="1" />
+      <rect x="8" y="14" width="8" height="5" rx="1" />
+      <path d="M10 10v2M14 10v2M12 14V10" />
+    </BaseIcon>
+  );
+}
+
+export function IconChart(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M3 3v18h18" />
+      <path d="M7 16v-5M12 16V9M17 16v-2" />
+    </BaseIcon>
+  );
+}
+
+export function IconCopy(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </BaseIcon>
+  );
+}
+
+export function IconExpand(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M15 3h6v6M9 21H3v-6M21 3l-9 9M3 21l9-9" />
+    </BaseIcon>
+  );
+}
+
+export function IconMenu(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </BaseIcon>
+  );
+}
+
+export function IconChevronLeft(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m15 18-6-6 6-6" />
+    </BaseIcon>
+  );
+}
+
+export function IconChevronRight(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m9 18 6-6-6-6" />
+    </BaseIcon>
+  );
+}

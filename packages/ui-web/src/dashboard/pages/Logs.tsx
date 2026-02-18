@@ -1,6 +1,9 @@
 import React from "react";
 import { AppDataTable } from "../components/AppDataTable";
+import { Badge } from "../components/Badge";
+import { Dropdown } from "../components/Dropdown";
 import { EmptyPanel } from "../components/EmptyPanel";
+import { EmptyState } from "../components/EmptyState";
 import { toRows, type CategoryMap } from "../lib/model";
 
 interface LogsPageProps {
@@ -126,18 +129,42 @@ function LogsEnabled({ categories }: { categories: CategoryMap }) {
         {activeTab === "live" ? (
           <>
             <div className="panel-head">
-              <div className="cluster-row">
-                {serviceStatuses.map((status) => (
-                  <button
-                    key={status.service}
-                    type="button"
-                    className={`tab-btn ${selectedServices.includes(status.service) ? "active" : ""}`}
-                    onClick={() => toggleService(status.service)}
-                  >
-                    {status.service}
-                  </button>
-                ))}
-              </div>
+              {serviceStatuses.length <= 6 ? (
+                <div className="cluster-row">
+                  {serviceStatuses.map((status) => (
+                    <button
+                      key={status.service}
+                      type="button"
+                      className={`tab-btn ${selectedServices.includes(status.service) ? "active" : ""}`}
+                      onClick={() => toggleService(status.service)}
+                    >
+                      {status.service}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <Dropdown
+                  trigger={
+                    <button type="button" className="btn">
+                      Services ({selectedServices.length}/{serviceStatuses.length} selected)
+                    </button>
+                  }
+                  align="left"
+                >
+                  <div className="dropdown-service-list">
+                    {serviceStatuses.map((status) => (
+                      <label key={status.service} className="dropdown-service-item">
+                        <input
+                          type="checkbox"
+                          checked={selectedServices.includes(status.service)}
+                          onChange={() => toggleService(status.service)}
+                        />
+                        <span>{status.service}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Dropdown>
+              )}
               <input
                 type="search"
                 className="ui-input"
@@ -148,21 +175,27 @@ function LogsEnabled({ categories }: { categories: CategoryMap }) {
             </div>
 
             <div className="live-status-row">
-              <span className={`live-pill ${connected ? "online" : "offline"}`}>
+              <Badge tone={connected ? "good" : "bad"}>
                 {connected ? "Connected" : "Disconnected"}
-              </span>
+              </Badge>
               <button type="button" className="btn" onClick={() => setLines([])}>Clear</button>
               <span className="empty-state">Showing {filteredLines.length} lines</span>
             </div>
 
             <div className="log-live-surface" ref={logContainerRef}>
-              {filteredLines.map((line, index) => (
-                <div key={`${line.service}-${line.timestamp}-${index}`} className={`log-line log-${line.level || "info"}`}>
-                  <span className="log-service">{line.service}</span>
-                  <span className="log-ts">{line.timestamp || "--:--:--"}</span>
-                  <span className="log-msg">{line.message}</span>
-                </div>
-              ))}
+              {filteredLines.length === 0 ? (
+                <EmptyState title="No log lines" message="Logs will appear here when services emit output." iconType="alert" />
+              ) : (
+                <>
+                  {filteredLines.map((line, index) => (
+                    <div key={`${line.service}-${line.timestamp}-${index}`} className={`log-line log-${line.level || "info"}`}>
+                      <span className="log-service">{line.service}</span>
+                      <span className="log-ts">{line.timestamp || "--:--:--"}</span>
+                      <span className="log-msg">{line.message}</span>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </>
         ) : null}

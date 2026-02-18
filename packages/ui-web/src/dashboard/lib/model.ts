@@ -4,7 +4,7 @@ import { resolve } from "./field-resolver";
 export type AtlasRow = Record<string, unknown>;
 export type CategoryMap = Record<string, unknown[]>;
 
-export type RouteName = "overview" | "migrations" | "depgraph" | "logs" | "frontend" | "details";
+export type RouteName = "overview" | "migrations" | "depgraph" | "logs" | "frontend" | "erd" | "details";
 
 export interface SearchHit {
   id: string;
@@ -20,7 +20,7 @@ export interface NavItem {
   label: string;
   subtitle: string;
   enabled: boolean;
-  icon: "home" | "migrations" | "graph" | "logs" | "frontend";
+  icon: "home" | "migrations" | "graph" | "logs" | "frontend" | "erd";
 }
 
 export interface PluginAvailability {
@@ -28,6 +28,7 @@ export interface PluginAvailability {
   depgraph: boolean;
   logs: boolean;
   frontend: boolean;
+  erd: boolean;
 }
 
 export interface GraphNode {
@@ -53,6 +54,7 @@ const ROUTE_PREFIXES: Array<{ route: RouteName; prefix: string }> = [
   { route: "depgraph", prefix: "/depgraph" },
   { route: "logs", prefix: "/logs" },
   { route: "frontend", prefix: "/frontend-usage" },
+  { route: "erd", prefix: "/erd" },
   { route: "details", prefix: "/details" },
 ];
 
@@ -72,6 +74,9 @@ export function inferPluginAvailability(categories: CategoryMap, sections: Dashb
     frontend:
       Boolean(categories.frontend_usage?.length) ||
       hasSection(sections, (section) => section.dataKey === "frontend_usage" || section.id.includes("frontend")),
+    erd:
+      Boolean(categories.erd_diagrams?.length) ||
+      hasSection(sections, (section) => section.dataKey === "erd_diagrams" || section.id === "erd"),
   };
 }
 
@@ -109,6 +114,14 @@ export function getNavItems(availability: PluginAvailability): NavItem[] {
       subtitle: "Component resource footprint",
       enabled: availability.frontend,
       icon: "frontend",
+    },
+    {
+      route: "erd",
+      path: "/erd",
+      label: "ERD Diagrams",
+      subtitle: "Entity relationship diagrams",
+      enabled: availability.erd,
+      icon: "erd",
     },
   ];
 }

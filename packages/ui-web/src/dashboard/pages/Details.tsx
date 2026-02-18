@@ -1,13 +1,74 @@
 import React from "react";
+import { Badge } from "../components/Badge";
+import { EmptyState } from "../components/EmptyState";
+import { Tooltip } from "../components/Tooltip";
 import { IconExternal, IconFile } from "../components/Icons";
+import { getSectionIcon } from "../lib/section-icons";
 import { ValueRenderer } from "../components/ValueRenderer";
-import { findDetailTarget, getPrimaryKey, prettyLabel, type CategoryMap } from "../lib/model";
+import { findDetailTarget, getPrimaryKey, prettyLabel, type CategoryMap, type GraphEdge } from "../lib/model";
 import type { DashboardSectionDef } from "@sbtools/sdk";
 
 interface DetailsPageProps {
   categories: CategoryMap;
   search: URLSearchParams;
   sections?: DashboardSectionDef[];
+  onOpenDetail?: (section: string, key: string) => void;
+}
+
+function EdgeTable({
+  edges,
+  currentId,
+  direction,
+  onOpenDetail,
+}: {
+  edges: GraphEdge[];
+  currentId: string;
+  direction: "inbound" | "outbound";
+  onOpenDetail?: (section: string, key: string) => void;
+}) {
+  if (edges.length === 0) {
+    return <p className="empty-state">No {direction} dependencies.</p>;
+  }
+  const section = "dependency_graph";
+  return (
+    <div className="table-surface">
+      <table className="table-grid">
+        <thead>
+          <tr>
+            <th>{direction === "inbound" ? "Source" : "Target"}</th>
+            <th>Relationship</th>
+          </tr>
+        </thead>
+        <tbody>
+          {edges.map((edge) => {
+            const otherId = direction === "inbound" ? edge.source : edge.target;
+            return (
+              <tr key={`${edge.source}-${edge.target}-${edge.label}`}>
+                <td>
+                  {onOpenDetail ? (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() => onOpenDetail(section, otherId)}
+                    >
+                      <code>{otherId}</code>
+                    </button>
+                  ) : (
+                    <code>{otherId}</code>
+                  )}
+                </td>
+                <td>
+                  <Tooltip content={`Relationship: ${edge.label}`}>
+                    <span><Badge>{edge.label}</Badge></span>
+                  </Tooltip>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 interface FileTarget {
@@ -108,7 +169,7 @@ function isWideField(field: string, value: unknown): boolean {
   return false;
 }
 
-export function DetailsPage({ categories, search, sections = [] }: DetailsPageProps) {
+export function DetailsPage({ categories, search, sections = [], onOpenDetail }: DetailsPageProps) {
   const section = search.get("section") ?? "";
   const key = search.get("key") ?? "";
   const target = findDetailTarget(categories, section, key, sections);
@@ -116,8 +177,11 @@ export function DetailsPage({ categories, search, sections = [] }: DetailsPagePr
   if (!target) {
     return (
       <section className="panel">
-        <h2>Detail Not Found</h2>
-        <p className="empty-state">No matching record found for this section and key.</p>
+        <EmptyState
+          title="Detail Not Found"
+          message="No matching record found for this section and key."
+          iconType="alert"
+        />
       </section>
     );
   }
@@ -125,14 +189,64 @@ export function DetailsPage({ categories, search, sections = [] }: DetailsPagePr
   if (target.type === "node") {
     const { node, edges } = target;
     const fileTargets = getFileTargets(section, { id: node.id });
+    const schema = node.id.includes(".") ? node.id.split(".").slice(0, -1).join(".") : "";
+    const inboundEdges = edges.filter((e) => e.target === node.id);
+    const outboundEdges = edges.filter((e) => e.source === node.id);
 
     return (
       <div className="content-stack">
         <section className="panel panel-accent">
-          <h2>Graph Node Detail</h2>
-          <p>{node.label}</p>
-          <p className="empty-state">{node.type} · {node.id}</p>
-          <div className="header-actions" style={{ marginTop: 10 }}>
+          <div className="detail-header" style={{ marginBottom: 12 }}>
+            <h2 style={{ margin: 0 }}>{node.label}</h2>
+            <Tooltip content={`Node type: ${node.type}`}>
+              <span><Badge tone="accent">{node.type}</Badge></span>
+            </Tooltip>
+          </div>
+          <div className="detail-grid" style={{ marginBottom: 16 }}>
+            <article className="detail-card">
+              <h4>Type</h4>
+              <div className="detail-value">
+                <Tooltip content={`Entity type: ${node.type}`}>
+                  <span><Badge tone="accent">{node.type}</Badge></span>
+                </Tooltip>
+              </div>
+            </article>
+            {schema ? (
+              <article className="detail-card">
+                <h4>Schema</h4>
+                <div className="detail-value">{schema}</div>
+              </article>
+            ) : null}
+            <article className="detail-card">
+              <h4>ID</h4>
+              <div className="detail-value"><code className="code-inline">{node.id}</code></div>
+            </article>
+            <article className="detail-card">
+              <h4>Inbound</h4>
+              <div className="detail-value">
+                <Tooltip content="Number of dependencies targeting this node">
+                  <span><Badge tone="default">{inboundEdges.length}</Badge></span>
+                </Tooltip>
+              </div>
+            </article>
+            <article className="detail-card">
+              <h4>Outbound</h4>
+              <div className="detail-value">
+                <Tooltip content="Number of dependencies this node references">
+                  <span><Badge tone="default">{outboundEdges.length}</Badge></span>
+                </Tooltip>
+              </div>
+            </article>
+            <article className="detail-card">
+              <h4>Total Connections</h4>
+              <div className="detail-value">
+                <Tooltip content="Total edges connected to this node">
+                  <span><Badge tone="accent">{edges.length}</Badge></span>
+                </Tooltip>
+              </div>
+            </article>
+          </div>
+          <div className="header-actions">
             {fileTargets.map((fileTarget) => (
               <a key={fileTarget.label} className="header-action-link" href={fileTarget.href} target="_blank" rel="noreferrer">
                 <IconFile size={13} />
@@ -149,16 +263,13 @@ export function DetailsPage({ categories, search, sections = [] }: DetailsPagePr
         </section>
 
         <section className="panel">
-          <h3>Connected Edges ({edges.length})</h3>
-          <ul className="edge-list">
-            {edges.map((edge) => (
-              <li key={`${edge.source}-${edge.target}-${edge.label}`}>
-                <code>{edge.source}</code>
-                <span>{edge.label}</span>
-                <code>{edge.target}</code>
-              </li>
-            ))}
-          </ul>
+          <h3>Inbound Dependencies ({inboundEdges.length})</h3>
+          <EdgeTable edges={inboundEdges} currentId={node.id} direction="inbound" onOpenDetail={onOpenDetail} />
+        </section>
+
+        <section className="panel">
+          <h3>Outbound Dependencies ({outboundEdges.length})</h3>
+          <EdgeTable edges={outboundEdges} currentId={node.id} direction="outbound" onOpenDetail={onOpenDetail} />
         </section>
       </div>
     );
@@ -170,8 +281,13 @@ export function DetailsPage({ categories, search, sections = [] }: DetailsPagePr
   return (
     <div className="content-stack">
       <section className="panel panel-accent">
-        <h2>{prettyLabel(section)} Detail</h2>
-        <p>{getPrimaryKey(targetRow)}</p>
+        <div className="detail-header">
+          {React.createElement(getSectionIcon(section), { size: 20, className: "detail-type-icon" })}
+          <div>
+            <h2>{prettyLabel(section)} Detail</h2>
+            <p>{getPrimaryKey(targetRow)}</p>
+          </div>
+        </div>
         <div className="header-actions" style={{ marginTop: 10 }}>
           {fileTargets.map((fileTarget) => (
             <a key={fileTarget.label} className="header-action-link" href={fileTarget.href} target="_blank" rel="noreferrer">

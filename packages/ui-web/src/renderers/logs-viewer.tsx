@@ -90,30 +90,33 @@ export function renderLogsViewerPage(input: {
   return renderPageFrame({
     title: "Supabase Log Viewer",
     subtitle: `Live logs and diagnostics on port ${input.port}.`,
-    pageCss: `.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.svc.active{background:#e0e7ff}.tabs{display:flex;gap:8px;margin-bottom:10px}.tab{border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:6px 10px;cursor:pointer}.tab.active{border-color:var(--accent);color:var(--accent)}.pane{min-height:420px}.log-wrap{height:420px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:8px;background:#fbfdff}.log-line{font-family:JetBrains Mono,Consolas,monospace;font-size:12px;padding:2px 0}`,
     body: (
       <>
-        <div className="toolbar">
+        <div className="cluster-row">
           <div>{serviceButtons}</div>
           <input id="search" className="input" placeholder="Search logs..." style={{ maxWidth: 260 }} />
           <button id="clear" className="badge">Clear</button>
           <span className="subtitle">Connection: <strong id="conn">Connecting...</strong></span>
         </div>
 
-        <div className="tabs">
-          <button className="tab active" data-tab="logs">Live Logs</button>
-          <button className="tab" data-tab="pg">Query Performance</button>
-          <button className="tab" data-tab="svc">Service Health</button>
+        <div className="tab-row">
+          <button className="tab-btn active" data-tab="logs">Live Logs</button>
+          <button className="tab-btn" data-tab="pg">Query Performance</button>
+          <button className="tab-btn" data-tab="svc">Service Health</button>
         </div>
 
         <section className="pane" data-pane="logs">
-          <div id="logs" className="log-wrap"></div>
+          <div id="logs" className="log-live-surface"></div>
         </section>
         <section className="pane hidden" data-pane="pg">
-          <div id="pg-table" className="surface table-wrap" style={{ padding: 10 }}></div>
+          <div className="table-scroll-wrap" style={{ padding: 10 }}>
+            <div id="pg-table" className="surface table-wrap"></div>
+          </div>
         </section>
         <section className="pane hidden" data-pane="svc">
-          <div id="svc-table" className="surface table-wrap" style={{ padding: 10 }}></div>
+          <div className="table-scroll-wrap" style={{ padding: 10 }}>
+            <div id="svc-table" className="surface table-wrap"></div>
+          </div>
         </section>
       </>
     ),

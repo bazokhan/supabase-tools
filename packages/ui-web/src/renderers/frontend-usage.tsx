@@ -78,7 +78,8 @@ export function renderFrontendUsagePage(data: FrontendUsageData, scanResults: Fr
 
         <Section title="Components">
           <input id="search" className="input" placeholder="Filter by component path..." />
-          <div className="surface table-wrap" style={{ marginTop: 12 }}>
+          <div className="table-scroll-wrap" style={{ marginTop: 12 }}>
+            <div className="surface table-wrap">
             <table>
               <thead>
                 <tr>
@@ -89,6 +90,7 @@ export function renderFrontendUsagePage(data: FrontendUsageData, scanResults: Fr
               </thead>
               <tbody id="tbody"></tbody>
             </table>
+            </div>
           </div>
         </Section>
       </>

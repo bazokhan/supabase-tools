@@ -1,5 +1,6 @@
 import React from "react";
 import { EmptyPanel } from "../components/EmptyPanel";
+import { getNodeTypeIcon } from "../lib/section-icons";
 import { buildGraphModel, type GraphNode } from "../lib/model";
 import type { PageProps } from "./page-types";
 
@@ -27,6 +28,11 @@ function DependenciesEnabled({ categories, onOpenDetail }: PageProps) {
   const [search, setSearch] = React.useState("");
   const [selectedNode, setSelectedNode] = React.useState("");
   const [page, setPage] = React.useState(0);
+  const [zoom, setZoom] = React.useState(1);
+  const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = React.useState(false);
+  const panStartRef = React.useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const model = React.useMemo(() => buildGraphModel(categories.dependency_graph ?? []), [categories.dependency_graph]);
 
   React.useEffect(() => {
@@ -86,6 +92,43 @@ function DependenciesEnabled({ categories, onOpenDetail }: PageProps) {
   const width = Math.max(860, ...renderNodes.map((node) => node.x + 140));
   const height = Math.max(460, ...renderNodes.map((node) => node.y + 80));
 
+  const handleWheel = React.useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom((z) => Math.min(3, Math.max(0.3, z + delta)));
+  }, []);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
+
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    if (e.button === 0) {
+      setIsPanning(true);
+      panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    }
+  }, [pan]);
+
+  React.useEffect(() => {
+    if (!isPanning) return;
+    const onMove = (e: MouseEvent) => {
+      setPan({
+        x: panStartRef.current.panX + e.clientX - panStartRef.current.x,
+        y: panStartRef.current.panY + e.clientY - panStartRef.current.y,
+      });
+    };
+    const onUp = () => setIsPanning(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isPanning]);
+
   return (
     <div className="content-stack">
       <section className="panel panel-accent">
@@ -125,7 +168,27 @@ function DependenciesEnabled({ categories, onOpenDetail }: PageProps) {
 
       <section className="graph-layout">
         <article className="panel graph-canvas-wrap">
-          <svg viewBox={`0 0 ${width} ${height}`} className="graph-canvas" role="img" aria-label="Dependency graph">
+          <div className="graph-zoom-controls">
+            <button type="button" className="btn btn-small" onClick={() => setZoom((z) => Math.min(3, z + 0.2))} aria-label="Zoom in">+</button>
+            <button type="button" className="btn btn-small" onClick={() => setZoom((z) => Math.max(0.3, z - 0.2))} aria-label="Zoom out">−</button>
+            <button type="button" className="btn btn-small" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} aria-label="Reset zoom">Reset</button>
+          </div>
+          <div
+            ref={containerRef}
+            className="graph-pan-zoom"
+            onMouseDown={handleMouseDown}
+            style={{ cursor: isPanning ? "grabbing" : "grab" }}
+          >
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="graph-canvas"
+              role="img"
+              aria-label="Dependency graph"
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: "0 0",
+              }}
+            >
             {renderEdges.map((edge) => {
               const source = nodesById.get(edge.source);
               const target = nodesById.get(edge.target);
@@ -146,6 +209,7 @@ function DependenciesEnabled({ categories, onOpenDetail }: PageProps) {
               <GraphNodeCell key={node.id} node={node} active={selectedNode === node.id} onClick={setSelectedNode} />
             ))}
           </svg>
+          </div>
         </article>
 
         <article className="panel">
@@ -189,12 +253,23 @@ function GraphNodeCell({
   onClick: (nodeId: string) => void;
 }) {
   return (
-    <g transform={`translate(${node.x - 72}, ${node.y - 24})`} onClick={() => onClick(node.id)}>
+    <g
+      transform={`translate(${node.x - 72}, ${node.y - 24})`}
+      onClick={() => onClick(node.id)}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(node.id); } }}
+      role="button"
+    >
+      <title>{`${node.label} (${node.type}) - ${node.id}`}</title>
       <rect width="144" height="48" rx="12" className={`graph-node ${active ? "active" : ""}`} />
-      <text x="12" y="20" className="graph-node-title">
-        {node.label.slice(0, 22)}
+      <g transform="translate(4, 14)">
+        {React.createElement(getNodeTypeIcon(node.type), { size: 20 })}
+      </g>
+      <text x="32" y="20" className="graph-node-title">
+        {node.label.slice(0, 18)}
       </text>
-      <text x="12" y="36" className="graph-node-subtitle">
+      <text x="32" y="36" className="graph-node-subtitle">
         {node.type}
       </text>
     </g>

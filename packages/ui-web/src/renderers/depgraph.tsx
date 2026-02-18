@@ -62,7 +62,8 @@ export function renderDepgraphPage(graph: DepgraphData): string {
         </Section>
 
         <Section title="Nodes">
-          <div className="surface table-wrap">
+          <div className="table-scroll-wrap">
+            <div className="surface table-wrap">
             <table>
               <thead>
                 <tr>
@@ -73,11 +74,13 @@ export function renderDepgraphPage(graph: DepgraphData): string {
               </thead>
               <tbody id="node-body"></tbody>
             </table>
+            </div>
           </div>
         </Section>
 
         <Section title="Edges">
-          <div className="surface table-wrap">
+          <div className="table-scroll-wrap">
+            <div className="surface table-wrap">
             <table>
               <thead>
                 <tr>
@@ -88,6 +91,7 @@ export function renderDepgraphPage(graph: DepgraphData): string {
               </thead>
               <tbody id="edge-body"></tbody>
             </table>
+            </div>
           </div>
         </Section>
       </>

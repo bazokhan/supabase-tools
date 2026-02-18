@@ -1,7 +1,14 @@
 import React from "react";
 import { AppDataTable } from "../components/AppDataTable";
+import { Dropdown } from "../components/Dropdown";
+import { EmptyState } from "../components/EmptyState";
+import { MiniBarChart } from "../components/MiniBarChart";
+import { StatCard } from "../components/StatCard";
+import { Tooltip } from "../components/Tooltip";
 import { getPrimaryKey, getSectionPrimaryKeyField, prettyLabel, toRows } from "../lib/model";
 import type { PageProps } from "./page-types";
+
+const MAX_VISIBLE_TABS = 12;
 
 const CORE_TABS = [
   "functions",
@@ -25,6 +32,8 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
       .map(([name, rows]) => ({ name, count: rows.length }));
     return [...entries, ...extras].sort((a, b) => b.count - a.count).slice(0, 10);
   }, [categories]);
+
+  const totalCount = stats.reduce((sum, s) => sum + s.count, 0);
 
   const rows = React.useMemo(() => {
     const source = toRows(categories[activeTab] ?? []);
@@ -57,14 +66,43 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
 
       <section className="stat-grid">
         {stats.map((entry) => (
-          <article key={entry.name} className="stat-panel" onClick={() => setActiveTab(entry.name)}>
-            <div className="stat-value">{entry.count.toLocaleString()}</div>
-            <div className="stat-label">{prettyLabel(entry.name)}</div>
-          </article>
+          <Tooltip key={entry.name} content={`Click to filter by ${prettyLabel(entry.name)}`}>
+            <div>
+              <StatCard
+                label={prettyLabel(entry.name)}
+                value={entry.count.toLocaleString()}
+                tone={entry.name === activeTab ? "accent" : "default"}
+                onClick={() => setActiveTab(entry.name)}
+              />
+            </div>
+          </Tooltip>
         ))}
       </section>
 
+      {totalCount > 0 && (
+        <section className="panel">
+          <h3 className="chart-section-title">Entity counts</h3>
+          <MiniBarChart
+            data={stats.map((s) => ({
+              label: prettyLabel(s.name),
+              value: s.count,
+              tone: s.name === activeTab ? "accent" : "default",
+            }))}
+            maxBars={10}
+            height={140}
+          />
+        </section>
+      )}
+
       <section className="panel">
+        {totalCount === 0 ? (
+          <EmptyState
+            title="No entities found"
+            message="Run sbt generate-atlas to populate the workspace inventory."
+            iconType="alert"
+          />
+        ) : (
+        <>
         <div className="panel-head">
           <div>
             <h2>Entity Explorer</h2>
@@ -80,28 +118,53 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
         </div>
 
         <div className="tab-row">
-          {Object.keys(categories)
-            .filter((name) => categories[name]?.length)
-            .slice(0, 14)
-            .map((name) => (
-              <button
-                key={name}
-                type="button"
-                className={`tab-btn ${activeTab === name ? "active" : ""}`}
-                onClick={() => setActiveTab(name)}
-              >
-                {prettyLabel(name)}
-              </button>
-            ))}
+          {(() => {
+            const tabNames = Object.keys(categories).filter((name) => categories[name]?.length);
+            const visible = tabNames.slice(0, MAX_VISIBLE_TABS);
+            const overflow = tabNames.slice(MAX_VISIBLE_TABS);
+            return (
+              <>
+                {visible.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={`tab-btn ${activeTab === name ? "active" : ""}`}
+                    onClick={() => setActiveTab(name)}
+                  >
+                    {prettyLabel(name)}
+                  </button>
+                ))}
+                {overflow.length > 0 ? (
+                  <Dropdown trigger={<button type="button" className="tab-btn">More ({overflow.length})</button>} align="right">
+                    <div className="dropdown-service-list">
+                      {overflow.map((name) => (
+                        <button
+                          key={name}
+                          type="button"
+                          className={`dropdown-service-item ${activeTab === name ? "active" : ""}`}
+                          onClick={() => setActiveTab(name)}
+                        >
+                          {prettyLabel(name)}
+                        </button>
+                      ))}
+                    </div>
+                  </Dropdown>
+                ) : null}
+              </>
+            );
+          })()}
         </div>
 
         <AppDataTable
           rows={rows}
           columns={columns}
+          section={activeTab}
           onRowClick={(row) =>
             onOpenDetail(activeTab, getPrimaryKey(row, getSectionPrimaryKeyField(sections, activeTab)))
           }
         />
+        </>
+        )}
       </section>
     </div>
   );

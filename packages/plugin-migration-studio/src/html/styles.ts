@@ -8,8 +8,11 @@ export function getStyles(): string {
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
+  body, input, select, textarea, label {
     font-family: var(--font-sans);
+  }
+
+  body {
     background: var(--bg);
     color: var(--text);
     padding: 20px;
@@ -18,6 +21,25 @@ export function getStyles(): string {
 
   h1 { font-size: 1.42rem; margin-bottom: 6px; }
   .sub { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px; }
+
+  .migration-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .migration-stat {
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.82rem;
+  }
+  .migration-stat .stat-label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .migration-stat .stat-value { font-size: 1.2rem; font-weight: 700; }
+  .migration-stat.stat-applied .stat-value { color: var(--success); }
+  .migration-stat.stat-pending .stat-value { color: var(--warning); }
+  .migration-stat.stat-missing .stat-value { color: var(--danger); }
 
   .toolbar {
     display: flex;
@@ -32,7 +54,8 @@ export function getStyles(): string {
 
   button {
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
     font-weight: 500;
     cursor: pointer;
     border: 1px solid var(--border);
@@ -53,7 +76,7 @@ export function getStyles(): string {
   }
 
   button.primary:hover {
-    background: #6366f1;
+    background: var(--accent-hover);
   }
 
   button.danger {
@@ -111,10 +134,10 @@ export function getStyles(): string {
     background: var(--bg-strong);
   }
 
-  .cm-editor { height: 100%; }
-  .cm-scroller { font-family: var(--font-mono); font-size: 0.86rem; }
+  .cm-editor { height: 100%; font-family: var(--font-mono) !important; }
+  .cm-scroller, .cm-editor .cm-content { font-family: var(--font-mono) !important; font-size: 0.86rem; }
   .cm-content { min-height: 300px; padding: 12px; }
-  .cm-gutters { background: #09090b; border-right: 1px solid var(--border-subtle); }
+  .cm-gutters { background: var(--bg); border-right: 1px solid var(--border-subtle); }
 
   .schema-status { font-size: 0.76rem; color: var(--text-muted); margin-left: auto; align-self: center; }
 
@@ -176,9 +199,30 @@ export function getStyles(): string {
   }
 
   .context-item code { font-size: 0.74rem; }
-  .badge-applied { color: var(--success); }
-  .badge-pending { color: var(--warning); }
-  .badge-missing { color: var(--danger); }
+  .badge-applied {
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 44%, transparent);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+  }
+  .badge-pending {
+    color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warning) 44%, transparent);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+  }
+  .badge-missing {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger) 44%, transparent);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+  }
 
   .cm-tooltip-schema-hover .cm-schema-tooltip {
     background: var(--surface);
