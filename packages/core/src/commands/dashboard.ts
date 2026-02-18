@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveContainerPrefix, getArg, ui, withHelp } from "@sbtools/sdk";
 import type { DashboardSectionDef, PluginContext } from "@sbtools/sdk";
+import { allCommands } from "../command-registry.js";
 
 const CORE_SECTIONS: DashboardSectionDef[] = [
   {
@@ -314,6 +315,28 @@ function resolveErdDir(ctx: PluginContext): string {
   return path.join(ctx.paths.docsOutput, "entity-relations");
 }
 
+const BLOCKED_COMMANDS = new Set(["dashboard", "docs", "init"]);
+
+function findSbtBin(projectRoot: string): string {
+  const ext = process.platform === "win32" ? ".cmd" : "";
+  const local = path.join(projectRoot, `node_modules/.bin/sbt${ext}`);
+  if (fs.existsSync(local)) return local;
+  return "sbt";
+}
+
+function collectCommands(ctx: PluginContext): Array<{ name: string; description: string; category: string; source: string }> {
+  const commands: Array<{ name: string; description: string; category: string; source: string }> = [];
+  for (const cmd of allCommands()) {
+    commands.push({ name: cmd.name, description: cmd.description, category: cmd.category, source: "core" });
+  }
+  for (const plugin of ctx.siblingPlugins ?? []) {
+    for (const cmd of plugin.commands ?? []) {
+      commands.push({ name: cmd.name, description: cmd.description, category: plugin.name, source: plugin.name });
+    }
+  }
+  return commands;
+}
+
 function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
   const atlasDataPath = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
 
@@ -457,6 +480,76 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       res.write("data: {\"type\":\"init\"}\n\n");
       const interval = setInterval(() => res.write(": ping\n\n"), 30000);
       req.on("close", () => clearInterval(interval));
+      return;
+    }
+
+    if (pathname === "/api/commands") {
+      sendJson(res, 200, { commands: collectCommands(ctx) });
+      return;
+    }
+
+    if (pathname === "/api/run/stream") {
+      const parsed = new URL(url, "http://localhost");
+      const command = parsed.searchParams.get("command") ?? "";
+      const knownCommands = new Set(collectCommands(ctx).map((c) => c.name));
+
+      if (!command || BLOCKED_COMMANDS.has(command) || !knownCommands.has(command)) {
+        sendJson(res, 400, { error: `Command '${command}' cannot be invoked from the dashboard.` });
+        return;
+      }
+
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+
+      const bin = findSbtBin(ctx.projectRoot);
+      const child = spawn(bin, [command], {
+        cwd: ctx.projectRoot,
+        shell: true,
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" },
+      });
+
+      res.write(`data: ${JSON.stringify({ type: "start", command, pid: child.pid })}\n\n`);
+
+      const pipeStream = (stream: NodeJS.ReadableStream | null, streamType: "stdout" | "stderr") => {
+        if (!stream) return;
+        let buffer = "";
+        stream.on("data", (chunk: Buffer) => {
+          buffer += chunk.toString();
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            res.write(`data: ${JSON.stringify({ type: streamType, line })}\n\n`);
+          }
+        });
+        stream.on("end", () => {
+          if (buffer) {
+            res.write(`data: ${JSON.stringify({ type: streamType, line: buffer })}\n\n`);
+            buffer = "";
+          }
+        });
+      };
+
+      pipeStream(child.stdout, "stdout");
+      pipeStream(child.stderr, "stderr");
+
+      child.on("close", (code) => {
+        res.write(`data: ${JSON.stringify({ type: "exit", code: code ?? 1, success: code === 0 })}\n\n`);
+        res.end();
+      });
+
+      child.on("error", (err) => {
+        res.write(`data: ${JSON.stringify({ type: "stderr", line: `Failed to start process: ${(err as Error).message}` })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: "exit", code: 1, success: false })}\n\n`);
+        res.end();
+      });
+
+      req.on("close", () => {
+        try { child.kill("SIGTERM"); } catch { /* ignore */ }
+      });
       return;
     }
 

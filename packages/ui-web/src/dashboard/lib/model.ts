@@ -4,7 +4,7 @@ import { resolve } from "./field-resolver";
 export type AtlasRow = Record<string, unknown>;
 export type CategoryMap = Record<string, unknown[]>;
 
-export type RouteName = "overview" | "migrations" | "depgraph" | "logs" | "frontend" | "erd" | "details";
+export type RouteName = "overview" | "migrations" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "details";
 
 export interface SearchHit {
   id: string;
@@ -20,7 +20,7 @@ export interface NavItem {
   label: string;
   subtitle: string;
   enabled: boolean;
-  icon: "home" | "migrations" | "graph" | "logs" | "frontend" | "erd";
+  icon: "home" | "migrations" | "graph" | "logs" | "frontend" | "erd" | "runner";
 }
 
 export interface PluginAvailability {
@@ -55,6 +55,7 @@ const ROUTE_PREFIXES: Array<{ route: RouteName; prefix: string }> = [
   { route: "logs", prefix: "/logs" },
   { route: "frontend", prefix: "/frontend-usage" },
   { route: "erd", prefix: "/erd" },
+  { route: "runner", prefix: "/runner" },
   { route: "details", prefix: "/details" },
 ];
 
@@ -122,6 +123,14 @@ export function getNavItems(availability: PluginAvailability): NavItem[] {
       subtitle: "Entity relationship diagrams",
       enabled: availability.erd,
       icon: "erd",
+    },
+    {
+      route: "runner",
+      path: "/runner",
+      label: "Commands",
+      subtitle: "Run sbt commands and stream output",
+      enabled: true,
+      icon: "runner",
     },
   ];
 }

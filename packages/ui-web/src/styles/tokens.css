@@ -1359,6 +1359,177 @@ a.dropdown-service-item {
   color: var(--text);
 }
 
+/* Runner page */
+.runner-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.runner-category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.runner-category-title {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.runner-command-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.run-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.run-card--active {
+  border-color: var(--border);
+}
+
+.run-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12);
+}
+
+.run-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.run-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.run-cmd-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.run-card-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.run-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-shrink: 0;
+}
+
+.run-status-pill {
+  font-size: 0.74rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.run-status-running {
+  color: var(--accent);
+  background: var(--accent-muted);
+  border-color: transparent;
+}
+
+.run-status-success {
+  color: var(--success);
+  background: var(--secondary-muted);
+  border-color: transparent;
+}
+
+.run-status-error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: transparent;
+}
+
+.btn-primary-sm {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--accent);
+  color: #fff;
+  transition: background 0.15s ease;
+}
+
+.btn-primary-sm:hover {
+  background: var(--accent-hover);
+}
+
+.btn-danger-sm {
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+  transition: background 0.15s ease;
+}
+
+.btn-danger-sm:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.run-log-surface {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-strong);
+  padding: 10px 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.run-log-line {
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.run-log-line--err {
+  color: var(--danger);
+}
+
+.run-log-cursor {
+  color: var(--accent);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 @media (max-width: 1120px) {
   .app-shell {
     grid-template-columns: 1fr;

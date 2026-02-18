@@ -14,6 +14,7 @@ import {
   IconMoon,
   IconSearch,
   IconSun,
+  IconTerminal,
 } from "./components/Icons";
 import { Dropdown } from "./components/Dropdown";
 import { ShellLoadingSkeleton } from "./components/Skeleton";
@@ -40,6 +41,7 @@ import { LogsPage } from "./pages/Logs";
 import { MigrationsPage } from "./pages/Migrations";
 import { ErdPage } from "./pages/Erd";
 import { OverviewPage } from "./pages/Overview";
+import { RunnerPage } from "./pages/Runner";
 
 const DARK_STORAGE_KEY = "sbt-dashboard-dark";
 const SIDEBAR_COLLAPSED_KEY = "sbt-sidebar-collapsed";
@@ -60,6 +62,8 @@ function NavIcon({ item }: { item: NavItem }) {
       return <IconFrontend size={15} />;
     case "erd":
       return <IconErd size={15} />;
+    case "runner":
+      return <IconTerminal size={15} />;
     default:
       return <IconHome size={15} />;
   }
@@ -367,14 +371,16 @@ export function App() {
           </div>
         </header>
 
-        {atlas.error ? (
+        {route === "runner" ? (
+          <div key={route} className="route-content-transition">
+            <RunnerPage />
+          </div>
+        ) : atlas.error ? (
           <section className="panel">
             <h2>Data Error</h2>
             <p className="empty-state">{atlas.error}</p>
           </section>
-        ) : null}
-
-        {!atlas.error ? (
+        ) : (
           <div key={route} className="route-content-transition">
             {route === "overview" ? (
               <OverviewPage categories={categories} sections={dashboard.sections} onOpenDetail={openDetail} />
@@ -397,7 +403,7 @@ export function App() {
               />
             ) : null}
           </div>
-        ) : null}
+        )}
       </main>
     </div>
   );
