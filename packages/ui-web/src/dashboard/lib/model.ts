@@ -4,7 +4,7 @@ import { resolve } from "./field-resolver";
 export type AtlasRow = Record<string, unknown>;
 export type CategoryMap = Record<string, unknown[]>;
 
-export type RouteName = "overview" | "migrations" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "details";
+export type RouteName = "overview" | "migrations" | "studio" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "details" | "notfound";
 
 export interface SearchHit {
   id: string;
@@ -20,11 +20,12 @@ export interface NavItem {
   label: string;
   subtitle: string;
   enabled: boolean;
-  icon: "home" | "migrations" | "graph" | "logs" | "frontend" | "erd" | "runner";
+  icon: "home" | "migrations" | "studio" | "graph" | "logs" | "frontend" | "erd" | "runner";
 }
 
 export interface PluginAvailability {
   migrations: boolean;
+  studio: boolean;
   depgraph: boolean;
   logs: boolean;
   frontend: boolean;
@@ -52,6 +53,7 @@ export const DEFAULT_STUDIO_URL = "http://localhost:3335";
 
 const ROUTE_PREFIXES: Array<{ route: RouteName; prefix: string }> = [
   { route: "migrations", prefix: "/migrations" },
+  { route: "studio", prefix: "/migration-studio" },
   { route: "depgraph", prefix: "/depgraph" },
   { route: "logs", prefix: "/logs" },
   { route: "frontend", prefix: "/frontend-usage" },
@@ -69,6 +71,7 @@ export function inferPluginAvailability(categories: CategoryMap, sections: Dashb
     migrations:
       Boolean(categories.migration_audit?.length) ||
       hasSection(sections, (section) => section.dataKey === "migration_audit" || section.id.includes("migration")),
+    studio: hasSection(sections, (section) => section.id.includes("migration_studio") || section.id.includes("studio")),
     depgraph:
       Boolean(categories.dependency_graph?.length) ||
       hasSection(sections, (section) => section.dataKey === "dependency_graph" || section.id.includes("depgraph")),
@@ -92,6 +95,14 @@ export function getNavItems(availability: PluginAvailability): NavItem[] {
       subtitle: "Audit, drift, and apply flow",
       enabled: availability.migrations,
       icon: "migrations",
+    },
+    {
+      route: "studio",
+      path: "/migration-studio",
+      label: "Migration Studio",
+      subtitle: "Write and apply migration SQL",
+      enabled: availability.studio,
+      icon: "studio",
     },
     {
       route: "depgraph",
@@ -145,10 +156,11 @@ export function toRows(items: unknown[]): AtlasRow[] {
 }
 
 export function normalizePath(pathname: string): RouteName {
+  if (pathname === "/" || pathname === "") return "overview";
   for (const route of ROUTE_PREFIXES) {
     if (pathname.startsWith(route.prefix)) return route.route;
   }
-  return "overview";
+  return "notfound";
 }
 
 export function prettyLabel(input: string): string {

@@ -4,18 +4,21 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import type { PluginContext } from "@sbtools/sdk";
 import { analyzeMigrationSql, createPgClient, testConnection, disconnectClient } from "@sbtools/sdk";
 import type { RouteHandler } from "./types.js";
-import { generateEditorPage } from "./html/editor-page.js";
 import { loadSchema } from "./schema-loader.js";
 import { TEMPLATES } from "./templates.js";
 import { scanMigrationFiles } from "@sbtools/sdk";
 import { readArtifactOrNull } from "@sbtools/sdk";
 
 const WATCH_STAMP_PATH_REL = path.join("watch", "last-event.json");
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
 function generateMigrationFilename(description?: string): string {
   const now = new Date();
@@ -42,9 +45,10 @@ async function readBody(req: http.IncomingMessage): Promise<string> {
   return body;
 }
 
-const handleIndex: RouteHandler = async (req, res, ctx) => {
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.end(generateEditorPage(ctx));
+const handleIndex: RouteHandler = async (_req, res) => {
+  // Server-only mode: UI is hosted by @sbtools/ui-web dashboard.
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ service: "migration-studio", mode: "server-only", ui: "Open /migration-studio in ui-web dashboard" }));
 };
 
 const handleAnalyze: RouteHandler = async (req, res, ctx) => {
@@ -222,11 +226,17 @@ const handleTemplates: RouteHandler = async (req, res) => {
   res.end(JSON.stringify({ templates: TEMPLATES }));
 };
 
+const handleHealth: RouteHandler = async (_req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ ok: true }));
+};
+
 const handleEvents: RouteHandler = async (_req, res) => {
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
+    ...CORS_HEADERS,
   });
   res.write(`data: ${JSON.stringify({ type: "connected", at: new Date().toISOString() })}\n\n`);
   sseClients.add(res);
@@ -285,42 +295,6 @@ const handleApply: RouteHandler = async (req, res, ctx) => {
   }
 };
 
-const LIB_PREFIX = "/lib/";
-
-function findNodeModulesRoot(): string {
-  const pluginDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  for (let d = pluginDir; d !== path.dirname(d); d = path.dirname(d)) {
-    const viewPath = path.join(d, "node_modules", "@codemirror", "view", "dist", "index.js");
-    if (fs.existsSync(viewPath)) return path.join(d, "node_modules");
-  }
-  return path.join(pluginDir, "node_modules");
-}
-
-function serveLibFile(req: http.IncomingMessage, res: http.ServerResponse): boolean {
-  const url = req.url ?? "/";
-  const pathname = url.split("?")[0];
-  if (pathname.startsWith(LIB_PREFIX) && req.method === "GET") {
-    const subpath = pathname.slice(LIB_PREFIX.length);
-    if (subpath.includes("..") || subpath.startsWith("/")) {
-      res.writeHead(400);
-      res.end("Bad request");
-      return true;
-    }
-    const filePath = path.join(findNodeModulesRoot(), subpath);
-    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
-      res.writeHead(404);
-      res.end("Not found");
-      return true;
-    }
-    const ext = path.extname(filePath);
-    const mimes: Record<string, string> = { ".js": "application/javascript", ".mjs": "application/javascript", ".map": "application/json" };
-    res.writeHead(200, { "Content-Type": mimes[ext] || "application/octet-stream" });
-    res.end(fs.readFileSync(filePath));
-    return true;
-  }
-  return false;
-}
-
 function initStudioFsBridge(ctx: PluginContext): void {
   if (fsBridgeStarted) return;
   fsBridgeStarted = true;
@@ -365,6 +339,7 @@ export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMes
   const routes = new Map<string, RouteHandler>([
     ["GET:/", handleIndex],
     ["GET:/index.html", handleIndex],
+    ["GET:/api/health", handleHealth],
     ["GET:/api/events", handleEvents],
     ["GET:/api/schema", handleSchema],
     ["GET:/api/templates", handleTemplates],
@@ -376,7 +351,11 @@ export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMes
   ]);
 
   return async (req, res) => {
-    if (serveLibFile(req, res)) return;
+    if (req.method === "OPTIONS") {
+      res.writeHead(204, CORS_HEADERS);
+      res.end();
+      return;
+    }
     const url = req.url ?? "/";
     const pathname = url.split("?")[0];
     const method = req.method ?? "GET";
@@ -385,6 +364,9 @@ export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMes
       handler = handleMigrationFile;
     }
     if (typeof handler === "function") {
+      for (const [key, value] of Object.entries(CORS_HEADERS)) {
+        res.setHeader(key, value);
+      }
       await handler(req, res, ctx);
     } else {
       res.writeHead(404);

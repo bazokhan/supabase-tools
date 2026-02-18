@@ -21,48 +21,61 @@ function escapeForInlineScript(value: string): string {
 export function renderMigrationStudioPage(opts: { migrationsDir: string; styles: string }): string {
   const bodyHtml = `
 <script type="importmap">${importMap}</script>
-<h1>Migration Studio</h1>
-<p class="sub">Create and apply migrations. SQL-first workflow. Apply uses <code>sbt migrate</code>.</p>
+<div class="content-stack migration-studio-root">
+<section class="panel panel-accent">
+  <div class="panel-head">
+    <div>
+      <h2>Migration Studio</h2>
+      <p>Create and apply migrations. SQL-first workflow. Apply uses <code>sbt migrate</code>.</p>
+    </div>
+    <span id="schema-status" class="schema-status"></span>
+  </div>
+  <div id="migration-stats" class="migration-stats"></div>
+</section>
 
-<div id="migration-stats" class="migration-stats"></div>
+<section class="panel">
+  <div class="toolbar cluster-row">
+    <button type="button" class="btn" id="btn-analyze">Analyze SQL</button>
+    <button type="button" class="btn" id="btn-dry-run">Dry run</button>
+    <button type="button" class="btn" id="btn-wrap-tx">Wrap in transaction</button>
+    <button type="button" class="btn btn-primary" id="btn-save">Save as migration</button>
+    <button type="button" class="btn" id="btn-save-new">Save as new</button>
+    <button type="button" class="btn btn-danger" id="btn-apply">Apply migrations</button>
+  </div>
 
-<div class="toolbar">
-  <button type="button" id="btn-analyze">Analyze SQL</button>
-  <button type="button" id="btn-dry-run">Dry run</button>
-  <button type="button" id="btn-wrap-tx">Wrap in transaction</button>
-  <button type="button" class="primary" id="btn-save">Save as migration</button>
-  <button type="button" id="btn-save-new">Save as new</button>
-  <button type="button" class="danger" id="btn-apply">Apply migrations</button>
-  <span id="schema-status" class="schema-status"></span>
-</div>
+  <div class="template-bar chip-bar" id="template-bar"></div>
+</section>
 
-<div class="template-bar" id="template-bar"></div>
+<section class="panel">
+  <div id="message"></div>
+</section>
 
-<div id="message"></div>
-
-<div class="main-layout">
-<div class="editor-column">
+<section class="main-layout">
+<div class="editor-column content-stack">
 <div class="panel">
   <h3>SQL editor <span class="hint">- Ctrl+Space for completion</span></h3>
   <div id="editor-wrap"></div>
 </div>
 
-<div class="panel" id="analysis-panel">
+<div class="panel">
+  <div id="analysis-panel">
   <h3>Analysis</h3>
   <div id="analysis-content">Type SQL to see live analysis.</div>
+  </div>
 </div>
 </div>
-<div class="context-sidebar">
+<div class="context-sidebar content-stack">
   <div class="panel">
     <h3>Context</h3>
-    <div class="context-tabs">
-      <button class="context-tab active" data-tab="migrations">Migrations</button>
-      <button class="context-tab" data-tab="schema">Schema</button>
+    <div class="context-tabs tab-row">
+      <button class="context-tab tab-btn active" data-tab="migrations">Migrations</button>
+      <button class="context-tab tab-btn" data-tab="schema">Schema</button>
     </div>
     <div id="context-migrations" class="context-list"></div>
     <div id="context-schema" class="context-list" style="display:none"></div>
   </div>
 </div>
+</section>
 </div>`;
 
   const script = `

@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  FileCode2,
   GitMerge,
   LayoutDashboard,
   Monitor,
@@ -41,7 +42,9 @@ import { DependenciesPage } from "./pages/Depgraph";
 import { FrontendPage } from "./pages/FrontendUsage";
 import { LogsPage } from "./pages/Logs";
 import { MigrationsPage } from "./pages/Migrations";
+import { MigrationStudioPage } from "./pages/MigrationStudio";
 import { ErdPage } from "./pages/Erd";
+import { NotFoundPage } from "./pages/NotFound";
 import { OverviewPage } from "./pages/Overview";
 import { RunnerPage } from "./pages/Runner";
 
@@ -58,6 +61,8 @@ function NavIcon({ item }: { item: NavItem }) {
       return <GitMerge size={16} />;
     case "graph":
       return <Network size={16} />;
+    case "studio":
+      return <FileCode2 size={16} />;
     case "logs":
       return <ScrollText size={16} />;
     case "frontend":
@@ -77,6 +82,9 @@ function routeActions(route: RouteName): Array<{ label: string; href: string; ic
       { label: "Audit HTML", href: "/migration-audit.html", icon: <IconExternal size={14} /> },
       { label: "Studio", href: "http://localhost:3335", icon: <IconExternal size={14} /> },
     ];
+  }
+  if (route === "studio") {
+    return [{ label: "Studio Server", href: "http://localhost:3335", icon: <IconExternal size={14} /> }];
   }
   if (route === "depgraph") {
     return [{ label: "Graph HTML", href: "/dependency-graph.html", icon: <IconExternal size={14} /> }];
@@ -170,8 +178,8 @@ export function App() {
   };
 
   const activeNav = navItems.find((item) => item.route === route);
-  const title = activeNav?.label ?? "Details";
-  const subtitle = activeNav?.subtitle ?? "Detailed object view";
+  const title = route === "notfound" ? "Not Found" : activeNav?.label ?? "Details";
+  const subtitle = route === "notfound" ? "Unknown dashboard route" : activeNav?.subtitle ?? "Detailed object view";
   const searchParams = new URLSearchParams(window.location.search);
 
   return (
@@ -389,6 +397,8 @@ export function App() {
               <MigrationsPage categories={categories} onOpenDetail={openDetail} enabled={availability.migrations} />
             ) : route === "depgraph" ? (
               <DependenciesPage categories={categories} onOpenDetail={openDetail} enabled={availability.depgraph} />
+            ) : route === "studio" ? (
+              <MigrationStudioPage categories={categories} onOpenDetail={openDetail} enabled={availability.studio} />
             ) : route === "logs" ? (
               <LogsPage categories={categories} enabled={availability.logs} />
             ) : route === "frontend" ? (
@@ -402,6 +412,8 @@ export function App() {
                 sections={dashboard.sections}
                 onOpenDetail={openDetail}
               />
+            ) : route === "notfound" ? (
+              <NotFoundPage />
             ) : null}
           </div>
         )}
