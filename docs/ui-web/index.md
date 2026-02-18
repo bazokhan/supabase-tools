@@ -53,7 +53,7 @@ These provide the same light/dark mode CSS custom properties used by the dashboa
 
 ## React Dashboard SPA
 
-The dashboard SPA at `sbt dashboard` (http://localhost:3400) is a Vite-built React application. It includes:
+The dashboard SPA at `sbt dashboard` (`http://localhost:3400`) is a Vite-built React application. It includes:
 
 ### Pages
 
