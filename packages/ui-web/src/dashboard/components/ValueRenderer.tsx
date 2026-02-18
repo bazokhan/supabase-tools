@@ -13,9 +13,14 @@ function inferFormat(value: unknown, field: string): ValueFormat {
   if (field) {
     const f = field.toLowerCase();
     if (f.includes("sql") || f === "query" || f.includes("definition") || f.includes("ddl")) return "sql";
-    if (f.includes("json") || f === "resources") return "json";
+    if (f.includes("json")) return "json";
+    /* resources/components use custom renderers below, not raw json */
   }
   return "text";
+}
+
+function isResourceItem(v: unknown): v is { type: string; resource: string } {
+  return !!v && typeof v === "object" && "type" in v && "resource" in v;
 }
 
 function highlightSql(sql: string): React.ReactNode[] {
@@ -120,6 +125,41 @@ export function ValueRenderer({ value, field = "", format = "auto", compact = fa
   const resolvedFormat = format === "auto" ? inferFormat(value, field) : format;
 
   if (value == null) return <span className="value-empty">—</span>;
+
+  /* Frontend usage: resources = array of {type, resource} → show as pills */
+  if (field === "resources" && Array.isArray(value)) {
+    const items = value.filter(isResourceItem).map((r) => ({ type: r.type, resource: r.resource }));
+    if (items.length > 0) {
+      return (
+        <span className="value-resource-pills" role="list">
+          {items.map((r, i) => (
+            <span key={i} className="value-resource-pill" role="listitem" title={`${r.type}: ${r.resource}`}>
+              <span className="value-resource-type">{r.type}</span>
+              <span className="value-resource-name">{r.resource}</span>
+            </span>
+          ))}
+        </span>
+      );
+    }
+  }
+
+  /* Frontend usage: components = array of strings → show as readable list */
+  if (field === "components" && Array.isArray(value)) {
+    const names = value.filter((v): v is string => typeof v === "string");
+    if (names.length > 0) {
+      const maxShow = 5;
+      const shown = names.slice(0, maxShow);
+      const extra = names.length - maxShow;
+      return (
+        <span className="value-component-list" title={names.join(", ")}>
+          {shown.join(", ")}
+          {extra > 0 ? (
+            <span className="value-extra"> +{extra} more</span>
+          ) : null}
+        </span>
+      );
+    }
+  }
 
   if (compact && typeof value === "string" && value.length > TRUNCATE_LEN) {
     return (

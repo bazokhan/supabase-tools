@@ -114,11 +114,6 @@ function LogsEnabled({ categories }: { categories: CategoryMap }) {
 
   return (
     <div className="content-stack">
-      <section className="panel panel-accent">
-        <h2>Runtime Health and Performance</h2>
-        <p>Live logs + snapshot metrics. Stream is sourced from dashboard backend in real time.</p>
-      </section>
-
       <section className="panel">
         <div className="tab-row">
           <button type="button" className={`tab-btn ${activeTab === "live" ? "active" : ""}`} onClick={() => setActiveTab("live")}>Live Logs</button>

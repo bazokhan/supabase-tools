@@ -6,6 +6,8 @@ import { ValueRenderer } from "./ValueRenderer";
 import { getSectionIcon } from "../lib/section-icons";
 import { getPrimaryKey, prettyLabel, type AtlasRow } from "../lib/model";
 
+export type RenderCellFn = (value: unknown, row: AtlasRow) => React.ReactNode;
+
 const BADGE_COLUMNS = new Set(["status", "type", "volatility", "command", "type_kind", "timing"]);
 
 function shouldUseBadge(column: string, value: unknown): boolean {
@@ -26,17 +28,24 @@ function compareValues(a: unknown, b: unknown, column: string): number {
   return sa.localeCompare(sb);
 }
 
+export interface ColumnMeta {
+  label?: string;
+  tooltip?: string;
+  renderCell?: RenderCellFn;
+}
+
 interface AppDataTableProps {
   rows: AtlasRow[];
   columns: string[];
   onRowClick?: (row: AtlasRow) => void;
   pageSize?: number;
   section?: string;
+  columnMeta?: Record<string, ColumnMeta>;
 }
 
 const DEFAULT_COLUMN_WIDTH = 140;
 
-export function AppDataTable({ rows, columns, onRowClick, pageSize = 50, section }: AppDataTableProps) {
+export function AppDataTable({ rows, columns, onRowClick, pageSize = 50, section, columnMeta }: AppDataTableProps) {
   const [sortColumn, setSortColumn] = React.useState<string | null>(null);
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [page, setPage] = React.useState(0);
@@ -105,6 +114,9 @@ export function AppDataTable({ rows, columns, onRowClick, pageSize = 50, section
           <tr>
             {columns.map((column, idx) => {
               const SectionIcon = section && idx === 0 ? getSectionIcon(section) : null;
+              const meta = columnMeta?.[column];
+              const label = meta?.label ?? prettyLabel(column);
+              const tooltipContent = meta?.tooltip ?? label;
               return (
                 <th
                   key={column}
@@ -112,10 +124,10 @@ export function AppDataTable({ rows, columns, onRowClick, pageSize = 50, section
                   style={{ width: getColWidth(column) }}
                   onClick={() => handleSort(column)}
                 >
-                  <Tooltip content={prettyLabel(column)}>
+                  <Tooltip content={tooltipContent}>
                     <span className="th-content">
                       {SectionIcon ? <SectionIcon size={12} aria-hidden /> : null}
-                      {prettyLabel(column)}
+                      {label}
                       {sortColumn === column ? (
                         <span className="sort-indicator" aria-hidden>{sortDirection === "asc" ? " ↑" : " ↓"}</span>
                       ) : null}
@@ -124,7 +136,7 @@ export function AppDataTable({ rows, columns, onRowClick, pageSize = 50, section
                   <span
                     className="col-resize-handle"
                     role="separator"
-                    aria-label={`Resize ${prettyLabel(column)} column`}
+                    aria-label={`Resize ${label} column`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -146,6 +158,11 @@ export function AppDataTable({ rows, columns, onRowClick, pageSize = 50, section
             >
               {columns.map((column) => {
                 const val = row[column];
+                const meta = columnMeta?.[column];
+                const customRender = meta?.renderCell;
+                if (customRender) {
+                  return <td key={column}>{customRender(val, row)}</td>;
+                }
                 if (shouldUseBadge(column, val)) {
                   const str = String(val ?? "");
                   return (

@@ -35,6 +35,7 @@ export interface GraphNode {
   id: string;
   label: string;
   type: string;
+  schema: string;
   x: number;
   y: number;
 }
@@ -275,9 +276,20 @@ export function buildGraphModel(categoryRows: unknown[]): { nodes: GraphNode[]; 
   const summary = records[0];
   if (!summary) return { nodes: [], edges: [] };
 
+  const nodeRows = Array.isArray(summary.nodes) ? summary.nodes.filter(isRecord) : [];
   const edgeRows = Array.isArray(summary.edges) ? summary.edges.filter(isRecord) : [];
-  const nodeMap = new Map<string, { label: string; type: string }>();
+  const nodeMap = new Map<string, { label: string; type: string; schema: string }>();
   const edges: GraphEdge[] = [];
+
+  for (const nodeRow of nodeRows) {
+    const id = String(nodeRow.id ?? "");
+    if (!id) continue;
+    nodeMap.set(id, {
+      label: String(nodeRow.label ?? id),
+      type: String(nodeRow.type ?? "object"),
+      schema: String(nodeRow.schema ?? ""),
+    });
+  }
 
   for (const edgeRow of edgeRows) {
     const source = String(edgeRow.source_id ?? "");
@@ -287,10 +299,12 @@ export function buildGraphModel(categoryRows: unknown[]): { nodes: GraphNode[]; 
     nodeMap.set(source, {
       label: String(edgeRow.source_label ?? source),
       type: String(edgeRow.source_type ?? "object"),
+      schema: String(nodeMap.get(source)?.schema ?? ""),
     });
     nodeMap.set(target, {
       label: String(edgeRow.target_label ?? target),
       type: String(edgeRow.target_type ?? "object"),
+      schema: String(nodeMap.get(target)?.schema ?? ""),
     });
     edges.push({ source, target, label: String(edgeRow.label ?? "related") });
   }
@@ -316,6 +330,7 @@ export function buildGraphModel(categoryRows: unknown[]): { nodes: GraphNode[]; 
         id,
         label: node.label,
         type: node.type,
+        schema: node.schema,
         x: 160 + col * colWidth,
         y: 80 + row * rowHeight,
       });

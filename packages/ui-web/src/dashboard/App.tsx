@@ -1,20 +1,22 @@
 import React from "react";
 import {
+  GitMerge,
+  LayoutDashboard,
+  Monitor,
+  Network,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ScrollText,
+  Share2,
+  SquareTerminal,
+} from "lucide-react";
+import {
   IconBack,
-  IconChevronLeft,
-  IconChevronRight,
-  IconErd,
   IconExternal,
-  IconFrontend,
-  IconGraph,
-  IconHome,
-  IconLogs,
   IconMenu,
-  IconMigrations,
   IconMoon,
   IconSearch,
   IconSun,
-  IconTerminal,
 } from "./components/Icons";
 import { Dropdown } from "./components/Dropdown";
 import { ShellLoadingSkeleton } from "./components/Skeleton";
@@ -53,19 +55,19 @@ function ShellLoading() {
 function NavIcon({ item }: { item: NavItem }) {
   switch (item.icon) {
     case "migrations":
-      return <IconMigrations size={15} />;
+      return <GitMerge size={16} />;
     case "graph":
-      return <IconGraph size={15} />;
+      return <Network size={16} />;
     case "logs":
-      return <IconLogs size={15} />;
+      return <ScrollText size={16} />;
     case "frontend":
-      return <IconFrontend size={15} />;
+      return <Monitor size={16} />;
     case "erd":
-      return <IconErd size={15} />;
+      return <Share2 size={16} />;
     case "runner":
-      return <IconTerminal size={15} />;
+      return <SquareTerminal size={16} />;
     default:
-      return <IconHome size={15} />;
+      return <LayoutDashboard size={16} />;
   }
 }
 
@@ -173,60 +175,59 @@ export function App() {
   const searchParams = new URLSearchParams(window.location.search);
 
   return (
-    <div className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+    <div className="app-shell">
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="sidebar-wrapper">
-        <aside className={`sidebar-modern ${sidebarOpen ? "open" : ""}`}>
-        <div className="brand-block">
-          <h1>Supabase Tools</h1>
-          <p>Operational Dashboard</p>
-        </div>
+        <aside className={`sidebar-modern ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${sidebarOpen ? "open" : ""}`}>
+          <div className="sidebar-head">
+            <div className="brand-block">
+              <h1>Supabase Tools</h1>
+              <p>Operational Dashboard</p>
+            </div>
+            <button
+              type="button"
+              className="sidebar-collapse-btn"
+              onClick={toggleCollapse}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          </div>
 
-        <nav className="sidebar-nav-modern">
-          {navItems.map((item) => (
-            <Tooltip key={item.path} content={item.enabled ? item.subtitle : "Plugin inactive"}>
-              <button
-                type="button"
-                disabled={!item.enabled}
-                className={`nav-link-modern ${route === item.route ? "active" : ""}`}
-                onClick={() => {
-                  navigate(item.path);
-                  setSidebarOpen(false);
-                }}
-                aria-label={item.label}
+          <nav className="sidebar-nav-modern">
+            {navItems.map((item) => (
+              <Tooltip
+                key={item.path}
+                content={sidebarCollapsed ? item.label : (item.enabled ? item.subtitle : "Plugin inactive")}
+                side={sidebarCollapsed ? "right" : "top"}
               >
-                <div className="nav-icon-row">
-                  <NavIcon item={item} />
-                  <strong>{item.label}</strong>
-                </div>
-                <span>{item.enabled ? item.subtitle : "Plugin inactive"}</span>
-              </button>
-            </Tooltip>
-          ))}
-        </nav>
+                <button
+                  type="button"
+                  disabled={!item.enabled}
+                  className={`nav-link-modern ${route === item.route ? "active" : ""}`}
+                  onClick={() => {
+                    navigate(item.path);
+                    setSidebarOpen(false);
+                  }}
+                  aria-label={item.label}
+                >
+                  <div className="nav-icon-row">
+                    <NavIcon item={item} />
+                    <strong>{item.label}</strong>
+                  </div>
+                  <span>{item.enabled ? item.subtitle : "Plugin inactive"}</span>
+                </button>
+              </Tooltip>
+            ))}
+          </nav>
 
-        <Tooltip content={dark ? "Switch to light mode" : "Switch to dark mode"} className="tooltip-theme">
-          <button type="button" className="theme-toggle" onClick={() => setDark((value) => !value)} aria-label="Toggle dark mode">
-            {dark ? <IconSun size={14} /> : <IconMoon size={14} />}
-            <span>{dark ? "Light" : "Dark"}</span>
-          </button>
-        </Tooltip>
+          <Tooltip content={dark ? "Switch to light mode" : "Switch to dark mode"} className="tooltip-theme">
+            <button type="button" className="theme-toggle" onClick={() => setDark((value) => !value)} aria-label="Toggle dark mode">
+              {dark ? <IconSun size={14} /> : <IconMoon size={14} />}
+              <span>{dark ? "Light" : "Dark"}</span>
+            </button>
+          </Tooltip>
         </aside>
-
-        <Tooltip content={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          <button
-            type="button"
-            className="sidebar-collapse-btn"
-            onClick={toggleCollapse}
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {sidebarCollapsed ? (
-              <IconChevronRight size={18} />
-            ) : (
-              <IconChevronLeft size={18} />
-            )}
-          </button>
-        </Tooltip>
       </div>
 
       {sidebarOpen ? (

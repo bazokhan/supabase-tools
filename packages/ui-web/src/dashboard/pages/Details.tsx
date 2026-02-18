@@ -8,6 +8,41 @@ import { ValueRenderer } from "../components/ValueRenderer";
 import { findDetailTarget, getPrimaryKey, prettyLabel, type CategoryMap, type GraphEdge } from "../lib/model";
 import type { DashboardSectionDef } from "@sbtools/sdk";
 
+function SqlFileBlock({ filename, url }: { filename: string; url: string }) {
+  const [sql, setSql] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setLoading(true);
+    setError(null);
+    setSql(null);
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(setSql)
+      .catch((e: unknown) => setError((e as Error).message))
+      .finally(() => setLoading(false));
+  }, [url]);
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h3 style={{ margin: 0, fontSize: "0.9rem", fontFamily: "var(--font-mono)" }}>{filename}</h3>
+        <a className="header-action-link" href={url} target="_blank" rel="noreferrer">
+          <IconExternal size={12} />
+          <span>Raw</span>
+        </a>
+      </div>
+      {loading && <p className="empty-state">Loading…</p>}
+      {error && <p className="empty-state" style={{ color: "var(--danger)" }}>Failed to load: {error}</p>}
+      {sql !== null && <ValueRenderer value={sql} field="sql" format="sql" />}
+    </section>
+  );
+}
+
 interface DetailsPageProps {
   categories: CategoryMap;
   search: URLSearchParams;
@@ -316,6 +351,13 @@ export function DetailsPage({ categories, search, sections = [], onOpenDetail }:
           ))}
         </div>
       </section>
+
+      {section === "migration_audit" && targetRow.filename && (
+        <SqlFileBlock
+          filename={String(targetRow.filename)}
+          url={`/api/fs/file?scope=migrations&path=${encodeURIComponent(String(targetRow.filename))}`}
+        />
+      )}
     </div>
   );
 }

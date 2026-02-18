@@ -39,6 +39,34 @@ The dashboard is bundled into `@sbtools/core` during build — consumers don't n
 import { renderDepgraphPage, renderRawDocument } from "@sbtools/ui-web";
 ```
 
+## Development
+
+To run the dashboard SPA with Vite HMR:
+
+1. **Start the dashboard backend** (serves API and static assets on port 3400):
+
+   ```bash
+   sbt dashboard
+   ```
+
+2. **Generate atlas data** (required for `/api/atlas-data`):
+
+   ```bash
+   sbt generate-atlas
+   ```
+
+3. **Run Vite dev server** with API proxy:
+
+   ```bash
+   npm run dev
+   ```
+
+   Or from repo root: `npm run dashboard:dev`
+
+   The UI runs at `http://localhost:5173`. API calls to `/api/*` are proxied to the backend at `http://127.0.0.1:3400`.
+
+   Set `DASHBOARD_API_PORT` if the backend runs on a different port.
+
 ## Dependencies
 
 - `react`, `react-dom` — Used for `renderToStaticMarkup` in SSR renderers
