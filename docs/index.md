@@ -1,5 +1,5 @@
 ---
-description: Portable toolkit for local Supabase development — Docker services, migrations, typegen, ERD, tests, and docs. CLI via npx sbt.
+description: Portable toolkit for local Supabase development — Docker services, migrations, ERD, dependency graphs, dashboard, and docs. CLI via npx sbt.
 ---
 
 # supabase-tools
@@ -29,9 +29,10 @@ npx sbt help
 - **Docker services** — Start/stop Supabase stack locally
 - **Migrations** — Apply SQL from `supabase/migrations/`
 - **Snapshot** — Export DB schema to filesystem
-- **ERD** — Mermaid diagram generation per table
-- **Tests** — pgTAP + PGlite in-memory runner
-- **Docs** — Swagger UI, ReDoc, SchemaSpy, Backend Atlas
+- **Dashboard** — React SPA with ERD, depgraph, logs, migrations, and a Commands runner (`sbt dashboard`, port 3400)
+- **ERD** — Mermaid diagram generation per table (via `plugin-erd`)
+- **Tests** — pgTAP + PGlite in-memory runner (via `plugin-db-test`)
+- **Docs** — Swagger UI, ReDoc, SchemaSpy (via built-in `docs` command)
 
 ## Core Commands
 
@@ -43,11 +44,12 @@ npx sbt help
 | `status` | Show service URLs and connection info |
 | `migrate` | Apply SQL migrations |
 | `snapshot` | Export DB objects to filesystem |
-| `generate-types` | Generate TypeScript types from DB |
 | `generate-atlas` | Generate Backend Atlas data (JSON) |
+| `dashboard` | Start React dashboard UI (port 3400) |
+| `docs` | Start Swagger UI / ReDoc / SchemaSpy |
 | `init` | Generate config file |
 
-Plugin commands (generate-erd, test, etc.) — [Plugins](/plugins/). Core also provides `docs` and `atlas-html`.
+Plugin commands (generate-erd, test, etc.) — [Plugins](/plugins/).
 
 All commands: `npx sbt <command>`
 

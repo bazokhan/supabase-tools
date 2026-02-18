@@ -61,6 +61,7 @@ Every command and hook receives `ctx`:
 | `projectRoot` | `string` | Absolute path to the project root |
 | `toolsDir` | `string` | Absolute path to the core package (Docker files) |
 | `sbtDataDir` | `string` | Project-local runtime data (`.sbt/`) |
+| `artifactsDir` | `string` | Artifact storage path (`.sbt/artifacts/`) |
 | `apiUrl` | `string` | Supabase API URL |
 | `paths` | `ResolvedPaths` | `migrations`, `snapshot`, `docsOutput`, `functions` — all absolute |
 | `pluginConfig` | `Record<string, unknown>` | Plugin-specific config from the `config` block |
@@ -68,11 +69,15 @@ Every command and hook receives `ctx`:
 
 ## Reading Config
 
-Plugin config is untyped — cast and default at runtime:
+Use the typed config helpers from the SDK (preferred over raw casts):
 
 ```ts
-const output = (ctx.pluginConfig.outputDir as string) ?? "docs/my-output";
-const limit = (ctx.pluginConfig.limit as number) ?? 10;
+import { getConfigString, getConfigNumber, getConfigStringArray, resolveConfigPath } from "@sbtools/sdk";
+
+const output   = getConfigString(ctx, "outputDir", "docs/my-output");
+const port     = getConfigNumber(ctx, "port", 3333);
+const scanDirs = getConfigStringArray(ctx, "scanPaths", ["src/"]);
+const typesOut = resolveConfigPath(ctx, "typesOutput", "src/types/supabase.ts");
 ```
 
 ## CLI Flags

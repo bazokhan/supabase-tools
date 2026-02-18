@@ -37,6 +37,7 @@ export default defineConfig({
       { text: "Getting Started", link: "/getting-started" },
       { text: "Plugins", link: "/plugins/" },
       { text: "SDK", link: "/sdk/" },
+      { text: "UI Web", link: "/ui-web/" },
       { text: "Changelog", link: "https://github.com/bazokhan/supabase-tools/releases" },
     ],
     sidebar: [
@@ -51,8 +52,6 @@ export default defineConfig({
           { text: "plugin-db-test", link: "/plugins/plugin-db-test" },
           { text: "plugin-deno-functions", link: "/plugins/plugin-deno-functions" },
           { text: "plugin-depgraph", link: "/plugins/plugin-depgraph" },
-          { text: "docs (built-in)", link: "/plugins/plugin-docs-server" },
-          { text: "atlas-html (built-in)", link: "/plugins/plugin-atlas-html" },
           { text: "plugin-erd", link: "/plugins/plugin-erd" },
           { text: "plugin-frontend-usage", link: "/plugins/plugin-frontend-usage" },
           { text: "plugin-logs", link: "/plugins/plugin-logs" },
@@ -60,6 +59,7 @@ export default defineConfig({
           { text: "plugin-migration-studio", link: "/plugins/plugin-migration-studio" },
           { text: "plugin-scaffold", link: "/plugins/plugin-scaffold" },
           { text: "plugin-typegen", link: "/plugins/plugin-typegen" },
+          { text: "docs (built-in)", link: "/plugins/plugin-docs-server" },
         ],
       },
       { text: "Writing Plugins", link: "/writing-plugins" },
@@ -76,6 +76,7 @@ export default defineConfig({
         ],
       },
       { text: "SDK API", link: "/sdk/" },
+      { text: "UI Web", link: "/ui-web/" },
     ],
   },
 });
