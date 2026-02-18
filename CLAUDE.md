@@ -85,7 +85,10 @@ packages/core/src/
     dashboard.ts      – HTTP server on :3400; serves SPA + API routes
     watch.ts          – file/DB watcher; re-runs snapshot+generate on change
     migrate.ts        – applies .sql migrations via pg client
-    docker.ts         – Docker Compose control
+    docker.ts         – Docker Compose control (start/stop/restart)
+    plugin.ts         – plugin management (list/add/remove/enable/disable)
+    help.ts           – help output with Quick Start guide
+    init.ts           – config creation and directory setup
   extractors/         – functions, views, triggers, policies, types, enums
   parsers/atlas-builders.ts – assembles AtlasData from snapshot files
 

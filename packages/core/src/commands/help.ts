@@ -1,6 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { ui } from "@sbtools/sdk";
 import type { SbtPluginCommand } from "@sbtools/sdk";
 import { allCommands } from "../command-registry.js";
+import { config } from "../config.js";
 
 const CATEGORY_ORDER = ["Docker", "Database", "Code Generation", "Testing", "Docs", "Setup", "Plugins"];
 
@@ -12,6 +15,10 @@ function inferCategory(cmdName: string): string {
 }
 
 export function showHelp(pluginCommands: { plugin: string; cmd: SbtPluginCommand }[]): void {
+  // Check if config file exists
+  const configPath = path.join(config.projectRoot, "supabase-tools.config.json");
+  const configExists = fs.existsSync(configPath);
+
   const byCategory = new Map<string, { name: string; description: string; source?: string }[]>();
 
   for (const entry of allCommands()) {
@@ -46,6 +53,18 @@ supabase-tools — Portable Supabase development toolkit
 Usage:
   sbt <command> [options]
 `);
+
+  // Show config-missing warning if applicable
+  if (!configExists) {
+    ui.warn(`⚠  No supabase-tools.config.json found.`);
+    ui.detail(`   Run 'sbt init' to create one and set up your project.`);
+    ui.blank();
+  }
+
+  // Show Quick Start section
+  ui.heading(`Quick Start (first time):`);
+  ui.detail(`  sbt init → sbt start → sbt snapshot → sbt generate-atlas → sbt dashboard`);
+  ui.blank();
 
   for (const category of CATEGORY_ORDER) {
     const commands = byCategory.get(category);

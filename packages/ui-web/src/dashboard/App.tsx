@@ -386,8 +386,26 @@ export function App() {
           </div>
         ) : atlas.error ? (
           <section className="panel">
-            <h2>Data Error</h2>
-            <p className="empty-state">{atlas.error}</p>
+            {atlas.error.includes("404") ? (
+              <>
+                <h2>Getting Started</h2>
+                <p>No dashboard data found. Run these commands in your terminal:</p>
+                <ol style={{ lineHeight: "2", paddingLeft: "1.5em" }}>
+                  <li><code>sbt start</code> — Start local Supabase services</li>
+                  <li><code>sbt snapshot</code> — Export DB schema to files</li>
+                  <li><code>sbt generate-atlas</code> — Build dashboard data</li>
+                  <li>Refresh this page</li>
+                </ol>
+                <p className="empty-state" style={{ marginTop: "1em", fontSize: "0.85em" }}>
+                  {atlas.error}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Data Error</h2>
+                <p className="empty-state">{atlas.error}</p>
+              </>
+            )}
           </section>
         ) : (
           <div key={route} className="route-content-transition">
