@@ -1,5 +1,110 @@
 # @sbtools/ui-web
 
+## 0.6.1
+
+### Patch Changes
+
+- 0e6989a: Add CLI runner page: invoke any sbt command from the dashboard and stream live output.
+
+  **@sbtools/core**
+
+  - `/api/commands`: returns all registered core + plugin commands (name, description, category, source)
+  - `/api/run/stream`: SSE endpoint that spawns the `sbt` binary with the requested command, streams stdout/stderr line-by-line, and sends an exit event with the final code; kills the child process when the client disconnects
+  - `findSbtBin()`: resolves `node_modules/.bin/sbt` locally before falling back to PATH
+  - `collectCommands()`: merges core registry commands with plugin-contributed commands; filters blocked commands (`dashboard`, `docs`, `init`)
+
+  **@sbtools/ui-web**
+
+  - `Runner.tsx`: commands page grouped by category; run/cancel per command; live scrolling log surface with stdout/stderr coloring; ✓/✗ exit status pill; "Modifies DB" and "Runs until cancelled" badges
+  - `useCommands` hook: fetches `/api/commands`, returns `{ commands, loading, error }`
+  - `IconTerminal`: new terminal window icon
+  - Nav: "Commands" entry with `IconTerminal`, always enabled, works without atlas data
+  - CSS: `.runner-page`, `.run-card`, `.run-log-surface`, `.run-status-*`, `.btn-primary-sm`, `.btn-danger-sm`, `@keyframes blink` cursor
+
+- 0e6989a: Refine dashboard UX across dependency graph, frontend usage, logs, and shared table/details components.
+
+  - Improve `/depgraph` interactions:
+    - subset relayout for focused/filtered nodes
+    - clearer node selection/deselection and reset controls
+    - directional edges with arrowheads and relationship labels
+    - improved node details presentation and spacing
+  - Improve `/frontend-usage`:
+    - add filter-driven tabbed analysis views (hot components, component map, resource impact)
+    - reduce header footprint to prioritize data table real estate
+    - improve chart label usability (wider axis labels + full names in tooltip)
+  - Simplify `/logs` header by removing non-essential intro copy.
+  - Update shared dashboard UI behaviors/styles used by new views and interactions.
+
+- 0e6989a: Improve dependency graph usability in the dashboard with focus-depth controls, palette presets, and quick structural filters.
+
+  **@sbtools/plugin-depgraph**
+
+  - Extend `dependency_graph` atlas category payload with additive `nodes` array (`id`, `label`, `type`, `schema`) for richer graph consumers.
+  - Keep existing `edges` payload unchanged for backward compatibility.
+
+  **@sbtools/ui-web**
+
+  - Upgrade `/depgraph` page controls:
+    - Focus toggle with selectable depth (`0..4`) from selected node
+    - Palette selector with built-in presets (`Default`, `Colorblind-safe`, `High contrast`, `Muted`)
+    - Quick filters: orphan-only, type multi-select, and connection-count buckets
+  - Use payload `nodes` when available and fall back to edge-derived nodes for older depgraph outputs.
+  - Add depgraph-specific UI styles for filter controls, chips, legend, and visibility counters.
+
+- 0e6989a: Move Migration Studio to a server-only plugin + React dashboard page architecture.
+
+  - Refactor `@sbtools/plugin-migration-studio` to server-only mode and remove bundled studio UI dependency on `@sbtools/ui-web`.
+  - Add CORS and `GET /api/health` to the studio server to support browser clients from dashboard origin.
+  - Add a first-class React `Migration Studio` dashboard page in `@sbtools/ui-web` with server URL config, connectivity status, templates, migration list/schema tabs, SQL actions (analyze/save/apply), and live refresh via SSE.
+  - Wire dashboard navigation and plugin availability gating using plugin-contributed dashboard section metadata.
+
+- 95f9e14: UI improvements: ERD dashboard integration, collapsible sidebar, Geist font, charts, sorting, accessibility, and style polish.
+
+  **@sbtools/core**
+
+  - Fix ERD fallback path: `resolveErdDir()` reads `plugin-erd` config to find the correct `erdOutput` directory instead of hardcoding `docsOutput/entity-relations`
+  - Serve `dependency-graph.html` and `migration-audit.html` directly from `docsOutput`
+
+  **@sbtools/plugin-erd**
+
+  - Add `getAtlasData()`: reads generated `.md` files and contributes `erd_diagrams` category to atlas data
+  - Add `getDashboardView()`: declares ERD section for the React SPA
+
+  **@sbtools/plugin-migration-studio**
+
+  - Replace hardcoded `#6366f1` with `var(--accent-hover)`, `#09090b` with `var(--bg)`
+  - Align button `border-radius` to `var(--radius-md)`
+  - Replace `.badge-applied/.badge-pending/.badge-missing` text classes with full badge styling
+  - Add migration stat summary cards (Total, Applied, Pending, Missing)
+
+  **@sbtools/ui-web**
+
+  - ERD page (`Erd.tsx`, `MermaidRenderer.tsx`): renders Mermaid diagrams with search and raw source toggle
+  - Collapsible sidebar: icon-only 56px collapsed state, `‹`/`›` toggle, persisted via localStorage
+  - Font: replace Sora + IBM Plex Mono with Geist + Geist Mono across SPA and SSR pages
+  - Charts: `MiniBarChart` (Overview entity counts), `MiniDonutChart` (Migrations applied/pending/missing)
+  - Loading: `ShellLoadingSkeleton` replaces plain text loading state
+  - Dropdown component: used for multi-action header buttons (Migrations, Depgraph)
+  - EmptyState component: unified empty state replacing ad-hoc `<p class="empty-state">` usage
+  - AppDataTable + DataTable: sortable columns, 50-row pagination, column resize handles, Badge for status/type fields, ValueRenderer with compact prop
+  - Overview: StatCard with click-to-filter, tab overflow Dropdown at 12+ tabs, MiniBarChart
+  - Details: graph node detail redesign with metadata grid, inbound/outbound edge tables, Badge for node type
+  - Depgraph: wheel zoom, mouse-drag pan, zoom reset controls
+  - Logs: responsive height (`calc(100vh - 320px)`), Badge for connection status
+  - Search: Ctrl+K hotkey, arrow key navigation, Enter to select, clear on navigate, click-outside to close, Ctrl+K trailing badge
+  - Accessibility: skip link, ARIA labels on nav/search/theme toggle, graph node keyboard support (`tabIndex`, Enter/Space)
+  - Icons: IconTable, IconFunction, IconView, IconTrigger, IconPolicy, IconKey, IconEnum, IconType, IconErd, IconChart, IconCopy, IconExpand, IconFilter — used in search results, detail headers, section nav
+  - SSR: move chip-bar, toolbar, tab, log-wrap patterns into `baseCss`; remove inline `pageCss` from `migration-audit` and `logs-viewer` renderers
+  - Responsive: mobile hamburger + backdrop overlay, stat grid 2-col at 480px, detail grid 1-col at 640px, table horizontal scroll shadow
+  - Transitions: theme color fade, sidebar width, route fade-in
+  - CSS tokens: `shared-tokens.css` as single source; `tokens.css` imports it
+
+- 95f9e14: Implement UI Improvement Plan items: CSS token deduplication, SSR renderer cleanup, responsive layout polish
+
+  - **§1 CSS Architecture**: Add `generate:tokens` script to sync `shared-tokens.ts` → `shared-tokens.css` at build time; shared-tokens.ts is now the single canonical source; add `--surface-alt` to `.dark` for parity with SHARED_TOKENS_DARK
+  - **§2 SSR Renderer Cleanup**: migration-audit uses standard `.tab-row` / `.tab-btn` instead of `.chipbar`; add `.table-scroll-wrap` with horizontal scroll fade; apply to migration-audit, depgraph, frontend-usage, logs-viewer tables
+  - **§3 Responsive Layout**: Hamburger menu moved into topbar at mobile widths with `IconMenu`; stat grid 480px / detail grid 640px breakpoints; table scroll indicator on all SSR tables
+
 ## 0.6.0
 
 ### Minor Changes

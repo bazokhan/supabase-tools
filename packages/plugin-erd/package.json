@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/plugin-erd",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "ERD diagram generation plugin for supabase-tools.",
   "type": "module",
   "exports": {
