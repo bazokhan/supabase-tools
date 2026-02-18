@@ -46,13 +46,19 @@ All commands: `npx tsx supabase-tools/cli.ts depgraph <options>`
 
 The generated `docs/dependency-graph.html` provides:
 
-- Force-directed SVG layout (no external libraries)
-- Colored nodes by type (tables=blue, functions=green, triggers=orange, policies=purple, views=teal, enums=pink)
-- Click a node to highlight its direct dependencies
-- Filter checkboxes to show/hide node types
-- Search box to find specific nodes
-- Zoom and pan via mouse
-- Tooltips with node metadata
+- Searchable nodes and edges tables
+- Fast scan of labels, types, schemas, and relationship labels
+- Lightweight static output with no runtime dependencies
+
+## Dashboard Graph Controls
+
+The dashboard `Dependencies` page (`/depgraph`) now includes:
+
+- Click-to-select node inspection
+- Focus toggle with configurable depth (`0..4`) using undirected traversal
+- Palette presets (`Default`, `Colorblind-safe`, `High contrast`, `Muted`)
+- Quick filters: orphan nodes, node type multi-select, and connection-count buckets
+- Zoom/pan graph navigation and node detail panel
 
 ## Configuration
 

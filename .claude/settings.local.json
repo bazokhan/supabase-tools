@@ -20,7 +20,8 @@
       "Bash(npm test:*)",
       "Bash(npm run docs:build:*)",
       "Bash(test:*)",
-      "Bash(powershell.exe -Command:*)"
+      "Bash(powershell.exe -Command:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

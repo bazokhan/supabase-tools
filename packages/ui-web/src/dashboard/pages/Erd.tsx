@@ -31,19 +31,7 @@ export function ErdPage({ categories }: ErdPageProps) {
 
   return (
     <div className="content-stack">
-      <section className="hero">
-        <h1>Entity Relationship Diagrams</h1>
-        <p>Mermaid ERD diagrams for each table showing columns and foreign keys.</p>
-      </section>
-
       <section className="panel">
-        <div className="panel-head">
-          <div>
-            <h2>Diagrams</h2>
-            <p>Select a table to view its ERD.</p>
-          </div>
-        </div>
-
         <div className="erd-layout">
           <div className="erd-sidebar">
             {diagrams.map((d) => (

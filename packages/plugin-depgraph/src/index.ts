@@ -163,6 +163,12 @@ const plugin: SbtPlugin = {
     // Artifact is written by command - skip here to avoid redundant writes
 
     const relationshipCounts = getRelationshipCounts(graph.edges);
+    const nodeSummaries = graph.nodes.map((n) => ({
+      id: n.id,
+      label: n.label,
+      type: n.type,
+      schema: n.schema,
+    }));
 
     // Build a flat list of edge summaries for the Atlas card list
     const edgeSummaries = graph.edges.map((e) => {
@@ -186,6 +192,7 @@ const plugin: SbtPlugin = {
             total_nodes: graph.nodes.length,
             total_edges: graph.edges.length,
             relationship_counts: relationshipCounts,
+            nodes: nodeSummaries,
             edges: edgeSummaries,
           },
         ],

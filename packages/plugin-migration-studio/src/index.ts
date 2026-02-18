@@ -6,10 +6,24 @@
  */
 import http from "node:http";
 import { execSync } from "node:child_process";
-import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
+import type { DashboardView, SbtPlugin, PluginContext } from "@sbtools/sdk";
 import { ui, hasFlag, getArg, loadPackageVersion, withHelp } from "@sbtools/sdk";
 import { createRequestHandler } from "./server.js";
 const DEFAULT_PORT = 3335;
+
+function getMigrationStudioDashboardView(): DashboardView {
+  return {
+    sections: [
+      {
+        id: "migration_studio",
+        title: "Migration Studio",
+        description: "Interactive migration authoring server connected from the dashboard UI.",
+        dataKey: "migration_studio",
+        layout: "summary-only",
+      },
+    ],
+  };
+}
 
 function killProcessOnPort(port: number): boolean {
   try {
@@ -96,6 +110,7 @@ const plugin: SbtPlugin = {
       run: withHelp(MIGRATION_STUDIO_HELP, migrationStudioCommand),
     },
   ],
+  getDashboardView: getMigrationStudioDashboardView,
 };
 
 export default plugin;

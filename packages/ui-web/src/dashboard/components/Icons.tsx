@@ -321,3 +321,13 @@ export function IconChevronRight(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function IconTerminal(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="2" y="3" width="20" height="18" rx="2" />
+      <path d="m6 9 4 4-4 4" />
+      <path d="M13 17h5" />
+    </BaseIcon>
+  );
+}

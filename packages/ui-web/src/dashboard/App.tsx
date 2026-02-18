@@ -1,16 +1,20 @@
 import React from "react";
 import {
+  FileCode2,
+  GitMerge,
+  LayoutDashboard,
+  Monitor,
+  Network,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ScrollText,
+  Share2,
+  SquareTerminal,
+} from "lucide-react";
+import {
   IconBack,
-  IconChevronLeft,
-  IconChevronRight,
-  IconErd,
   IconExternal,
-  IconFrontend,
-  IconGraph,
-  IconHome,
-  IconLogs,
   IconMenu,
-  IconMigrations,
   IconMoon,
   IconSearch,
   IconSun,
@@ -38,8 +42,11 @@ import { DependenciesPage } from "./pages/Depgraph";
 import { FrontendPage } from "./pages/FrontendUsage";
 import { LogsPage } from "./pages/Logs";
 import { MigrationsPage } from "./pages/Migrations";
+import { MigrationStudioPage } from "./pages/MigrationStudio";
 import { ErdPage } from "./pages/Erd";
+import { NotFoundPage } from "./pages/NotFound";
 import { OverviewPage } from "./pages/Overview";
+import { RunnerPage } from "./pages/Runner";
 
 const DARK_STORAGE_KEY = "sbt-dashboard-dark";
 const SIDEBAR_COLLAPSED_KEY = "sbt-sidebar-collapsed";
@@ -51,17 +58,21 @@ function ShellLoading() {
 function NavIcon({ item }: { item: NavItem }) {
   switch (item.icon) {
     case "migrations":
-      return <IconMigrations size={15} />;
+      return <GitMerge size={16} />;
     case "graph":
-      return <IconGraph size={15} />;
+      return <Network size={16} />;
+    case "studio":
+      return <FileCode2 size={16} />;
     case "logs":
-      return <IconLogs size={15} />;
+      return <ScrollText size={16} />;
     case "frontend":
-      return <IconFrontend size={15} />;
+      return <Monitor size={16} />;
     case "erd":
-      return <IconErd size={15} />;
+      return <Share2 size={16} />;
+    case "runner":
+      return <SquareTerminal size={16} />;
     default:
-      return <IconHome size={15} />;
+      return <LayoutDashboard size={16} />;
   }
 }
 
@@ -71,6 +82,9 @@ function routeActions(route: RouteName): Array<{ label: string; href: string; ic
       { label: "Audit HTML", href: "/migration-audit.html", icon: <IconExternal size={14} /> },
       { label: "Studio", href: "http://localhost:3335", icon: <IconExternal size={14} /> },
     ];
+  }
+  if (route === "studio") {
+    return [{ label: "Studio Server", href: "http://localhost:3335", icon: <IconExternal size={14} /> }];
   }
   if (route === "depgraph") {
     return [{ label: "Graph HTML", href: "/dependency-graph.html", icon: <IconExternal size={14} /> }];
@@ -164,65 +178,64 @@ export function App() {
   };
 
   const activeNav = navItems.find((item) => item.route === route);
-  const title = activeNav?.label ?? "Details";
-  const subtitle = activeNav?.subtitle ?? "Detailed object view";
+  const title = route === "notfound" ? "Not Found" : activeNav?.label ?? "Details";
+  const subtitle = route === "notfound" ? "Unknown dashboard route" : activeNav?.subtitle ?? "Detailed object view";
   const searchParams = new URLSearchParams(window.location.search);
 
   return (
-    <div className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+    <div className="app-shell">
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="sidebar-wrapper">
-        <aside className={`sidebar-modern ${sidebarOpen ? "open" : ""}`}>
-        <div className="brand-block">
-          <h1>Supabase Tools</h1>
-          <p>Operational Dashboard</p>
-        </div>
+        <aside className={`sidebar-modern ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${sidebarOpen ? "open" : ""}`}>
+          <div className="sidebar-head">
+            <div className="brand-block">
+              <h1>Supabase Tools</h1>
+              <p>Operational Dashboard</p>
+            </div>
+            <button
+              type="button"
+              className="sidebar-collapse-btn"
+              onClick={toggleCollapse}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          </div>
 
-        <nav className="sidebar-nav-modern">
-          {navItems.map((item) => (
-            <Tooltip key={item.path} content={item.enabled ? item.subtitle : "Plugin inactive"}>
-              <button
-                type="button"
-                disabled={!item.enabled}
-                className={`nav-link-modern ${route === item.route ? "active" : ""}`}
-                onClick={() => {
-                  navigate(item.path);
-                  setSidebarOpen(false);
-                }}
-                aria-label={item.label}
+          <nav className="sidebar-nav-modern">
+            {navItems.map((item) => (
+              <Tooltip
+                key={item.path}
+                content={sidebarCollapsed ? item.label : (item.enabled ? item.subtitle : "Plugin inactive")}
+                side={sidebarCollapsed ? "right" : "top"}
               >
-                <div className="nav-icon-row">
-                  <NavIcon item={item} />
-                  <strong>{item.label}</strong>
-                </div>
-                <span>{item.enabled ? item.subtitle : "Plugin inactive"}</span>
-              </button>
-            </Tooltip>
-          ))}
-        </nav>
+                <button
+                  type="button"
+                  disabled={!item.enabled}
+                  className={`nav-link-modern ${route === item.route ? "active" : ""}`}
+                  onClick={() => {
+                    navigate(item.path);
+                    setSidebarOpen(false);
+                  }}
+                  aria-label={item.label}
+                >
+                  <div className="nav-icon-row">
+                    <NavIcon item={item} />
+                    <strong>{item.label}</strong>
+                  </div>
+                  <span>{item.enabled ? item.subtitle : "Plugin inactive"}</span>
+                </button>
+              </Tooltip>
+            ))}
+          </nav>
 
-        <Tooltip content={dark ? "Switch to light mode" : "Switch to dark mode"} className="tooltip-theme">
-          <button type="button" className="theme-toggle" onClick={() => setDark((value) => !value)} aria-label="Toggle dark mode">
-            {dark ? <IconSun size={14} /> : <IconMoon size={14} />}
-            <span>{dark ? "Light" : "Dark"}</span>
-          </button>
-        </Tooltip>
+          <Tooltip content={dark ? "Switch to light mode" : "Switch to dark mode"} className="tooltip-theme">
+            <button type="button" className="theme-toggle" onClick={() => setDark((value) => !value)} aria-label="Toggle dark mode">
+              {dark ? <IconSun size={14} /> : <IconMoon size={14} />}
+              <span>{dark ? "Light" : "Dark"}</span>
+            </button>
+          </Tooltip>
         </aside>
-
-        <Tooltip content={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          <button
-            type="button"
-            className="sidebar-collapse-btn"
-            onClick={toggleCollapse}
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {sidebarCollapsed ? (
-              <IconChevronRight size={18} />
-            ) : (
-              <IconChevronLeft size={18} />
-            )}
-          </button>
-        </Tooltip>
       </div>
 
       {sidebarOpen ? (
@@ -367,14 +380,16 @@ export function App() {
           </div>
         </header>
 
-        {atlas.error ? (
+        {route === "runner" ? (
+          <div key={route} className="route-content-transition">
+            <RunnerPage />
+          </div>
+        ) : atlas.error ? (
           <section className="panel">
             <h2>Data Error</h2>
             <p className="empty-state">{atlas.error}</p>
           </section>
-        ) : null}
-
-        {!atlas.error ? (
+        ) : (
           <div key={route} className="route-content-transition">
             {route === "overview" ? (
               <OverviewPage categories={categories} sections={dashboard.sections} onOpenDetail={openDetail} />
@@ -382,6 +397,8 @@ export function App() {
               <MigrationsPage categories={categories} onOpenDetail={openDetail} enabled={availability.migrations} />
             ) : route === "depgraph" ? (
               <DependenciesPage categories={categories} onOpenDetail={openDetail} enabled={availability.depgraph} />
+            ) : route === "studio" ? (
+              <MigrationStudioPage categories={categories} onOpenDetail={openDetail} enabled={availability.studio} />
             ) : route === "logs" ? (
               <LogsPage categories={categories} enabled={availability.logs} />
             ) : route === "frontend" ? (
@@ -395,9 +412,11 @@ export function App() {
                 sections={dashboard.sections}
                 onOpenDetail={openDetail}
               />
+            ) : route === "notfound" ? (
+              <NotFoundPage />
             ) : null}
           </div>
-        ) : null}
+        )}
       </main>
     </div>
   );

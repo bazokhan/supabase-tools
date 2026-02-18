@@ -7,6 +7,7 @@ interface StatCardProps {
   value: string | number;
   tone?: StatTone;
   onClick?: () => void;
+  icon?: React.ReactNode;
 }
 
 const TONE_CLASS: Record<StatTone, string> = {
@@ -17,7 +18,7 @@ const TONE_CLASS: Record<StatTone, string> = {
   accent: "stat-tone-accent",
 };
 
-export function StatCard({ label, value, tone = "default", onClick }: StatCardProps) {
+export function StatCard({ label, value, tone = "default", onClick, icon }: StatCardProps) {
   return (
     <div
       className={`stat-card ${TONE_CLASS[tone]} ${onClick ? "stat-card-clickable" : ""}`}
@@ -28,6 +29,7 @@ export function StatCard({ label, value, tone = "default", onClick }: StatCardPr
     >
       <div className="stat-card-value">{value}</div>
       <div className="stat-card-label">{label}</div>
+      {icon && <div className="stat-card-icon">{icon}</div>}
     </div>
   );
 }

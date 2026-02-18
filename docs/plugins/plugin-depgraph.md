@@ -42,6 +42,15 @@ npx sbt depgraph
 
 Tracks: triggers→tables, policies→tables, functions→tables, views→tables, FK constraints, enum usage.
 
+## Dashboard Graph Controls
+
+The dashboard `Dependencies` page (`/depgraph`) supports:
+
+- Node focus mode with selectable depth (`0..4`)
+- Palette presets by node type (`Default`, `Colorblind-safe`, `High contrast`, `Muted`)
+- Quick filters: orphan nodes, type multi-select, and connection-count buckets
+- Search, pan/zoom, and node detail inspection
+
 ## Requirements
 
 Run `sbt generate-atlas` first — plugin reads from `docs/backend-atlas-data.json`.

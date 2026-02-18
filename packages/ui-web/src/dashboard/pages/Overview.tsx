@@ -1,4 +1,23 @@
 import React from "react";
+import {
+  AlignLeft,
+  Box,
+  Code2,
+  Database,
+  Eye,
+  GitMerge,
+  Globe,
+  Hash,
+  Layers,
+  List,
+  Monitor,
+  Network,
+  Share2,
+  ShieldCheck,
+  Table,
+  Tag,
+  Zap,
+} from "lucide-react";
 import { AppDataTable } from "../components/AppDataTable";
 import { Dropdown } from "../components/Dropdown";
 import { EmptyState } from "../components/EmptyState";
@@ -7,6 +26,31 @@ import { StatCard } from "../components/StatCard";
 import { Tooltip } from "../components/Tooltip";
 import { getPrimaryKey, getSectionPrimaryKeyField, prettyLabel, toRows } from "../lib/model";
 import type { PageProps } from "./page-types";
+
+const ICON_SIZE = 20;
+
+const ENTITY_ICONS: Record<string, React.ReactNode> = {
+  functions:         <Code2 size={ICON_SIZE} />,
+  policies:          <ShieldCheck size={ICON_SIZE} />,
+  triggers:          <Zap size={ICON_SIZE} />,
+  views:             <Eye size={ICON_SIZE} />,
+  materialized_views:<Database size={ICON_SIZE} />,
+  types:             <Tag size={ICON_SIZE} />,
+  enums:             <List size={ICON_SIZE} />,
+  edge_functions:    <Globe size={ICON_SIZE} />,
+  tables:            <Table size={ICON_SIZE} />,
+  columns:           <AlignLeft size={ICON_SIZE} />,
+  indexes:           <Hash size={ICON_SIZE} />,
+  schemas:           <Layers size={ICON_SIZE} />,
+  migration_audit:   <GitMerge size={ICON_SIZE} />,
+  dependency_graph:  <Network size={ICON_SIZE} />,
+  frontend_usage:    <Monitor size={ICON_SIZE} />,
+  erd_diagrams:      <Share2 size={ICON_SIZE} />,
+};
+
+function getEntityIcon(name: string): React.ReactNode {
+  return ENTITY_ICONS[name] ?? <Box size={ICON_SIZE} />;
+}
 
 const MAX_VISIBLE_TABS = 12;
 
@@ -59,40 +103,36 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
 
   return (
     <div className="content-stack">
-      <section className="hero">
-        <h1>Supabase Workspace Intelligence</h1>
-        <p>Unified view of schema entities, migrations, dependency impact, runtime health, and frontend coupling.</p>
-      </section>
-
-      <section className="stat-grid">
-        {stats.map((entry) => (
-          <Tooltip key={entry.name} content={`Click to filter by ${prettyLabel(entry.name)}`}>
-            <div>
-              <StatCard
-                label={prettyLabel(entry.name)}
-                value={entry.count.toLocaleString()}
-                tone={entry.name === activeTab ? "accent" : "default"}
-                onClick={() => setActiveTab(entry.name)}
-              />
-            </div>
-          </Tooltip>
-        ))}
-      </section>
-
-      {totalCount > 0 && (
-        <section className="panel">
-          <h3 className="chart-section-title">Entity counts</h3>
-          <MiniBarChart
-            data={stats.map((s) => ({
-              label: prettyLabel(s.name),
-              value: s.count,
-              tone: s.name === activeTab ? "accent" : "default",
-            }))}
-            maxBars={10}
-            height={140}
-          />
-        </section>
-      )}
+      <div className="overview-stats-row">
+        <div className="overview-stat-chips">
+          {stats.map((entry) => (
+            <Tooltip key={entry.name} content={`Filter: ${prettyLabel(entry.name)}`}>
+              <div>
+                <StatCard
+                  label={prettyLabel(entry.name)}
+                  value={entry.count.toLocaleString()}
+                  tone={entry.name === activeTab ? "accent" : "default"}
+                  onClick={() => setActiveTab(entry.name)}
+                  icon={getEntityIcon(entry.name)}
+                />
+              </div>
+            </Tooltip>
+          ))}
+        </div>
+        {totalCount > 0 && (
+          <div className="overview-chart-panel">
+            <MiniBarChart
+              data={stats.map((s) => ({
+                label: prettyLabel(s.name),
+                value: s.count,
+                tone: s.name === activeTab ? "accent" : "default",
+              }))}
+              maxBars={10}
+              height={140}
+            />
+          </div>
+        )}
+      </div>
 
       <section className="panel">
         {totalCount === 0 ? (
@@ -104,10 +144,7 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
         ) : (
         <>
         <div className="panel-head">
-          <div>
-            <h2>Entity Explorer</h2>
-            <p>Search, inspect, and open details for schema objects.</p>
-          </div>
+          <h2>Entity Explorer</h2>
           <input
             type="search"
             className="ui-input"
