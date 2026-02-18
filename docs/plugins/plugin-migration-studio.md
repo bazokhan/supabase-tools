@@ -2,7 +2,9 @@
 description: Schema-aware migration authoring UI — CodeMirror 6 editor, autocomplete, templates, live analysis.
 ---
 
-# plugin-migration-studio
+# @sbtools/plugin-migration-studio
+
+[![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-studio.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-studio)
 
 Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dialect, table/column autocomplete, migration templates, and live analysis. Apply via the core `sbt migrate` flow.
 
@@ -21,10 +23,14 @@ Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dia
 
 ## Dashboard Integration
 
-- Dashboard Migrations page supports opening Studio in two modes:
-- **Embedded Studio** (inline iframe inside dashboard workflow)
-- **Pop-out Studio** (dedicated Studio tab/window)
-- Dashboard also stores the Studio URL so teams can point to non-default ports.
+The primary UI for Migration Studio is the **React dashboard page** (`/migration-studio`) served by `sbt dashboard`. It connects to the running `sbt migration-studio` server and provides the full editor experience inside the dashboard shell.
+
+The dashboard Migrations page also supports two quick-access modes:
+
+- **Embedded Studio** — inline inside the Migrations workflow
+- **Pop-out Studio** — dedicated Studio tab/window
+
+The dashboard stores the Studio URL so teams can point to non-default ports.
 
 ## Installation
 

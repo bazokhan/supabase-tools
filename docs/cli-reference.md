@@ -53,10 +53,16 @@ Run `npx sbt help` to list available commands (including installed plugins).
 |---------|-------------|
 | `help` / `-h` / `--help` | Show all available commands |
 
+`dashboard` options:
+
+- `--port N` — listen on custom port (default: 3400)
+
 `dashboard` API routes:
 
 - `GET /api/atlas-data` — Backend Atlas JSON
 - `GET /api/dashboard-config` — Combined dashboard section definitions (core + plugins)
+- `GET /api/commands` — All registered commands (core + plugin) with category metadata
+- `GET /api/run/stream?command=...` — SSE: spawn `sbt <command>` and stream stdout/stderr
 - `GET /api/logs/services` — Current Docker service statuses
 - `GET /api/logs/stream?services=...` — Live SSE log stream from Docker
 - `GET /api/fs/list?scope=...&path=...` — Safe file listing (`snapshot`, `migrations`, `docs`, `project`)
@@ -96,12 +102,6 @@ Config: `baseUrl`, `configTomlPath`
 
 Requires `generate-atlas` first. Config: `typesFilePath`
 
-### atlas-html (core)
-
-| Command | Description |
-|---------|-------------|
-| `atlas-html` | Generate Backend Atlas HTML from backend-atlas-data.json |
-
 ### docs (core)
 
 | Command | Description |
@@ -109,7 +109,6 @@ Requires `generate-atlas` first. Config: `typesFilePath`
 | `docs` / `docs all` | Start all doc services |
 | `docs swagger` | Swagger UI (port 8081) |
 | `docs redoc` | ReDoc (port 8082) |
-| `docs atlas` | Backend Atlas (port 8083/atlas/) |
 | `docs schemaspy` | SchemaSpy (port 8083/schemaspy/) |
 | `docs stop` | Stop all docs containers |
 

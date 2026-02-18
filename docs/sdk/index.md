@@ -16,13 +16,14 @@ npm install @sbtools/sdk
 
 - **SbtPlugin** — Plugin contract with `name`, `version`, `commands`, and optional hooks
 - **PluginContext** — Runtime context passed to every plugin hook:
-  - `projectRoot`, `toolsDir`, `sbtDataDir` — absolute directory paths
+  - `projectRoot`, `toolsDir`, `sbtDataDir`, `artifactsDir` — absolute directory paths
   - `apiUrl` — Supabase API URL
-  - `paths` — shared config paths resolved to absolute: `migrations`, `tests`, `snapshot`, `docsOutput`, `functions`
+  - `paths` — shared config paths resolved to absolute: `migrations`, `snapshot`, `docsOutput`, `functions`
   - `pluginConfig` — plugin-specific config from `plugins[].config`
   - `siblingPlugins` — other loaded plugins for cross-plugin collaboration
 - **ResolvedPaths** — Type for `ctx.paths`
 - **SbtPluginCommand** — Command definition with `name`, `description`, `run`
+- **ArtifactCapabilities** — Declare which artifact IDs a plugin `produces` and `consumes` (used by tooling to validate artifact availability)
 
 ## UI Utilities
 
@@ -130,6 +131,44 @@ const plugin: SbtPlugin = {
   version: loadPackageVersion(import.meta.url), // Reads ../package.json
   commands: [/* ... */],
 };
+```
+
+## Plugin Config Helpers
+
+Typed accessors for plugin config values — replaces unsafe `(ctx.pluginConfig.foo as string) ?? default` casts:
+
+- `getConfigString(ctx, key, fallback)` — Get a string config value
+- `getConfigNumber(ctx, key, fallback)` — Get a number config value (parses strings too)
+- `getConfigStringArray(ctx, key, fallback)` — Get a string array config value
+- `resolveConfigPath(ctx, key, fallbackRelPath)` — Get a path config value; relative paths are resolved against `ctx.projectRoot`
+
+```ts
+import { getConfigString, getConfigNumber, getConfigStringArray, resolveConfigPath } from "@sbtools/sdk";
+
+const output   = getConfigString(ctx, "outputDir", "docs/my-output");
+const port     = getConfigNumber(ctx, "port", 3333);
+const scanDirs = getConfigStringArray(ctx, "scanPaths", ["src/"]);
+const typesOut = resolveConfigPath(ctx, "typesOutput", "src/types/supabase.ts");
+```
+
+## Artifact Helpers
+
+Read and write typed artifact envelopes stored in `.sbt/artifacts/`:
+
+- `writeArtifact(dir, id, version, payload)` — Write artifact JSON file
+- `readArtifact(dir, id, version)` — Read artifact; throws if missing or version mismatch
+- `readArtifactOrNull(dir, id, version)` — Read artifact; returns `null` if missing
+- `createArtifactWriter(opts)` — Factory for writing multiple artifacts from the same plugin
+
+```ts
+import { writeArtifact, readArtifactOrNull } from "@sbtools/sdk";
+
+// Write
+await writeArtifact(ctx.artifactsDir, "my.artifact", "1.0.0", { items: [] });
+
+// Read (returns null when missing instead of throwing)
+const result = readArtifactOrNull(ctx.artifactsDir, "migration.analysis", "1.0.0");
+if (result) { /* result.payload is the data */ }
 ```
 
 ## DB Utilities

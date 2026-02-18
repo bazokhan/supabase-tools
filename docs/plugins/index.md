@@ -21,7 +21,7 @@ Plugins extend supabase-tools with additional commands. Install a plugin via npm
 | [plugin-scaffold](/plugins/plugin-scaffold) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-scaffold.svg)](https://www.npmjs.com/package/@sbtools/plugin-scaffold) | Scaffold new plugins |
 | [plugin-typegen](/plugins/plugin-typegen) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-typegen.svg)](https://www.npmjs.com/package/@sbtools/plugin-typegen) | TypeScript type generation |
 
-The `docs` command (Swagger UI, ReDoc, Backend Atlas, SchemaSpy) and `atlas-html` command (Backend Atlas HTML) are **built into core** — no plugin required.
+The `docs` command (Swagger UI, ReDoc, SchemaSpy) and the `dashboard` command (React SPA) are **built into core** — no plugin required.
 
 ## Installation
 
