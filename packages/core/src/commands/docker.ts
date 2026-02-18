@@ -3,7 +3,7 @@
  */
 import { execSync } from "node:child_process";
 import path from "node:path";
-import { SbtError } from "@sbtools/sdk";
+import { SbtError, ui } from "@sbtools/sdk";
 import { config } from "../config.js";
 import { COMPOSE_DB_FILE } from "@sbtools/sdk";
 import { ensureDirs, writeComposeEnv } from "./init.js";
@@ -35,6 +35,9 @@ export function runStart(): void {
   ensureDirs();
   writeComposeEnv();
   run(`docker compose -f "${COMPOSE_DB}" --env-file "${SBT_ENV_FILE}" up -d`);
+  ui.blank();
+  ui.detail("Note: The 'db-init' container is a one-shot DB bootstrapper —");
+  ui.detail("      if it shows as 'Exited (0)' that is normal and expected.");
 }
 
 /** Stop Docker compose services. */

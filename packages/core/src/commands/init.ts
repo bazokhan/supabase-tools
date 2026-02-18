@@ -19,6 +19,9 @@ export function ensureDirs(): void {
   fs.mkdirSync(config.sbtDataDir, { recursive: true });
   fs.mkdirSync(path.join(config.sbtDataDir, "artifacts"), { recursive: true });
   fs.mkdirSync(path.join(config.sbtDataDir, "schemaspy-out"), { recursive: true });
+  // Create migrations and snapshot directories (referenced by preflight checks)
+  fs.mkdirSync(resolve(config.paths.migrations), { recursive: true });
+  fs.mkdirSync(resolve(config.paths.snapshot), { recursive: true });
 }
 
 /** Write .env file for Docker compose. */
@@ -66,6 +69,9 @@ export function init(): void {
     ensureDirs();
     writeComposeEnv();
     ensureGitignoreSbtEntry();
+    ui.blank();
+    ui.heading("Tip:");
+    ui.detail("  To manage plugins: sbt plugin list");
     return;
   }
   const projectName = (() => {
@@ -106,4 +112,14 @@ export function init(): void {
   ensureDirs();
   writeComposeEnv();
   ensureGitignoreSbtEntry();
+
+  // Print next steps guidance
+  ui.blank();
+  ui.heading("Next steps:");
+  ui.detail("  1. sbt start           — Start local Supabase services (Docker)");
+  ui.detail("  2. sbt snapshot        — Export DB schema to filesystem");
+  ui.detail("  3. sbt generate-atlas  — Build dashboard data");
+  ui.detail("  4. sbt dashboard       — Open the development dashboard");
+  ui.blank();
+  ui.detail("  To add plugins: sbt plugin list");
 }

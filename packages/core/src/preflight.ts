@@ -52,6 +52,12 @@ const migrationsDir = (): Check => ({
 });
 
 // ---------------------------------------------------------------------------
+// Commands that are allowed to run without a config file
+// ---------------------------------------------------------------------------
+
+const CONFIG_EXEMPT = new Set(["init", "help"]);
+
+// ---------------------------------------------------------------------------
 // Command → checks mapping
 // ---------------------------------------------------------------------------
 
@@ -96,6 +102,18 @@ function checksForCommand(command: string, args: string[]): Check[] {
  * failures with actionable messages and exit with code 1.
  */
 export function preflight(command: string, args: string[]): void {
+  // Global check: every command except init/help requires a config file.
+  if (!CONFIG_EXEMPT.has(command)) {
+    const configPath = path.join(config.projectRoot, "supabase-tools.config.json");
+    if (!fs.existsSync(configPath)) {
+      throw new SbtError(
+        "CONFIG_VALIDATION",
+        `No supabase-tools.config.json found.`,
+        { tips: ["Run `sbt init` to create one and set up your project."] },
+      );
+    }
+  }
+
   const checks = checksForCommand(command, args);
   if (checks.length === 0) return;
 

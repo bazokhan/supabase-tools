@@ -10,6 +10,7 @@ import { runStatus } from "./status.js";
 import { runWatch } from "./watch.js";
 import { init } from "./init.js";
 import { runStart, runStop, runRestart } from "./docker.js";
+import { runPlugin } from "./plugin.js";
 import type { PluginContext } from "@sbtools/sdk";
 import { docsCommand } from "./docs.js";
 import { dashboardCommand } from "./dashboard.js";
@@ -35,3 +36,4 @@ registerCommand({
   run: (args, ctx) => dashboardCommand(args, ctx as PluginContext),
 });
 registerCommand({ name: "init", description: "Generate supabase-tools.config.json with defaults", category: "Setup", run: async () => { init(); } });
+registerCommand({ name: "plugin", description: "Manage plugins (list, add, remove, enable, disable)", category: "Setup", run: (args) => runPlugin(args) });
