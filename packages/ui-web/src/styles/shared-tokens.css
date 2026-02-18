@@ -1,8 +1,5 @@
-/**
- * Shared design tokens - single source for dashboard, SSR pages, and Migration Studio.
- */
+/* Generated from shared-tokens.ts - do not edit manually. Run: npm run generate:tokens */
 
-export const SHARED_TOKENS_LIGHT = `
 :root {
   --bg: #f8fafc;
   --bg-strong: #f1f5f9;
@@ -36,46 +33,7 @@ export const SHARED_TOKENS_LIGHT = `
   --space-20: 20px;
   --space-24: 24px;
   --space-32: 32px;
-}`;
-
-export const SHARED_TOKENS_DARK = `
-:root {
-  --bg: #09090b;
-  --bg-strong: #0c0c0e;
-  --surface: #18181b;
-  --surface-solid: #18181b;
-  --surface-soft: #1f1f23;
-  --surface-elevated: #27272a;
-  --surface-alt: #27272a;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --text: #fafafa;
-  --text-muted: #a1a1aa;
-  --accent: #818cf8;
-  --accent-strong: #6366f1;
-  --accent-hover: #a5b4fc;
-  --accent-muted: rgba(129, 140, 248, 0.15);
-  --secondary: #2dd4bf;
-  --secondary-muted: rgba(45, 212, 191, 0.12);
-  --success: #34d399;
-  --warning: #fbbf24;
-  --danger: #f87171;
-  --radius: 12px;
-  --radius-lg: 12px;
-  --radius-md: 8px;
-  --radius-sm: 6px;
-  --font-sans: "Geist", "Inter", system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Consolas", monospace;
-  --space-4: 4px;
-  --space-8: 8px;
-  --space-12: 12px;
-  --space-16: 16px;
-  --space-20: 20px;
-  --space-24: 24px;
-  --space-32: 32px;
-}`;
-
-export const SHARED_TOKENS_CSS = SHARED_TOKENS_LIGHT + `
+}
 .dark {
   --bg: #09090b;
   --bg-strong: #0c0c0e;
@@ -106,4 +64,4 @@ export const SHARED_TOKENS_CSS = SHARED_TOKENS_LIGHT + `
   --space-20: 20px;
   --space-24: 24px;
   --space-32: 32px;
-}`;
+}

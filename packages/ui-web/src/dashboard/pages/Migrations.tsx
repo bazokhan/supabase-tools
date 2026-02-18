@@ -1,6 +1,9 @@
 import React from "react";
 import { AppDataTable } from "../components/AppDataTable";
 import { EmptyPanel } from "../components/EmptyPanel";
+import { MiniDonutChart } from "../components/MiniDonutChart";
+import { StatCard } from "../components/StatCard";
+import { Tooltip } from "../components/Tooltip";
 import {
   DEFAULT_STUDIO_URL,
   STUDIO_URL_STORAGE_KEY,
@@ -115,12 +118,42 @@ function MigrationsEnabled({ categories, onOpenDetail }: PageProps) {
       ) : null}
 
       <section className="stat-grid compact">
-        <article className="stat-panel"><div className="stat-value">{formatValue(summary.total)}</div><div className="stat-label">Total</div></article>
-        <article className="stat-panel"><div className="stat-value tone-good">{formatValue(summary.applied)}</div><div className="stat-label">Applied</div></article>
-        <article className="stat-panel"><div className="stat-value tone-warn">{formatValue(summary.pending)}</div><div className="stat-label">Pending</div></article>
-        <article className="stat-panel"><div className="stat-value tone-bad">{formatValue(summary.missing)}</div><div className="stat-label">Missing</div></article>
-        <article className="stat-panel"><div className="stat-value">{formatValue(summary.issues)}</div><div className="stat-label">Issues</div></article>
+        <Tooltip content="Total migration files on disk">
+          <div><StatCard label="Total" value={formatValue(summary.total)} /></div>
+        </Tooltip>
+        <Tooltip content="Migrations applied to database">
+          <div><StatCard label="Applied" value={formatValue(summary.applied)} tone="good" /></div>
+        </Tooltip>
+        <Tooltip content="Migrations on disk but not yet applied">
+          <div><StatCard label="Pending" value={formatValue(summary.pending)} tone="warn" /></div>
+        </Tooltip>
+        <Tooltip content="Migrations in database but missing on disk">
+          <div><StatCard label="Missing" value={formatValue(summary.missing)} tone="bad" /></div>
+        </Tooltip>
+        <Tooltip content="Validation issues detected">
+          <div>
+            <StatCard
+              label="Issues"
+              value={formatValue(summary.issues)}
+              tone={Number(summary.issues) > 0 ? "bad" : "default"}
+            />
+          </div>
+        </Tooltip>
       </section>
+
+      {rows.length > 0 && (
+        <section className="panel">
+          <h3 className="chart-section-title">Migration status</h3>
+          <MiniDonutChart
+            segments={[
+              { label: "Applied", value: Number(summary.applied) || 0, color: "var(--success)" },
+              { label: "Pending", value: Number(summary.pending) || 0, color: "var(--warning)" },
+              { label: "Missing", value: Number(summary.missing) || 0, color: "var(--danger)" },
+            ].filter((s) => s.value > 0)}
+            size={120}
+          />
+        </section>
+      )}
 
       <section className="panel">
         <div className="panel-head">

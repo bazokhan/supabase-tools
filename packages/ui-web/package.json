@@ -27,15 +27,19 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.json && vite build",
+    "generate:tokens": "tsx scripts/generate-shared-tokens.ts",
+    "build": "npm run generate:tokens && tsc --project tsconfig.json && vite build",
     "build:dashboard": "vite build",
     "clean": "rimraf dist"
   },
   "dependencies": {
+    "mermaid": "^11.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.0"
   },
   "devDependencies": {
+    "tsx": "^4.19.0",
     "@types/react": "^18.3.8",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

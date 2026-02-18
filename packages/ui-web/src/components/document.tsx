@@ -67,6 +67,19 @@ body {
   border-radius: 8px;
   background: var(--surface);
 }
+.table-scroll-wrap {
+  position: relative;
+}
+.table-scroll-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, var(--bg));
+  pointer-events: none;
+}
 .table-wrap { overflow: auto; }
 table {
   width: 100%;
@@ -94,6 +107,61 @@ th {
   margin: 0 4px 4px 0;
   white-space: nowrap;
 }
+.chip-bar, .chipbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip-bar button, .chipbar button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.chip-bar button.active, .chipbar button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.toolbar, .cluster-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.tabs, .tab-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tab, .tab-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tab.active, .tab-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pane { min-height: 420px; }
+.log-wrap, .log-live-surface {
+  height: 420px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  background: var(--surface-soft);
+}
+.log-line {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 0;
+}
+.svc.active { background: var(--accent-muted); }
 code, pre {
   font-family: var(--font-mono);
 }
@@ -125,7 +193,7 @@ export function renderPageFrame({ title, subtitle, body, pageCss, script }: Page
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
         <style>{baseCss + (pageCss ?? "")}</style>
@@ -187,7 +255,7 @@ export function renderRawDocument(opts: {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
         <style>{baseCss + (opts.styles ?? "")}</style>

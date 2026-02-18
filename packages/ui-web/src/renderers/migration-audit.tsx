@@ -83,7 +83,6 @@ export function renderMigrationAuditPage(input: MigrationAuditInput): string {
   return renderPageFrame({
     title: "Migration Audit",
     subtitle: "Compare migration files on disk with migration history in the database.",
-    pageCss: `.chipbar{display:flex;gap:8px;flex-wrap:wrap}.chipbar button{border:1px solid var(--border);border-radius:999px;background:var(--surface);padding:6px 10px;cursor:pointer}.chipbar button.active{border-color:var(--accent);color:var(--accent);}`,
     body: (
       <>
         <div className="stats">
@@ -98,14 +97,15 @@ export function renderMigrationAuditPage(input: MigrationAuditInput): string {
         <Section title="Issues">{issues.length ? issues : <div className="subtitle">No issues detected.</div>}</Section>
 
         <Section title="Migrations">
-          <div className="chipbar">
-            <button data-status="all" className="active">All</button>
-            <button data-status="applied">Applied</button>
-            <button data-status="pending">Pending</button>
-            <button data-status="missing">Missing</button>
+          <div className="tab-row">
+            <button data-status="all" className="tab-btn active">All</button>
+            <button data-status="applied" className="tab-btn">Applied</button>
+            <button data-status="pending" className="tab-btn">Pending</button>
+            <button data-status="missing" className="tab-btn">Missing</button>
           </div>
           <input id="search" className="input" placeholder="Filter by filename..." style={{ marginTop: 10 }} />
-          <div className="surface table-wrap" style={{ marginTop: 12 }}>
+          <div className="table-scroll-wrap" style={{ marginTop: 12 }}>
+            <div className="surface table-wrap">
             <table>
               <thead>
                 <tr>
@@ -117,6 +117,7 @@ export function renderMigrationAuditPage(input: MigrationAuditInput): string {
               </thead>
               <tbody id="tbody"></tbody>
             </table>
+            </div>
           </div>
         </Section>
       </>

@@ -6,6 +6,7 @@ interface ValueRendererProps {
   value: unknown;
   field?: string;
   format?: ValueFormat;
+  compact?: boolean;
 }
 
 function inferFormat(value: unknown, field: string): ValueFormat {
@@ -113,10 +114,28 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }): Rea
   return <JsonLeaf value={value} />;
 }
 
-export function ValueRenderer({ value, field = "", format = "auto" }: ValueRendererProps) {
+const TRUNCATE_LEN = 80;
+
+export function ValueRenderer({ value, field = "", format = "auto", compact = false }: ValueRendererProps) {
   const resolvedFormat = format === "auto" ? inferFormat(value, field) : format;
 
   if (value == null) return <span className="value-empty">—</span>;
+
+  if (compact && typeof value === "string" && value.length > TRUNCATE_LEN) {
+    return (
+      <span className="value-compact" title={value}>
+        {value.slice(0, TRUNCATE_LEN)}…
+      </span>
+    );
+  }
+  if (compact && typeof value === "object" && value !== null && !Array.isArray(value)) {
+    const keys = Object.keys(value as object).length;
+    return <span className="value-compact">{"{"}{keys} keys{"}"}</span>;
+  }
+  if (compact && Array.isArray(value)) {
+    const len = value.length;
+    return <span className="value-compact">[{len} items]</span>;
+  }
 
   if (resolvedFormat === "json" || (resolvedFormat === "auto" && typeof value === "object")) {
     return (

@@ -24,6 +24,8 @@ export function renderMigrationStudioPage(opts: { migrationsDir: string; styles:
 <h1>Migration Studio</h1>
 <p class="sub">Create and apply migrations. SQL-first workflow. Apply uses <code>sbt migrate</code>.</p>
 
+<div id="migration-stats" class="migration-stats"></div>
+
 <div class="toolbar">
   <button type="button" id="btn-analyze">Analyze SQL</button>
   <button type="button" id="btn-dry-run">Dry run</button>
@@ -243,10 +245,22 @@ async function initEditor() {
   const migEl = document.getElementById('context-migrations');
   const schemaEl = document.getElementById('context-schema');
 
+  const renderMigrationStats = (migrations) => {
+    const statsEl = document.getElementById('migration-stats');
+    if (!statsEl) return;
+    const total = migrations.length;
+    const applied = migrations.filter(m => (m.status || '').toLowerCase() === 'applied').length;
+    const pending = migrations.filter(m => (m.status || '').toLowerCase() === 'pending').length;
+    const missing = migrations.filter(m => (m.status || '').toLowerCase() === 'missing').length;
+    statsEl.innerHTML = total > 0 ? '<div class="migration-stat"><span class="stat-label">Total</span><div class="stat-value">' + total + '</div></div><div class="migration-stat stat-applied"><span class="stat-label">Applied</span><div class="stat-value">' + applied + '</div></div><div class="migration-stat stat-pending"><span class="stat-label">Pending</span><div class="stat-value">' + pending + '</div></div>' + (missing > 0 ? '<div class="migration-stat stat-missing"><span class="stat-label">Missing</span><div class="stat-value">' + missing + '</div></div>' : '') : '';
+  };
+
   const renderMigrations = async () => {
     const migRes = await fetch('/api/migrations').then(r => r.json()).catch(() => ({ migrations: [] }));
+    const migrations = migRes.migrations || [];
+    renderMigrationStats(migrations);
     migEl.innerHTML = '';
-    for (const m of migRes.migrations || []) {
+    for (const m of migrations) {
       const div = document.createElement('div');
       div.className = 'context-item';
       div.innerHTML = '<code>' + (m.filename || '').replace(/</g,'&lt;') + '</code> <span class="badge-' + (m.status || 'pending') + '" style="font-size:0.7rem;margin-left:4px">' + (m.status || '') + '</span>';

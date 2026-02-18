@@ -71,3 +71,14 @@ Plugin config goes in `plugins[].config`:
 | `displayColumns` | `["name", "email", "full_name", "slug", "title"]` | Columns to display on referenced entities |
 
 Global ERD display columns can also be set at the root level under `erd.displayColumns`.
+
+## Dashboard Integration
+
+When active, the ERD plugin contributes to the dashboard automatically — no extra commands needed.
+
+- **`getAtlasData()`** — reads the generated `.md` files from `erdOutput` at `sbt generate-atlas` time and adds an `erd_diagrams` category to `backend-atlas-data.json`
+- **`getDashboardView()`** — declares the ERD section so the dashboard router shows it in the nav
+
+The dashboard ERD page (`/erd`) renders each diagram as an interactive Mermaid SVG with table search and a raw source toggle. If `erd_diagrams` is missing from atlas data (e.g. `generate-erd` hasn't run yet), the dashboard falls back to reading `.md` files directly from the `erdOutput` directory at request time.
+
+> **Note on `erdOutput`:** If you set a custom `erdOutput` path in plugin config, make sure it matches where `generate-erd` writes files. The dashboard resolves this path from `supabase-tools.config.json` at runtime — a mismatch causes the ERD page to appear empty.
