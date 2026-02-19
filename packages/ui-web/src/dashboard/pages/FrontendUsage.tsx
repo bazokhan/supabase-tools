@@ -6,6 +6,7 @@ import { MiniBarChart } from "../components/MiniBarChart";
 import { toRows } from "../lib/model";
 import type { PageProps } from "./page-types";
 import type { AtlasRow } from "../lib/model";
+import type { BadgeTone } from "../components/Badge";
 
 const FRONTEND_COLUMN_META: Record<string, ColumnMeta> = {
   component: {
@@ -189,7 +190,7 @@ function FrontendEnabled({ categories, onOpenDetail }: PageProps) {
   const hotBarData = hotComponents.slice(0, 8).map((row) => ({
     label: row.component,
     value: row.score,
-    tone: row.score >= 18 ? "bad" : row.score >= 10 ? "warn" : "accent",
+    tone: row.score >= 18 ? "bad" : row.score >= 10 ? "warn" : "accent" as BadgeTone,
   }));
 
   function toggleType(type: string) {
@@ -250,7 +251,7 @@ function FrontendEnabled({ categories, onOpenDetail }: PageProps) {
 
         {activeView === "hot" ? (
           <>
-            <div className="panel-head">
+            <div className="panel-head panel-head-sub">
               <div>
                 <h3>Hot Components</h3>
                 <p>Components ranked by coupling to backend (SDK calls). Hover column headers for metric details.</p>
@@ -269,7 +270,7 @@ function FrontendEnabled({ categories, onOpenDetail }: PageProps) {
 
         {activeView === "components" ? (
           <>
-            <div className="panel-head">
+            <div className="panel-head panel-head-sub">
               <div>
                 <h3>Component to Resource Map</h3>
                 <p>Component-centric usage with current filters applied.</p>
@@ -286,7 +287,7 @@ function FrontendEnabled({ categories, onOpenDetail }: PageProps) {
 
         {activeView === "resources" ? (
           <>
-            <div className="panel-head">
+            <div className="panel-head panel-head-sub">
               <div>
                 <h3>Resource Impact Map</h3>
                 <p>Resource-centric view to answer who is coupled to each backend resource.</p>

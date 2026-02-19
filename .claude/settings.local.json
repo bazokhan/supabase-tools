@@ -32,7 +32,9 @@
       "mcp__MCP_DOCKER__browser_run_code",
       "mcp__MCP_DOCKER__fetch",
       "Bash(docker ps:*)",
-      "mcp__MCP_DOCKER__browser_snapshot"
+      "mcp__MCP_DOCKER__browser_snapshot",
+      "WebSearch",
+      "WebFetch(domain:registry.npmjs.org)"
     ]
   }
 }
