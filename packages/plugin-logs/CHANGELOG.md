@@ -1,5 +1,12 @@
 # @sbtools/plugin-logs
 
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [65add92]
+  - @sbtools/ui-web@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes
