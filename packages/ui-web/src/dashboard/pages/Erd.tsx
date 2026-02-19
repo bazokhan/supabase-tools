@@ -6,6 +6,7 @@ import type { CategoryMap } from "../lib/model";
 
 interface ErdPageProps {
   categories: CategoryMap;
+  dark?: boolean;
 }
 
 interface ErdDiagram {
@@ -14,7 +15,7 @@ interface ErdDiagram {
   markdown?: string;
 }
 
-export function ErdPage({ categories }: ErdPageProps) {
+export function ErdPage({ categories, dark }: ErdPageProps) {
   const diagrams = (categories.erd_diagrams ?? []) as ErdDiagram[];
   const [selected, setSelected] = React.useState<string | null>(diagrams[0]?.table ?? null);
   const selectedDiagram = diagrams.find((d) => d.table === selected);
@@ -49,7 +50,7 @@ export function ErdPage({ categories }: ErdPageProps) {
           <div className="erd-content">
             {selectedDiagram?.mermaid ? (
               <div className="mermaid-wrap">
-                <MermaidRenderer code={selectedDiagram.mermaid} id={selected ?? "erd"} />
+                <MermaidRenderer code={selectedDiagram.mermaid} id={selected ?? "erd"} dark={dark} />
               </div>
             ) : (
               <p className="empty-state">No Mermaid diagram found for this table.</p>

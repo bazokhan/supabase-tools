@@ -77,19 +77,6 @@ function MigrationsEnabled({ categories, onOpenDetail }: PageProps) {
             </div>
           </Tooltip>
         </div>
-
-        {rows.length > 0 && (
-          <div className="overview-chart-panel">
-            <MiniDonutChart
-              segments={[
-                { label: "Applied", value: Number(summary.applied) || 0, color: "var(--success)" },
-                { label: "Pending", value: Number(summary.pending) || 0, color: "var(--warning)" },
-                { label: "Missing", value: Number(summary.missing) || 0, color: "var(--danger)" },
-              ].filter((s) => s.value > 0)}
-              size={100}
-            />
-          </div>
-        )}
       </div>
 
       <section className="panel">

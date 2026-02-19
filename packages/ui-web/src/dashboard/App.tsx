@@ -422,7 +422,7 @@ export function App() {
             ) : route === "frontend" ? (
               <FrontendPage categories={categories} onOpenDetail={openDetail} enabled={availability.frontend} />
             ) : route === "erd" ? (
-              <ErdPage categories={categories} />
+              <ErdPage categories={categories} dark={dark} />
             ) : route === "details" ? (
               <DetailsPage
                 categories={categories}

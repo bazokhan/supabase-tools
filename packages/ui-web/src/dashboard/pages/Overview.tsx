@@ -21,7 +21,6 @@ import {
 import { AppDataTable } from "../components/AppDataTable";
 import { Dropdown } from "../components/Dropdown";
 import { EmptyState } from "../components/EmptyState";
-import { MiniBarChart } from "../components/MiniBarChart";
 import { StatCard } from "../components/StatCard";
 import { Tooltip } from "../components/Tooltip";
 import { getPrimaryKey, getSectionPrimaryKeyField, prettyLabel, toRows } from "../lib/model";
@@ -102,12 +101,12 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
   }, [rows]);
 
   return (
-    <div className="content-stack">
-      <div className="overview-stats-row">
-        <div className="overview-stat-chips">
-          {stats.map((entry) => (
+    <div className="content-stack reveal-group">
+      <div className="overview-stats-row reveal-item" style={{ "--reveal-index": 0 } as React.CSSProperties}>
+        <div className="overview-stat-chips reveal-group">
+          {stats.map((entry, index) => (
             <Tooltip key={entry.name} content={`Filter: ${prettyLabel(entry.name)}`}>
-              <div>
+              <div className="reveal-item" style={{ "--reveal-index": index + 1 } as React.CSSProperties}>
                 <StatCard
                   label={prettyLabel(entry.name)}
                   value={entry.count.toLocaleString()}
@@ -119,22 +118,9 @@ export function OverviewPage({ categories, sections = [], onOpenDetail }: PagePr
             </Tooltip>
           ))}
         </div>
-        {totalCount > 0 && (
-          <div className="overview-chart-panel">
-            <MiniBarChart
-              data={stats.map((s) => ({
-                label: prettyLabel(s.name),
-                value: s.count,
-                tone: s.name === activeTab ? "accent" : "default",
-              }))}
-              maxBars={10}
-              height={140}
-            />
-          </div>
-        )}
       </div>
 
-      <section className="panel">
+      <section className="panel reveal-item" style={{ "--reveal-index": 2 } as React.CSSProperties}>
         {totalCount === 0 ? (
           <EmptyState
             title="No entities found"
