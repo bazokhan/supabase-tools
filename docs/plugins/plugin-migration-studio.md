@@ -96,6 +96,14 @@ Studio exposes `GET /api/events` (SSE). When watch updates arrive, Studio invali
 
 **Note:** `migration.analysis` is written only by `sbt migration-audit`, not by `sbt generate-atlas`. See [Package & Artifact Dependencies](../architecture/package-dependencies.md) for the full map.
 
+## Brownfield Adoption Platform
+
+The plugin also ships a **backend understanding toolchain** for existing Postgres/Supabase projects. If you have a database already in production and want to bring it under typed management, see:
+
+**[Migration Studio Platform →](./plugin-migration-studio-platform)**
+
+The platform adds four tools (`studio-introspect`, `studio-sql-parse`, `studio-intent-sync`, `studio-intent-init`) that inspect your live database and migration history, confidence-score each entity, and build a typed intent graph that records what the platform knows how to manage safely.
+
 ## Dependencies
 
 Requires `pg` for database schema introspection (optional peer; studio degrades to atlas-data/artifact when DB unreachable).

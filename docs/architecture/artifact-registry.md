@@ -30,6 +30,17 @@ This document is the **single source of truth** for official artifact IDs in sup
 | `migration.lineage` | plugin-migration-audit | — | Planned | Migration dependency/lineage graph |
 | `migration.staleness` | plugin-migration-audit | — | Planned | Staleness and drift metrics |
 | `migration.studio.draft` | plugin-migration-studio | — | Planned | Studio-owned draft migration metadata |
+| `studio.schema.snapshot` | plugin-migration-studio | 1.0.0 | Active | Live DB state — tables, columns, constraints, indexes, policies, functions, views, triggers, extensions |
+| `studio.sql.ast` | plugin-migration-studio | 1.0.0 | Active | Migration file parse results — per-file AST, extracted intent nodes, aggregated entity/policy/function arrays |
+| `studio.intent.sync-report` | plugin-migration-studio | 1.0.0 | Active | Confidence-scored match between DB snapshot and SQL AST; matched, unmatchedDb, unmatchedIntent lists |
+| `studio.intent.graph` | plugin-migration-studio | 1.0.0 | Active | Final intent graph — managed/assisted/opaque entity nodes, opaque blocks, managed scope declaration |
+| `studio.rls.plan` | plugin-migration-studio | 1.0.0 | Planned | RLS policy plan for managed entities |
+| `studio.rls.report` | plugin-migration-studio | 1.0.0 | Planned | RLS policy application report |
+| `studio.rpc.plan` | plugin-migration-studio | 1.0.0 | Planned | RPC/function generation plan |
+| `studio.migration.plan` | plugin-migration-studio | 1.0.0 | Planned | Migration generation plan from intent graph diff |
+| `studio.migration.lint` | plugin-migration-studio | 1.0.0 | Planned | Migration lint results (destructive ops, missing transactions, etc.) |
+| `studio.release.gate` | plugin-migration-studio | 1.0.0 | Planned | Release gate decision — go/no-go with blocking issues |
+| `studio.workflow.run` | plugin-migration-studio | 1.0.0 | Active | Workflow run state — step results, status, timestamps, current step pointer |
 | `typescript.schema-types` | plugin-typegen | — | Optional | Typegen output metadata (path, hash, timestamp) |
 | `depgraph.graph` | plugin-depgraph | 1.0.0 | Producing | Dependency graph |
 | `frontend.usage` | plugin-frontend-usage | 1.0.0 | Producing | Frontend usage scan results |

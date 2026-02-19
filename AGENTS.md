@@ -55,7 +55,7 @@ This repo uses `@changesets/cli`. Create changesets for any package whose public
 | `@sbtools/core` | CLI entry point, command registry, plugin loader, snapshot/generate/dashboard/watch/migrate commands, HTTP server |
 | `@sbtools/ui-web` | React SPA (Vite) + HTML renderers; served by core's dashboard command from `dist/dashboard/` |
 | `@sbtools/plugin-erd` | Mermaid ERD generation; contributes `erd_diagrams` to atlas data and ERD page to dashboard |
-| `@sbtools/plugin-migration-studio` | CodeMirror SQL editor; apply migrations from browser |
+| `@sbtools/plugin-migration-studio` | CodeMirror SQL editor; apply migrations from browser; SQL AST parsing via `@supabase/pg-parser`; artifact writers; brownfield adoption tools (introspect, sql-parse, intent-sync, intent-init); workflow engine |
 | `@sbtools/plugin-migration-audit` | Audit migration files vs DB tracking table; detect drift |
 | `@sbtools/plugin-depgraph` | TypeScript function/table dependency graph |
 | `@sbtools/plugin-typegen` | Generate TS types from Supabase `/pg/generators/typescript` |
@@ -73,6 +73,19 @@ packages/sdk/src/
   plugin-api.ts       – SbtPlugin, PluginContext, DashboardView interfaces
   types.ts            – AtlasData, SnapshotMeta, FunctionItem, PolicyItem, etc.
   artifacts.ts        – .sbt/artifacts/ read/write helpers
+  studio-types.ts     – IntentGraph, EntityNode, PolicyNode, FunctionNode, WorkflowRun, ReleaseGate, etc.
+
+packages/plugin-migration-studio/src/
+  artifacts/constants.ts  – STUDIO_ARTIFACTS id/version constants
+  artifacts/writers.ts    – typed artifact writer factories (SchemaSnapshotData, SqlAstData, IntentSyncData, etc.)
+  artifacts/schemas.ts    – Zod validation schemas for all studio artifacts
+  sql-parser.ts           – WASM SQL parser (parseMigrationSql, extractSchemaNodes)
+  tools/introspect.ts     – DB queries → SchemaSnapshotData → studio.schema.snapshot
+  tools/sql-parse.ts      – migration files → AST extraction → studio.sql.ast
+  tools/intent-sync.ts    – DB vs SQL confidence scoring → studio.intent.sync-report
+  tools/intent-init.ts    – build IntentGraph from sync report → studio.intent.graph
+  engine/runner.ts        – sequential pipeline runner (startWorkflow, resumeWorkflow)
+  workflows/adopt-backend.ts – 4-step brownfield adoption workflow definition
 
 packages/core/src/
   cli.ts              – entry; parses argv, loads plugins, dispatches commands
