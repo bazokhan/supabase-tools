@@ -107,9 +107,9 @@ packages/core/src/
 
 packages/ui-web/src/
   dashboard/App.tsx          – main router; dark mode; search
-  dashboard/hooks/           – useAtlasData (/api/atlas-data), useDashboardConfig (/api/dashboard-config)
+  dashboard/hooks/           – useAtlasData, useDashboardConfig, useCommands, usePlugins, useServices
   dashboard/lib/model.ts     – route parsing, search indexing, nav building
-  dashboard/pages/           – Overview, Details, Migrations, Depgraph, Logs, Erd, FrontendUsage
+  dashboard/pages/           – Overview, Details, Migrations, MigrationStudio, Depgraph, Logs, FrontendUsage, Erd, Runner, Plugins, Services
   renderers/                 – standalone HTML page generators (migration-audit, depgraph, logs-viewer)
 ```
 
@@ -161,7 +161,10 @@ interface PluginContext {
 |---|---|
 | `GET /api/atlas-data` | `backend-atlas-data.json` |
 | `GET /api/dashboard-config` | plugin-contributed section definitions |
-| `GET /api/services` | Docker service statuses |
+| `GET /api/services` | Docker service statuses + local UI endpoint reachability |
+| `GET /api/plugins` | built-in + configured plugin state (configured/enabled/installed/loaded) |
+| `POST /api/plugins` | plugin config actions (`add`, `remove`, `enable`, `disable`) |
+| `GET /api/commands` | runnable command list with prerequisites and running-state metadata |
 | `GET /api/logs/stream` | SSE Docker log stream |
 | `GET /api/fs/list` | snapshot/migrations/docs directory listing |
 | `GET /api/fs/file` | raw file content |

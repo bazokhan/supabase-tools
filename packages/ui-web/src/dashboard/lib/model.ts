@@ -4,7 +4,7 @@ import { resolve } from "./field-resolver";
 export type AtlasRow = Record<string, unknown>;
 export type CategoryMap = Record<string, unknown[]>;
 
-export type RouteName = "overview" | "migrations" | "studio" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "details" | "notfound";
+export type RouteName = "overview" | "migrations" | "studio" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "plugins" | "services" | "details" | "notfound";
 
 export interface SearchHit {
   id: string;
@@ -20,7 +20,7 @@ export interface NavItem {
   label: string;
   subtitle: string;
   enabled: boolean;
-  icon: "home" | "migrations" | "studio" | "graph" | "logs" | "frontend" | "erd" | "runner";
+  icon: "home" | "migrations" | "studio" | "graph" | "logs" | "frontend" | "erd" | "runner" | "plugins" | "services";
 }
 
 export interface PluginAvailability {
@@ -30,6 +30,8 @@ export interface PluginAvailability {
   logs: boolean;
   frontend: boolean;
   erd: boolean;
+  plugins: boolean;
+  services: boolean;
 }
 
 export interface GraphNode {
@@ -59,6 +61,8 @@ const ROUTE_PREFIXES: Array<{ route: RouteName; prefix: string }> = [
   { route: "frontend", prefix: "/frontend-usage" },
   { route: "erd", prefix: "/erd" },
   { route: "runner", prefix: "/runner" },
+  { route: "plugins", prefix: "/plugins" },
+  { route: "services", prefix: "/services" },
   { route: "details", prefix: "/details" },
 ];
 
@@ -82,6 +86,8 @@ export function inferPluginAvailability(categories: CategoryMap, sections: Dashb
     erd:
       Boolean(categories.erd_diagrams?.length) ||
       hasSection(sections, (section) => section.dataKey === "erd_diagrams" || section.id === "erd"),
+    plugins: true,
+    services: true,
   };
 }
 
@@ -143,6 +149,22 @@ export function getNavItems(availability: PluginAvailability): NavItem[] {
       subtitle: "Run sbt commands and stream output",
       enabled: true,
       icon: "runner",
+    },
+    {
+      route: "plugins",
+      path: "/plugins",
+      label: "Plugins",
+      subtitle: "Install and enable dashboard plugins",
+      enabled: availability.plugins,
+      icon: "plugins",
+    },
+    {
+      route: "services",
+      path: "/services",
+      label: "Services",
+      subtitle: "Container status and local UIs",
+      enabled: availability.services,
+      icon: "services",
     },
   ];
 }

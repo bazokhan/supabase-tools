@@ -5,9 +5,11 @@ import {
   LayoutDashboard,
   Monitor,
   Network,
+  Plug,
   PanelLeftClose,
   PanelLeftOpen,
   ScrollText,
+  Server,
   Share2,
   SquareTerminal,
 } from "lucide-react";
@@ -46,7 +48,9 @@ import { MigrationStudioPage } from "./pages/MigrationStudio";
 import { ErdPage } from "./pages/Erd";
 import { NotFoundPage } from "./pages/NotFound";
 import { OverviewPage } from "./pages/Overview";
+import { PluginsPage } from "./pages/Plugins";
 import { RunnerPage } from "./pages/Runner";
+import { ServicesPage } from "./pages/Services";
 
 const DARK_STORAGE_KEY = "sbt-dashboard-dark";
 const SIDEBAR_COLLAPSED_KEY = "sbt-sidebar-collapsed";
@@ -71,6 +75,10 @@ function NavIcon({ item }: { item: NavItem }) {
       return <Share2 size={16} />;
     case "runner":
       return <SquareTerminal size={16} />;
+    case "plugins":
+      return <Plug size={16} />;
+    case "services":
+      return <Server size={16} />;
     default:
       return <LayoutDashboard size={16} />;
   }
@@ -91,6 +99,12 @@ function routeActions(route: RouteName): Array<{ label: string; href: string; ic
   }
   if (route === "logs") {
     return [{ label: "Open Logs Plugin Viewer", href: "http://localhost:3333", icon: <IconExternal size={14} /> }];
+  }
+  if (route === "services") {
+    return [
+      { label: "Supabase Studio", href: "http://localhost:54323", icon: <IconExternal size={14} /> },
+      { label: "Swagger", href: "http://localhost:8081", icon: <IconExternal size={14} /> },
+    ];
   }
   return [];
 }
@@ -181,6 +195,7 @@ export function App() {
   const title = route === "notfound" ? "Not Found" : activeNav?.label ?? "Details";
   const subtitle = route === "notfound" ? "Unknown dashboard route" : activeNav?.subtitle ?? "Detailed object view";
   const searchParams = new URLSearchParams(window.location.search);
+  const atlasOptionalRoute = route === "runner" || route === "studio" || route === "plugins" || route === "services";
 
   return (
     <div className="app-shell">
@@ -380,9 +395,17 @@ export function App() {
           </div>
         </header>
 
-        {route === "runner" ? (
+        {atlasOptionalRoute ? (
           <div key={route} className="route-content-transition">
-            <RunnerPage />
+            {route === "runner" ? (
+              <RunnerPage />
+            ) : route === "studio" ? (
+              <MigrationStudioPage categories={categories} onOpenDetail={openDetail} enabled={availability.studio} />
+            ) : route === "plugins" ? (
+              <PluginsPage />
+            ) : route === "services" ? (
+              <ServicesPage />
+            ) : null}
           </div>
         ) : atlas.error ? (
           <section className="panel">
@@ -423,6 +446,10 @@ export function App() {
               <FrontendPage categories={categories} onOpenDetail={openDetail} enabled={availability.frontend} />
             ) : route === "erd" ? (
               <ErdPage categories={categories} dark={dark} />
+            ) : route === "plugins" ? (
+              <PluginsPage />
+            ) : route === "services" ? (
+              <ServicesPage />
             ) : route === "details" ? (
               <DetailsPage
                 categories={categories}

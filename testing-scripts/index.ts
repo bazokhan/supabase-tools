@@ -1,7 +1,8 @@
 /**
- * sbt onboarding test runner
+ * sbt integration test runner
  *
  * Usage:
+ *   npx tsx testing-scripts/index.ts
  *   npx tsx testing-scripts/index.ts --target /absolute/path/to/empty-or-existing-folder
  *
  * Each test runs against the target directory with a clean slate (sbt-generated
@@ -12,6 +13,7 @@
  * source is run directly via tsx.
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { clean, log } from "./utils.js";
@@ -30,25 +32,32 @@ import * as t07 from "./tests/07-plugin-add.js";
 import * as t08 from "./tests/08-plugin-disable-enable.js";
 import * as t09 from "./tests/09-plugin-remove.js";
 import * as t10 from "./tests/10-plugin-no-config.js";
+import * as t11 from "./tests/11-dashboard-first-run.js";
 
-const TESTS: Array<{ name: string; run: (dir: string) => void }> = [
-  t01, t02, t03, t04, t05, t06, t07, t08, t09, t10,
+const TESTS: Array<{ name: string; run: (dir: string) => void | Promise<void> }> = [
+  t01, t02, t03, t04, t05, t06, t07, t08, t09, t10, t11,
 ];
 
 // ---------------------------------------------------------------------------
 // Arg parsing
 // ---------------------------------------------------------------------------
 
-function parseArgs(): { targetDir: string } {
+function parseArgs(): { targetDir: string; ownsTargetDir: boolean } {
   const args = process.argv.slice(2);
   const targetIdx = args.indexOf("--target");
-  if (targetIdx === -1 || !args[targetIdx + 1]) {
-    console.error("Usage: npx tsx testing-scripts/index.ts --target <absolute-path>");
+
+  if (targetIdx === -1) {
+    const temp = fs.mkdtempSync(path.join(os.tmpdir(), "sbt-test-scripts-"));
+    return { targetDir: temp, ownsTargetDir: true };
+  }
+
+  if (!args[targetIdx + 1]) {
+    console.error("Usage: npx tsx testing-scripts/index.ts [--target <absolute-path>]");
     console.error("Example: npx tsx testing-scripts/index.ts --target /tmp/my-sbt-test");
     process.exit(1);
   }
   const targetDir = path.resolve(args[targetIdx + 1]);
-  return { targetDir };
+  return { targetDir, ownsTargetDir: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +68,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main(): Promise<void> {
-  const { targetDir } = parseArgs();
+  const { targetDir, ownsTargetDir } = parseArgs();
 
   // Validate target directory
   if (!fs.existsSync(targetDir)) {
@@ -73,8 +82,8 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n${"=".repeat(70)}`);
-  console.log(`  sbt onboarding test suite`);
-  console.log(`  target: ${targetDir}`);
+  console.log(`  sbt integration test suite`);
+  console.log(`  target: ${targetDir}${ownsTargetDir ? " (temp)" : ""}`);
   console.log(`  tests:  ${TESTS.length}`);
   console.log(`${"=".repeat(70)}`);
 
@@ -90,7 +99,7 @@ async function main(): Promise<void> {
     clean(targetDir);
 
     try {
-      test.run(targetDir);
+      await test.run(targetDir);
       log.pass("PASSED");
       passed++;
     } catch (err: unknown) {
@@ -103,6 +112,9 @@ async function main(): Promise<void> {
 
   // Final clean-up
   clean(targetDir);
+  if (ownsTargetDir) {
+    fs.rmSync(targetDir, { recursive: true, force: true });
+  }
 
   // Summary
   console.log(`\n${"=".repeat(70)}`);

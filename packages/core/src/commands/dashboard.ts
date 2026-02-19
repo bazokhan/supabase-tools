@@ -4,11 +4,14 @@
 import { execSync, spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
+import https from "node:https";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveContainerPrefix, getArg, ui, withHelp } from "@sbtools/sdk";
 import type { DashboardSectionDef, PluginContext } from "@sbtools/sdk";
 import { allCommands } from "../command-registry.js";
+import { BUILTIN_PLUGINS } from "../lib/plugin-catalog.js";
 
 const CORE_SECTIONS: DashboardSectionDef[] = [
   {
@@ -144,10 +147,221 @@ The dashboard serves the React SPA and APIs for atlas data, dashboard config, se
 `;
 
 const DEFAULT_PORT = 3400;
+const PLUGIN_CONFIG_PATH = "supabase-tools.config.json";
+const FILESYSTEM_CANDIDATES = ["dist/index.js", "index.js", "index.ts", "src/index.ts"];
+
+interface PluginEntry {
+  path: string;
+  enabled?: boolean;
+  config?: Record<string, unknown>;
+}
+
+interface ConfigFile {
+  plugins?: PluginEntry[];
+  api?: { studioUrl?: string; inbucketUrl?: string };
+  [key: string]: unknown;
+}
+
+interface RunningCommand {
+  command: string;
+  pid: number;
+  startedAt: string;
+}
+
+interface CommandRule {
+  requiresServices?: string[];
+  requiresPlugins?: string[];
+  longRunning?: boolean;
+  singleton?: boolean;
+}
+
+const COMMAND_RULES: Record<string, CommandRule> = {
+  start: { singleton: true, longRunning: true },
+  stop: { singleton: true },
+  restart: { singleton: true },
+  status: {},
+  migrate: { requiresServices: ["db"] },
+  snapshot: { requiresServices: ["db"] },
+  watch: { requiresServices: ["db"], singleton: true, longRunning: true },
+  "generate-atlas": {},
+  docs: { singleton: true, longRunning: true },
+  dashboard: { singleton: true, longRunning: true },
+  init: {},
+  plugin: {},
+  "migration-studio": {
+    requiresPlugins: ["@sbtools/plugin-migration-studio"],
+    singleton: true,
+    longRunning: true,
+  },
+  "migration-audit": { requiresPlugins: ["@sbtools/plugin-migration-audit"] },
+  depgraph: { requiresPlugins: ["@sbtools/plugin-depgraph"] },
+  "generate-types": { requiresPlugins: ["@sbtools/plugin-typegen"] },
+  "db-test": { requiresPlugins: ["@sbtools/plugin-db-test"] },
+  "logs-viewer": { requiresPlugins: ["@sbtools/plugin-logs"], singleton: true, longRunning: true },
+  "deno-functions": { requiresPlugins: ["@sbtools/plugin-deno-functions"] },
+  "frontend-usage": { requiresPlugins: ["@sbtools/plugin-frontend-usage"] },
+  "plugin-scaffold": { requiresPlugins: ["@sbtools/plugin-scaffold"] },
+};
 
 function resolveDashboardDir(): string {
   const distDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   return path.join(distDir, "dashboard");
+}
+
+function readConfigFile(projectRoot: string): ConfigFile {
+  const configPath = path.join(projectRoot, PLUGIN_CONFIG_PATH);
+  if (!fs.existsSync(configPath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(configPath, "utf8")) as ConfigFile;
+  } catch {
+    return {};
+  }
+}
+
+function writeConfigFile(projectRoot: string, cfg: ConfigFile): void {
+  const configPath = path.join(projectRoot, PLUGIN_CONFIG_PATH);
+  fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2) + "\n", "utf8");
+}
+
+function isPackageName(p: string): boolean {
+  return p.startsWith("@") || (!p.startsWith(".") && !path.isAbsolute(p) && !p.includes("/") && !p.includes("\\"));
+}
+
+function isPluginInstalled(projectRoot: string, pluginPath: string): boolean {
+  try {
+    if (isPackageName(pluginPath)) {
+      const rootPackagePath = path.join(projectRoot, "package.json");
+      const req = createRequire(fs.existsSync(rootPackagePath) ? rootPackagePath : `${projectRoot}${path.sep}`);
+      req.resolve(pluginPath);
+      return true;
+    }
+
+    const pluginDir = path.isAbsolute(pluginPath) ? pluginPath : path.resolve(projectRoot, pluginPath);
+    for (const candidate of FILESYSTEM_CANDIDATES) {
+      if (fs.existsSync(path.join(pluginDir, candidate))) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function collectPluginState(ctx: PluginContext): Array<{
+  name: string;
+  description: string;
+  builtin: boolean;
+  configured: boolean;
+  enabled: boolean;
+  installed: boolean;
+  loaded: boolean;
+  source: "builtin" | "custom";
+}> {
+  const cfg = readConfigFile(ctx.projectRoot);
+  const configured = cfg.plugins ?? [];
+  const configuredMap = new Map(configured.map((entry) => [entry.path, entry]));
+  const loaded = new Set((ctx.siblingPlugins ?? []).map((plugin) => plugin.name));
+
+  const rows: Array<{
+    name: string;
+    description: string;
+    builtin: boolean;
+    configured: boolean;
+    enabled: boolean;
+    installed: boolean;
+    loaded: boolean;
+    source: "builtin" | "custom";
+  }> = BUILTIN_PLUGINS.map((plugin) => {
+    const entry = configuredMap.get(plugin.name);
+    const loadedFlag = loaded.has(plugin.name);
+    const configuredFlag = Boolean(entry) || loadedFlag;
+    const enabled = entry ? entry.enabled !== false : loadedFlag;
+    return {
+      name: plugin.name,
+      description: plugin.desc,
+      builtin: true,
+      configured: configuredFlag,
+      enabled: configuredFlag ? enabled : false,
+      installed: isPluginInstalled(ctx.projectRoot, plugin.name) || loadedFlag,
+      loaded: loadedFlag,
+      source: "builtin",
+    };
+  });
+
+  for (const entry of configured) {
+    if (rows.some((row) => row.name === entry.path)) continue;
+    rows.push({
+      name: entry.path,
+      description: "Custom plugin",
+      builtin: false,
+      configured: true,
+      enabled: entry.enabled !== false,
+      installed: isPluginInstalled(ctx.projectRoot, entry.path),
+      loaded: loaded.has(entry.path),
+      source: "custom",
+    });
+  }
+
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function applyPluginAction(projectRoot: string, action: "add" | "remove" | "enable" | "disable", pluginName: string): {
+  changed: boolean;
+  message: string;
+} {
+  const cfg = readConfigFile(projectRoot);
+  const plugins: PluginEntry[] = cfg.plugins ?? [];
+  const index = plugins.findIndex((entry) => entry.path === pluginName);
+
+  if (action === "add") {
+    if (index >= 0) return { changed: false, message: `Plugin '${pluginName}' is already configured.` };
+    plugins.push({ path: pluginName, enabled: true, config: {} });
+    cfg.plugins = plugins;
+    writeConfigFile(projectRoot, cfg);
+    return { changed: true, message: `Added plugin '${pluginName}'.` };
+  }
+
+  if (action === "remove") {
+    if (index < 0) return { changed: false, message: `Plugin '${pluginName}' is not configured.` };
+    cfg.plugins = plugins.filter((entry) => entry.path !== pluginName);
+    writeConfigFile(projectRoot, cfg);
+    return { changed: true, message: `Removed plugin '${pluginName}'.` };
+  }
+
+  if (index < 0) return { changed: false, message: `Plugin '${pluginName}' is not configured.` };
+
+  if (action === "enable") {
+    if (plugins[index].enabled !== false) return { changed: false, message: `Plugin '${pluginName}' is already enabled.` };
+    plugins[index].enabled = true;
+    cfg.plugins = plugins;
+    writeConfigFile(projectRoot, cfg);
+    return { changed: true, message: `Enabled plugin '${pluginName}'.` };
+  }
+
+  if (plugins[index].enabled === false) return { changed: false, message: `Plugin '${pluginName}' is already disabled.` };
+  plugins[index].enabled = false;
+  cfg.plugins = plugins;
+  writeConfigFile(projectRoot, cfg);
+  return { changed: true, message: `Disabled plugin '${pluginName}'.` };
+}
+
+function readJsonBody<T>(req: http.IncomingMessage): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    req.on("data", (chunk: Buffer) => {
+      raw += chunk.toString("utf8");
+      if (raw.length > 1024 * 1024) {
+        reject(new Error("Request body too large."));
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve((raw ? JSON.parse(raw) : {}) as T);
+      } catch {
+        reject(new Error("Invalid JSON body."));
+      }
+    });
+    req.on("error", reject);
+  });
 }
 
 function collectDashboardSections(ctx: PluginContext): DashboardSectionDef[] {
@@ -181,6 +395,37 @@ function parseLogLine(service: string, raw: string): { service: string; level: s
     return { service, level: detectLevel(message), timestamp: ts, message };
   }
   return { service, level: detectLevel(raw), timestamp: "", message: raw };
+}
+
+async function probeUrl(url: string, timeoutMs = 1200): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const parsed = new URL(url);
+      const client = parsed.protocol === "https:" ? https : http;
+      const req = client.request(
+        {
+          method: "GET",
+          hostname: parsed.hostname,
+          port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+          path: parsed.pathname || "/",
+          timeout: timeoutMs,
+        },
+        (res) => {
+          const ok = (res.statusCode ?? 500) < 500;
+          res.resume();
+          resolve(ok);
+        },
+      );
+      req.on("error", () => resolve(false));
+      req.on("timeout", () => {
+        req.destroy();
+        resolve(false);
+      });
+      req.end();
+    } catch {
+      resolve(false);
+    }
+  });
 }
 
 function getServiceStatuses(projectRoot: string): Array<{ service: string; container: string; running: boolean; status: string }> {
@@ -324,7 +569,32 @@ function findSbtBin(projectRoot: string): string {
   return "sbt";
 }
 
-function collectCommands(ctx: PluginContext): Array<{ name: string; description: string; category: string; source: string }> {
+function getCommandRule(name: string, source: string): CommandRule {
+  const baseRule = COMMAND_RULES[name] ?? {};
+  if (source !== "core" && (!baseRule.requiresPlugins || baseRule.requiresPlugins.length === 0)) {
+    return { ...baseRule, requiresPlugins: [source] };
+  }
+  return baseRule;
+}
+
+function collectCommands(
+  ctx: PluginContext,
+  running: Map<string, RunningCommand>,
+): Array<{
+  name: string;
+  description: string;
+  category: string;
+  source: string;
+  requiresPlugins: string[];
+  missingPlugins: string[];
+  requiresServices: string[];
+  missingServices: string[];
+  longRunning: boolean;
+  singleton: boolean;
+  running: RunningCommand | null;
+  canRun: boolean;
+  blockedReason: string | null;
+}> {
   const commands: Array<{ name: string; description: string; category: string; source: string }> = [];
   for (const cmd of allCommands()) {
     commands.push({ name: cmd.name, description: cmd.description, category: cmd.category, source: "core" });
@@ -334,11 +604,77 @@ function collectCommands(ctx: PluginContext): Array<{ name: string; description:
       commands.push({ name: cmd.name, description: cmd.description, category: plugin.name, source: plugin.name });
     }
   }
-  return commands;
+
+  const plugins = collectPluginState(ctx);
+  const pluginMap = new Map(plugins.map((plugin) => [plugin.name, plugin]));
+  const serviceStatusMap = new Map(getServiceStatuses(ctx.projectRoot).map((service) => [service.service, service.running]));
+
+  return commands.map((command) => {
+    const rule = getCommandRule(command.name, command.source);
+    const requiresPlugins = rule.requiresPlugins ?? [];
+    const missingPlugins = requiresPlugins.filter((plugin) => {
+      const state = pluginMap.get(plugin);
+      if (!state) return true;
+      return !state.configured || !state.enabled || !state.installed;
+    });
+    const requiresServices = rule.requiresServices ?? [];
+    const missingServices = requiresServices.filter((service) => !serviceStatusMap.get(service));
+    const active = running.get(command.name) ?? null;
+
+    let blockedReason: string | null = null;
+    if (missingPlugins.length > 0) blockedReason = `Missing plugin setup: ${missingPlugins.join(", ")}`;
+    if (!blockedReason && missingServices.length > 0) blockedReason = `Required services are not running: ${missingServices.join(", ")}`;
+    if (!blockedReason && rule.singleton && active) blockedReason = `Command '${command.name}' is already running.`;
+
+    return {
+      ...command,
+      requiresPlugins,
+      missingPlugins,
+      requiresServices,
+      missingServices,
+      longRunning: Boolean(rule.longRunning),
+      singleton: Boolean(rule.singleton),
+      running: active,
+      canRun: !blockedReason,
+      blockedReason,
+    };
+  });
 }
 
 function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
   const atlasDataPath = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
+  const runningCommands = new Map<string, RunningCommand>();
+
+  const collectUiEndpoints = async () => {
+    const cfg = readConfigFile(ctx.projectRoot);
+    const docsSpecPath = path.join(ctx.sbtDataDir, "openapi-spec.json");
+    const rows = [
+      { id: "supabase-studio", label: "Supabase Studio", url: "http://localhost:54323", source: "supabase" },
+      { id: "swagger-ui", label: "Swagger UI", url: "http://localhost:8081", source: "docs" },
+      { id: "redoc", label: "ReDoc", url: "http://localhost:8082", source: "docs" },
+      { id: "schemaspy", label: "SchemaSpy", url: "http://localhost:8083/schemaspy/", source: "docs" },
+      { id: "migration-studio", label: "Migration Studio", url: "http://localhost:3335", source: "plugin" },
+      { id: "dashboard", label: "SBT Dashboard", url: "http://localhost:3400", source: "core" },
+      {
+        id: "inbucket",
+        label: "Inbucket",
+        url: typeof cfg.api?.inbucketUrl === "string" && cfg.api.inbucketUrl ? cfg.api.inbucketUrl : "http://localhost:54324",
+        source: "supabase",
+      },
+    ];
+
+    const unique = new Map(rows.map((row) => [row.url, row]));
+    const withHealth: Array<{ id: string; label: string; url: string; source: string; reachable: boolean }> = [];
+    for (const row of unique.values()) {
+      const reachable = await probeUrl(row.url);
+      withHealth.push({ ...row, reachable });
+    }
+
+    return {
+      docsSpecPresent: fs.existsSync(docsSpecPath),
+      items: withHealth,
+    };
+  };
 
   return (req: http.IncomingMessage, res: http.ServerResponse): void => {
     const url = req.url ?? "/";
@@ -381,8 +717,55 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       return;
     }
 
+    if (pathname === "/api/plugins" && req.method === "GET") {
+      const plugins = collectPluginState(ctx);
+      sendJson(res, 200, { plugins });
+      return;
+    }
+
+    if (pathname === "/api/plugins" && req.method === "POST") {
+      readJsonBody<{ action?: "add" | "remove" | "enable" | "disable"; plugin?: string }>(req)
+        .then((body) => {
+          const action = body.action;
+          const pluginName = String(body.plugin ?? "").trim();
+          if (!action || !pluginName) {
+            sendJson(res, 400, { error: "Expected JSON body: { action, plugin }." });
+            return;
+          }
+
+          const result = applyPluginAction(ctx.projectRoot, action, pluginName);
+          const pluginState = collectPluginState(ctx).find((plugin) => plugin.name === pluginName);
+          sendJson(res, 200, {
+            ok: true,
+            changed: result.changed,
+            message: result.message,
+            restartRequired: result.changed,
+            installHint: isPackageName(pluginName) ? `npm install ${pluginName}` : null,
+            plugin: pluginState ?? null,
+          });
+        })
+        .catch((err) => {
+          sendJson(res, 400, { error: (err as Error).message });
+        });
+      return;
+    }
+
     if (pathname === "/api/services" || pathname === "/api/logs/services") {
-      sendJson(res, 200, getServiceStatuses(ctx.projectRoot));
+      if (pathname === "/api/logs/services") {
+        sendJson(res, 200, getServiceStatuses(ctx.projectRoot));
+        return;
+      }
+      const services = getServiceStatuses(ctx.projectRoot);
+      collectUiEndpoints()
+        .then((uis) => sendJson(res, 200, { services, uis }))
+        .catch(() => sendJson(res, 200, { services, uis: { docsSpecPresent: false, items: [] } }));
+      return;
+    }
+
+    if (pathname === "/api/ui-endpoints") {
+      collectUiEndpoints()
+        .then((uis) => sendJson(res, 200, uis))
+        .catch(() => sendJson(res, 200, { docsSpecPresent: false, items: [] }));
       return;
     }
 
@@ -484,17 +867,23 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
     }
 
     if (pathname === "/api/commands") {
-      sendJson(res, 200, { commands: collectCommands(ctx) });
+      sendJson(res, 200, { commands: collectCommands(ctx, runningCommands) });
       return;
     }
 
     if (pathname === "/api/run/stream") {
       const parsed = new URL(url, "http://localhost");
       const command = parsed.searchParams.get("command") ?? "";
-      const knownCommands = new Set(collectCommands(ctx).map((c) => c.name));
+      const commands = collectCommands(ctx, runningCommands);
+      const commandInfo = commands.find((item) => item.name === command);
+      const knownCommands = new Set(commands.map((c) => c.name));
 
       if (!command || BLOCKED_COMMANDS.has(command) || !knownCommands.has(command)) {
         sendJson(res, 400, { error: `Command '${command}' cannot be invoked from the dashboard.` });
+        return;
+      }
+      if (!commandInfo?.canRun) {
+        sendJson(res, 409, { error: commandInfo?.blockedReason ?? `Command '${command}' is currently blocked.` });
         return;
       }
 
@@ -511,6 +900,13 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
         stdio: ["ignore", "pipe", "pipe"],
         env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" },
       });
+      if (child.pid) {
+        runningCommands.set(command, {
+          command,
+          pid: child.pid,
+          startedAt: new Date().toISOString(),
+        });
+      }
 
       res.write(`data: ${JSON.stringify({ type: "start", command, pid: child.pid })}\n\n`);
 
@@ -537,11 +933,13 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       pipeStream(child.stderr, "stderr");
 
       child.on("close", (code) => {
+        runningCommands.delete(command);
         res.write(`data: ${JSON.stringify({ type: "exit", code: code ?? 1, success: code === 0 })}\n\n`);
         res.end();
       });
 
       child.on("error", (err) => {
+        runningCommands.delete(command);
         res.write(`data: ${JSON.stringify({ type: "stderr", line: `Failed to start process: ${(err as Error).message}` })}\n\n`);
         res.write(`data: ${JSON.stringify({ type: "exit", code: 1, success: false })}\n\n`);
         res.end();

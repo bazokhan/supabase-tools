@@ -54,6 +54,16 @@ export function RunnerPage() {
   };
 
   const runCommand = (name: string) => {
+    const commandInfo = commands.find((item) => item.name === name);
+    if (!commandInfo?.canRun) {
+      patchState(name, (prev) => ({
+        ...prev,
+        status: "error",
+        exitCode: 1,
+        lines: [...prev.lines, { type: "stderr", line: commandInfo?.blockedReason ?? "Command is currently blocked." }],
+      }));
+      return;
+    }
     eventSourcesRef.current.get(name)?.close();
     eventSourcesRef.current.delete(name);
     patchState(name, { status: "running", lines: [], exitCode: undefined });
@@ -142,7 +152,8 @@ export function RunnerPage() {
               const isRunning = state.status === "running";
               const hasOutput = state.lines.length > 0;
               const isDestructive = cmd.name === "migrate" || cmd.name.includes("apply");
-              const isLongRunning = cmd.name === "watch";
+              const isLongRunning = cmd.longRunning;
+              const disabledReason = cmd.blockedReason;
 
               return (
                 <div
@@ -155,8 +166,12 @@ export function RunnerPage() {
                         <code className="run-cmd-name">{cmd.name}</code>
                         {isDestructive && <Badge tone="warn">Modifies DB</Badge>}
                         {isLongRunning && <Badge tone="default">Runs until cancelled</Badge>}
+                        {cmd.running && <Badge tone="accent">Active pid {cmd.running.pid}</Badge>}
+                        {cmd.missingPlugins.length > 0 && <Badge tone="warn">Plugin required</Badge>}
+                        {cmd.missingServices.length > 0 && <Badge tone="warn">Service required</Badge>}
                       </div>
                       <p className="run-card-desc">{cmd.description}</p>
+                      {disabledReason ? <p className="run-card-desc run-card-warning">{disabledReason}</p> : null}
                     </div>
 
                     <div className="run-card-actions">
@@ -172,7 +187,7 @@ export function RunnerPage() {
                           Cancel
                         </button>
                       ) : (
-                        <button type="button" className="btn-primary-sm" onClick={() => runCommand(cmd.name)}>
+                        <button type="button" className="btn-primary-sm" onClick={() => runCommand(cmd.name)} disabled={!cmd.canRun}>
                           Run ▶
                         </button>
                       )}
