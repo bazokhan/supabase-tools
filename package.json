@@ -15,7 +15,7 @@
     "clean": "npm run clean --workspaces",
     "release": "npm run build && changeset publish",
     "test:scripts": "tsx testing-scripts/index.ts",
-    "test": "vitest run --config packages/sdk/vitest.config.ts && vitest run --config packages/core/vitest.config.ts && vitest run --config packages/plugin-erd/vitest.config.ts && vitest run --config packages/plugin-typegen/vitest.config.ts && vitest run --config packages/plugin-db-test/vitest.config.ts && vitest run --config packages/plugin-depgraph/vitest.config.ts && vitest run --config packages/plugin-migration-audit/vitest.config.ts && vitest run --config packages/plugin-frontend-usage/vitest.config.ts && vitest run --config packages/plugin-deno-functions/vitest.config.ts",
+    "test": "vitest run --config packages/sdk/vitest.config.ts && vitest run --config packages/core/vitest.config.ts && vitest run --config packages/plugin-erd/vitest.config.ts && vitest run --config packages/plugin-typegen/vitest.config.ts && vitest run --config packages/plugin-db-test/vitest.config.ts && vitest run --config packages/plugin-depgraph/vitest.config.ts && vitest run --config packages/plugin-migration-audit/vitest.config.ts && vitest run --config packages/plugin-frontend-usage/vitest.config.ts && vitest run --config packages/plugin-deno-functions/vitest.config.ts && vitest run --config packages/plugin-migration-studio/vitest.config.ts",
     "test:watch": "vitest --config packages/core/vitest.config.ts",
     "lint:conventions": "tsx scripts/lint-conventions.ts",
     "docs:dev": "vitepress dev docs",

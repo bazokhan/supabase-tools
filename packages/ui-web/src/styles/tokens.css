@@ -2246,6 +2246,10 @@ a.dropdown-service-item {
   font-size: 0.82rem;
 }
 
+.run-card-warning {
+  color: var(--warning);
+}
+
 .run-card-actions {
   display: flex;
   align-items: center;
@@ -2295,6 +2299,12 @@ a.dropdown-service-item {
   background: var(--accent-hover);
 }
 
+.btn-primary-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: color-mix(in srgb, var(--accent) 55%, #999);
+}
+
 .btn-danger-sm {
   border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
   border-radius: var(--radius-sm);
@@ -2309,6 +2319,88 @@ a.dropdown-service-item {
 
 .btn-danger-sm:hover {
   background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.plugin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-16);
+}
+
+.plugin-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-16);
+  background: var(--surface-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.plugin-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-8);
+  align-items: flex-start;
+}
+
+.plugin-card-head h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.plugin-card-head p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+}
+
+.plugin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-10);
+  margin-top: var(--space-4);
+}
+
+.plugin-install-hint {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.service-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-14);
+}
+
+.service-link-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-14);
+  background: var(--surface-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.service-link-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.service-open-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.run-card-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  padding: 0 var(--space-12) var(--space-10);
 }
 
 .run-log-surface {

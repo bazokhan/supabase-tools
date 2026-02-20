@@ -5,20 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ui, SbtError } from "@sbtools/sdk";
 import { config } from "../config.js";
-
-/** Well-known @sbtools plugins with descriptions. */
-const BUILTIN_PLUGINS: Array<{ name: string; desc: string }> = [
-  { name: "@sbtools/plugin-erd", desc: "ERD diagram generator" },
-  { name: "@sbtools/plugin-migration-studio", desc: "SQL editor; apply migrations from browser" },
-  { name: "@sbtools/plugin-migration-audit", desc: "Migration drift detection" },
-  { name: "@sbtools/plugin-depgraph", desc: "TS function/table dependency graph" },
-  { name: "@sbtools/plugin-typegen", desc: "Generate TS types from Supabase" },
-  { name: "@sbtools/plugin-db-test", desc: "pgTAP runner via PGlite" },
-  { name: "@sbtools/plugin-logs", desc: "Docker logs + pg_stat_statements viewer" },
-  { name: "@sbtools/plugin-deno-functions", desc: "Scan and document Edge Functions" },
-  { name: "@sbtools/plugin-frontend-usage", desc: "Scan frontend Supabase SDK usage" },
-  { name: "@sbtools/plugin-scaffold", desc: "Generate plugin boilerplate" },
-];
+import { BUILTIN_PLUGINS } from "../lib/plugin-catalog.js";
 
 interface PluginEntry {
   path: string;

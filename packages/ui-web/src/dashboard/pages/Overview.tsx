@@ -45,6 +45,7 @@ const ENTITY_ICONS: Record<string, React.ReactNode> = {
   dependency_graph:  <Network size={ICON_SIZE} />,
   frontend_usage:    <Monitor size={ICON_SIZE} />,
   erd_diagrams:      <Share2 size={ICON_SIZE} />,
+  studio_intent_entities: <GitMerge size={ICON_SIZE} />,
 };
 
 function getEntityIcon(name: string): React.ReactNode {

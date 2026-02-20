@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export interface AtlasData {
   meta?: { timestamp?: string; database_url?: string; postgres_version?: string; object_counts?: Record<string, number> };
@@ -12,18 +12,24 @@ export function useAtlasData(base = DEFAULT_BASE) {
   const [data, setData] = useState<AtlasData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const refresh = useCallback(() => setRefreshToken((v) => v + 1), []);
 
   useEffect(() => {
+    setLoading(true);
     const url = `${base}/api/atlas-data`;
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error(`Failed to load atlas data: ${r.status}`);
         return r.json();
       })
-      .then(setData)
+      .then((next) => {
+        setData(next);
+        setError(null);
+      })
       .catch((e) => setError((e as Error).message))
       .finally(() => setLoading(false));
-  }, [base]);
+  }, [base, refreshToken]);
 
-  return { data, loading, error };
+  return { data, loading, error, refresh };
 }

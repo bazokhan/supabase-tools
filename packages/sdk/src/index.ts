@@ -142,3 +142,33 @@ export { COMPOSE_DB_FILE, COMPOSE_API_DOCS_FILE } from "./constants.js";
 // Templates
 export { snapshotFileHeader } from "./templates.js";
 
+// Studio platform types (intent graph, workflow, release gate)
+export type {
+  ManagedStatus,
+  SourceOrigin,
+  ManagedScope,
+  ColumnNode,
+  ConstraintNode,
+  IndexNode,
+  EntityNode,
+  ViewNode,
+  TriggerNode,
+  PolicyNode,
+  ArgSpec,
+  FunctionNode,
+  EndpointNode,
+  InfraNode,
+  OpaqueBlock,
+  IntentGraph,
+  ArtifactRef,
+  GatePolicy,
+  WorkflowContext,
+  WorkflowStep,
+  StepResult,
+  WorkflowStatus,
+  WorkflowRun,
+  GateReason,
+  Acknowledgement,
+  ReleaseGate,
+} from "./studio-types.js";
+

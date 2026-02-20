@@ -34,7 +34,11 @@
       "Bash(docker ps:*)",
       "mcp__MCP_DOCKER__browser_snapshot",
       "WebSearch",
-      "WebFetch(domain:registry.npmjs.org)"
+      "WebFetch(domain:registry.npmjs.org)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm ls:*)",
+      "Bash(vitest run:*)",
+      "Bash(echo:*)"
     ]
   }
 }

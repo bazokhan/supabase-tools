@@ -151,6 +151,40 @@ Produces `migration.analysis` artifact. Detail pages at `{docsOutput}/migration-
 
 Requires DB for schema introspection (falls back to atlas-data/artifact when unreachable).
 
+#### Brownfield Adoption
+
+| Command | Description |
+|---------|-------------|
+| `studio-introspect` | Query live DB → `studio.schema.snapshot` artifact |
+| `studio-sql-parse` | Parse migration files → `studio.sql.ast` artifact |
+| `studio-adopt` | Full adoption workflow (introspect → sql-parse → review → intent-sync → approve → intent-init) |
+| `studio-intent-patch --entity <id> --action <exclude\|set-status> [--status <managed\|assisted>]` | Mutate a single entity's managed-status in the intent graph |
+| `studio-endpoint-map` | Derive PostgREST `EndpointNode` declarations for all managed entities/functions |
+
+#### Scaffold Tools (Generate Layer)
+
+| Command | Description |
+|---------|-------------|
+| `studio-create-table --schema <s> --name <n> [--columns <json>] [--no-rls]` | Generate `CREATE TABLE` migration |
+| `studio-add-column --entity <schema.table> --name <col> --type <type> [--nullable] [--default <val>]` | Generate `ALTER TABLE ... ADD COLUMN` migration (requires intent graph) |
+| `studio-add-rls-policy --entity <id> --name <n> --command <SELECT\|INSERT\|...> --roles <r>` | Generate `CREATE POLICY` migration |
+| `studio-add-index --entity <id> --name <n> --columns <cols> [--unique] [--method <btree\|...>]` | Generate `CREATE INDEX` migration |
+| `studio-add-constraint --entity <id> --name <n> --type <fk\|unique\|check> [--options...]` | Generate `ALTER TABLE ... ADD CONSTRAINT` migration |
+| `studio-add-function --schema <s> --name <n> --returns <type> --language <sql\|plpgsql> --body-file <path>` | Generate `CREATE OR REPLACE FUNCTION` migration |
+| `studio-create-rpc --name <n> --returns <type> --language <sql\|plpgsql> --body-file <path>` | Same as add-function, forces `schema: public` |
+| `studio-create-view --schema <s> --name <n> --query "SELECT ..."` | Generate `CREATE OR REPLACE VIEW` migration |
+| `studio-greenfield-init` | Initialize an empty intent graph for a new project (no DB introspection needed) |
+
+#### Validation Tools (Validate Layer)
+
+| Command | Description |
+|---------|-------------|
+| `studio-rls-check` | RLS coverage check — gap analysis per managed entity → `studio.rls.plan` + `studio.rls.report` |
+| `studio-rpc-lint` | Function security audit (DEFINER/search_path/exposure) → `studio.rpc.plan` |
+| `studio-migration-plan` | Intent graph diff → ordered SQL change plan → `studio.migration.plan` |
+| `studio-lint` | Migration file lint (destructive ops, naming, lock safety) → `studio.migration.lint` |
+| `studio-release-gate` | Aggregate RLS/RPC/lint findings → pass/fail → `studio.release.gate` |
+
 ### plugin-logs
 
 | Command | Description |

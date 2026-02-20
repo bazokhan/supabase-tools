@@ -57,6 +57,7 @@ export default defineConfig({
           { text: "plugin-logs", link: "/plugins/plugin-logs" },
           { text: "plugin-migration-audit", link: "/plugins/plugin-migration-audit" },
           { text: "plugin-migration-studio", link: "/plugins/plugin-migration-studio" },
+          { text: "↳ Studio Platform", link: "/plugins/plugin-migration-studio-platform" },
           { text: "plugin-scaffold", link: "/plugins/plugin-scaffold" },
           { text: "plugin-typegen", link: "/plugins/plugin-typegen" },
           { text: "docs (built-in)", link: "/plugins/plugin-docs-server" },

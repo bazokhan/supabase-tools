@@ -24,6 +24,7 @@ const SECTION_ICONS: Record<string, React.ComponentType<IconProps>> = {
   migration_audit: IconFile,
   dependency_graph: IconTable,
   frontend_usage: IconFile,
+  studio_intent_entities: IconTable,
 };
 
 export function getSectionIcon(section: string): React.ComponentType<IconProps> {
