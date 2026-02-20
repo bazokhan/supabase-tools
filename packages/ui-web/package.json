@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/ui-web",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Shared React UI renderer package for supabase-tools web pages.",
   "type": "module",
   "exports": {

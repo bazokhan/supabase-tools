@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/plugin-erd",
-  "version": "0.6.1",
+  "version": "0.8.0",
   "description": "ERD diagram generation plugin for supabase-tools.",
   "type": "module",
   "exports": {
@@ -35,7 +35,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sbtools/sdk": "^0.6.0",
+    "@sbtools/sdk": "^0.8.0",
     "pg": "^8.13.0"
   },
   "devDependencies": {
