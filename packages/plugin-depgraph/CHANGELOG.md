@@ -1,5 +1,19 @@
 # @sbtools/plugin-depgraph
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [00287ca]
+- Updated dependencies [00287ca]
+- Updated dependencies [00287ca]
+- Updated dependencies [00287ca]
+- Updated dependencies [00287ca]
+- Updated dependencies [00287ca]
+- Updated dependencies [00287ca]
+  - @sbtools/ui-web@0.8.0
+  - @sbtools/sdk@0.8.0
+
 ## 0.7.0
 
 ### Patch Changes

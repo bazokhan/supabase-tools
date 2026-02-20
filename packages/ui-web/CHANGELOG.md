@@ -1,5 +1,149 @@
 # @sbtools/ui-web
 
+## 0.8.0
+
+### Minor Changes
+
+- 00287ca: Migration Studio Phase 10: intent graph mutation + endpoint mapping
+
+  **New tools:**
+
+  - `intent-patch` — mutates a single entity's `managedStatus` in the intent graph; supports `exclude` (adds to `managedScope.explicitExclusions`) and `set-status` actions
+  - `endpoint-map` — derives `EndpointNode` declarations from the intent graph: `table-crud` endpoints for managed entities (with `allowedRoles` from associated policies), `rpc` endpoints for managed public-schema functions; writes results back into the intent graph artifact
+
+  **New HTTP routes (studio server port 3335):**
+
+  - `POST /api/studio/intent-graph/entity` — patch entity classification
+  - `POST /api/studio/endpoint-map` — run endpoint derivation
+
+  **New CLI commands:**
+
+  - `sbt studio-intent-patch --entity <schema.table> --action exclude|set-status [--status ...]`
+  - `sbt studio-endpoint-map`
+
+  **Dashboard Adoption page** — entity table is now interactive: each row shows a color-coded status badge, a "Manage" button (promote to managed), and an "Exclude" button. A "Map Endpoints" button above the table triggers endpoint derivation and shows the resulting count.
+
+- 00287ca: Migration Studio Platform Phase 11: full vision complete
+
+  **New tool — `generate-create-view`:**
+
+  - `src/tools/generate-create-view.ts` — generates `CREATE OR REPLACE VIEW schema.name AS <query>;` migration files; no intent graph required
+
+  **New CLI command:**
+
+  - `sbt studio-create-view --schema public --name <name> --query "SELECT ..."`
+
+  **New HTTP route:**
+
+  - `POST /api/studio/scaffold/create-view` — calls `runCreateView`
+
+  **Apply improvements (Layer 5 — Apply):**
+
+  - Audit log: after a successful `POST /api/apply`, writes a `studio.apply.log` artifact (`appliedAt`, `output`, `success`) so there is always a record of the most recent apply
+  - Snapshot staleness check: if a `studio.migration.plan` artifact exists at apply time, recomputes the current snapshot hash and includes `snapshotStale: true` in the response when the snapshot has changed since the plan was generated — warns without blocking
+
+  **Schema Builder UI (Layer 2 — Design):**
+
+  - `FunctionBuilder` component — schema, name, params (add/remove rows), return type, language (sql/plpgsql), security (invoker/definer), inline body textarea, live SQL preview; calls `POST /api/studio/scaffold/add-function`
+  - `RpcBuilder` component — same as FunctionBuilder but forces `schema: public` and calls `POST /api/studio/scaffold/create-rpc`
+  - `ViewBuilder` component — schema, name, SELECT query textarea, live SQL preview; calls `POST /api/studio/scaffold/create-view`
+
+  All three builders appear in the Schema Builder page below the existing Table and Policy builders.
+
+  **New artifact constant:**
+
+  - `STUDIO_ARTIFACTS.APPLY_LOG` — `studio.apply.log` artifact for apply audit records
+
+  This completes the full platform vision: all five layers (Understand → Design → Generate → Validate → Apply) are now fully implemented.
+
+- 00287ca: Migration Studio Platform Phase 5 — CLI, HTTP routes, scaffold tools, Adoption dashboard page
+
+  **`@sbtools/plugin-migration-studio`**
+
+  - feat: CLI commands — `studio-introspect`, `studio-sql-parse`, `studio-adopt`, `studio-add-column`, `studio-add-function`, `studio-create-rpc`
+  - feat: HTTP routes on port 3335 — `/api/studio/introspect`, `/api/studio/sql-parse`, `/api/studio/intent-graph`, `/api/studio/adopt/*`, `/api/studio/scaffold/*`
+  - feat: scaffold tools — `generate-add-column`, `generate-add-function`, `generate-create-rpc` (write migration files to `supabase/migrations/`)
+  - feat: `getAtlasData()` — contributes `studio_intent_entities` to atlas for overview integration
+  - feat: `getDashboardView()` — add Intent Graph section with entity table
+
+  **`@sbtools/ui-web`**
+
+  - feat: Adoption page — workflow status, Start/Resume/Restart, step table, intent graph entity table; fetches from studio server (port 3335)
+  - feat: add Adoption nav item and route; visible when migration_studio plugin loaded
+
+- 00287ca: Phase 8 — Schema Builder: visual dashboard page for designing tables and RLS policies.
+
+  **New dashboard page** at `/schema-builder` (nav: "Schema Builder", icon: wrench, visible when migration-studio plugin is active):
+
+  **New Table builder:**
+
+  - Schema + table name inputs
+  - Column editor table with add/remove rows; per-column: name, type (12 common PG types), nullable, primary key, default
+  - Enable RLS checkbox (default: on)
+  - Live SQL preview updated on every keystroke (client-side, no HTTP call)
+  - "Generate Migration" → `POST /api/studio/scaffold/create-table` → writes timestamped `.sql` file to `supabase/migrations/`; success badge shows filename
+
+  **Add RLS Policy builder:**
+
+  - Table input (e.g. `public.users`), policy name, command (SELECT/INSERT/UPDATE/DELETE/ALL), roles (comma-separated), permissive toggle
+  - USING / WITH CHECK expression inputs shown/hidden based on command (INSERT never shows USING; SELECT/DELETE never show WITH CHECK)
+  - Live SQL preview
+  - "Generate Migration" → `POST /api/studio/scaffold/add-rls-policy` → same file-write flow
+
+  **Model + routing changes (`packages/ui-web`):**
+
+  - `RouteName` extended with `"builder"`
+  - `PluginAvailability` extended with `builder: boolean` (true when studio plugin active)
+  - `NavItem.icon` extended with `"builder"`
+  - New route prefix `/schema-builder` → `builder`
+  - Nav item: "Schema Builder" / "Design tables and RLS policies visually"
+  - `Wrench` icon from lucide-react
+
+  Layer 2 (Design) now at ~40%.
+
+- 00287ca: Phase 9 — Greenfield Workflow + Gate Enforcement.
+
+  **`@sbtools/plugin-migration-studio`:**
+
+  New tool `studio-greenfield-init` (`tools/greenfield-init.ts`):
+
+  - Creates an empty `studio.intent.graph` artifact with `mode: 'greenfield'` and zero entities
+  - No DB connection required — works from day one on fresh projects
+  - CLI: `sbt studio-greenfield-init`
+  - HTTP: `POST /api/studio/greenfield-init`
+
+  Gate enforcement in `POST /api/apply`:
+
+  - Reads `studio.release.gate` artifact before proceeding
+  - If gate `status: 'fail'` → 422 response with `gateBlocked: true` and the list of blocking issues; apply is prevented
+  - If no gate artifact → apply proceeds normally but response includes `gateWarning` advising the user to run `studio-release-gate` before production applies
+  - Passing gate → apply proceeds unchanged
+
+  **`@sbtools/ui-web` (Schema Builder page):**
+
+  New **Project Setup** panel (top of `/schema-builder`):
+
+  - Fetches intent graph status on load from `GET /api/studio/intent-graph`
+  - Shows mode badge (Greenfield / Brownfield managed / Brownfield assisted) and entity count when a graph exists
+  - When no graph is found: displays "Initialize Greenfield Project" button → calls `POST /api/studio/greenfield-init` → refreshes status
+
+  New **Release Gate** panel (bottom of `/schema-builder`):
+
+  - "Run Gate" button → calls `POST /api/studio/release-gate`
+  - Displays PASS/FAIL badge, lists blocking issues (red) and warnings (amber) inline
+  - Gives developers a one-click pre-apply validation check without leaving the dashboard
+
+  Layer 3 (Generate) and Layer 5 (Apply) are now at ~100% and ~80% respectively.
+
+### Patch Changes
+
+- 00287ca: Improve first-run dashboard usability and operations visibility.
+
+  - Allow operational routes (Migration Studio, Commands, Plugins, Services) to render even when atlas data is missing.
+  - Add dashboard plugin management APIs and UI for add/enable/disable/remove with install/load status visibility.
+  - Add command prerequisite and runtime-state metadata so runner buttons are status-aware and prevent duplicate singleton launches.
+  - Add Services page with Docker status plus reachable local UI endpoints (Supabase Studio, docs UIs, migration studio).
+
 ## 0.7.0
 
 ### Minor Changes

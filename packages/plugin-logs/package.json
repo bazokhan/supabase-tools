@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/plugin-logs",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Docker log tailing, pg_stat_statements, and log viewer plugin for supabase-tools.",
   "type": "module",
   "exports": {
@@ -35,8 +35,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sbtools/sdk": "^0.6.0",
-    "@sbtools/ui-web": "^0.7.0"
+    "@sbtools/sdk": "^0.8.0",
+    "@sbtools/ui-web": "^0.8.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"
