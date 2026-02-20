@@ -1,5 +1,6 @@
 import React from "react";
 import { Badge } from "../components/Badge";
+import { useDashboardEvents } from "../hooks/useDashboardEvents";
 import { useCommands, type CommandInfo } from "../hooks/useCommands";
 
 interface RunLogEntry {
@@ -14,9 +15,13 @@ interface RunState {
 }
 
 type RunEvent =
-  | { type: "start"; command: string; pid: number }
+  | { type: "start"; command: string; args?: string[]; pid: number }
   | { type: "stdout" | "stderr"; line: string }
   | { type: "exit"; code: number; success: boolean };
+
+function runKey(command: string, args: string[] = []): string {
+  return `${command}::${args.join("\u0001")}`;
+}
 
 function groupByCategory(commands: CommandInfo[]): Array<{ category: string; commands: CommandInfo[] }> {
   const map = new Map<string, CommandInfo[]>();
@@ -29,34 +34,35 @@ function groupByCategory(commands: CommandInfo[]): Array<{ category: string; com
 }
 
 export function RunnerPage() {
-  const { commands, loading, error } = useCommands();
+  const { commands, loading, error, refresh } = useCommands();
   const [runStates, setRunStates] = React.useState<Map<string, RunState>>(new Map());
   const eventSourcesRef = React.useRef<Map<string, EventSource>>(new Map());
   const logRefsMap = React.useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const getState = (name: string): RunState =>
-    runStates.get(name) ?? { status: "idle", lines: [] };
+  const getState = (key: string): RunState =>
+    runStates.get(key) ?? { status: "idle", lines: [] };
 
-  const patchState = (name: string, patch: Partial<RunState> | ((prev: RunState) => RunState)) => {
+  const patchState = (key: string, patch: Partial<RunState> | ((prev: RunState) => RunState)) => {
     setRunStates((prev) => {
       const next = new Map(prev);
-      const current = prev.get(name) ?? { status: "idle", lines: [] };
-      next.set(name, typeof patch === "function" ? patch(current) : { ...current, ...patch });
+      const current = prev.get(key) ?? { status: "idle", lines: [] };
+      next.set(key, typeof patch === "function" ? patch(current) : { ...current, ...patch });
       return next;
     });
   };
 
-  const scrollToBottom = (name: string) => {
+  const scrollToBottom = (key: string) => {
     setTimeout(() => {
-      const el = logRefsMap.current.get(name);
+      const el = logRefsMap.current.get(key);
       if (el) el.scrollTop = el.scrollHeight;
     }, 0);
   };
 
-  const runCommand = (name: string) => {
+  const runCommand = (name: string, args: string[] = []) => {
     const commandInfo = commands.find((item) => item.name === name);
+    const key = runKey(name, args);
     if (!commandInfo?.canRun) {
-      patchState(name, (prev) => ({
+      patchState(key, (prev) => ({
         ...prev,
         status: "error",
         exitCode: 1,
@@ -64,30 +70,31 @@ export function RunnerPage() {
       }));
       return;
     }
-    eventSourcesRef.current.get(name)?.close();
-    eventSourcesRef.current.delete(name);
-    patchState(name, { status: "running", lines: [], exitCode: undefined });
+    eventSourcesRef.current.get(key)?.close();
+    eventSourcesRef.current.delete(key);
+    patchState(key, { status: "running", lines: [], exitCode: undefined });
 
-    const es = new EventSource(`/api/run/stream?command=${encodeURIComponent(name)}`);
-    eventSourcesRef.current.set(name, es);
+    const es = new EventSource(`/api/run/stream?command=${encodeURIComponent(name)}&args=${encodeURIComponent(JSON.stringify(args))}`);
+    eventSourcesRef.current.set(key, es);
 
     es.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data as string) as RunEvent;
         if (data.type === "exit") {
           es.close();
-          eventSourcesRef.current.delete(name);
-          patchState(name, (prev) => ({
+          eventSourcesRef.current.delete(key);
+          patchState(key, (prev) => ({
             ...prev,
             status: data.success ? "success" : "error",
             exitCode: data.code,
           }));
+          refresh();
         } else if (data.type === "stdout" || data.type === "stderr") {
-          patchState(name, (prev) => ({
+          patchState(key, (prev) => ({
             ...prev,
             lines: [...prev.lines, { type: data.type as "stdout" | "stderr", line: data.line }],
           }));
-          scrollToBottom(name);
+          scrollToBottom(key);
         }
       } catch {
         // Ignore malformed event
@@ -96,24 +103,32 @@ export function RunnerPage() {
 
     es.onerror = () => {
       es.close();
-      eventSourcesRef.current.delete(name);
-      patchState(name, (prev) => ({
+      eventSourcesRef.current.delete(key);
+      patchState(key, (prev) => ({
         ...prev,
         status: "error",
         exitCode: 1,
         lines: [...prev.lines, { type: "stderr", line: "Connection lost." }],
       }));
+      refresh();
     };
   };
 
-  const cancelCommand = (name: string) => {
-    eventSourcesRef.current.get(name)?.close();
-    eventSourcesRef.current.delete(name);
-    patchState(name, (prev) => ({
+  const stopCommand = (name: string, args: string[] = []) => {
+    const key = runKey(name, args);
+    fetch("/api/run/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command: name, args }),
+    }).catch(() => undefined);
+    eventSourcesRef.current.get(key)?.close();
+    eventSourcesRef.current.delete(key);
+    patchState(key, (prev) => ({
       ...prev,
       status: "idle",
-      lines: [...prev.lines, { type: "stderr", line: "Cancelled." }],
+      lines: [...prev.lines, { type: "stderr", line: "Stop requested." }],
     }));
+    refresh();
   };
 
   React.useEffect(() => {
@@ -122,6 +137,14 @@ export function RunnerPage() {
       for (const es of sources.values()) es.close();
     };
   }, []);
+
+  useDashboardEvents(
+    React.useCallback((event) => {
+      if (event.type === "command:started" || event.type === "command:finished" || event.type === "command:stopping") {
+        refresh();
+      }
+    }, [refresh]),
+  );
 
   if (loading) {
     return (
@@ -148,8 +171,10 @@ export function RunnerPage() {
           <h3 className="runner-category-title">{category}</h3>
           <div className="runner-command-list">
             {cmds.map((cmd) => {
-              const state = getState(cmd.name);
-              const isRunning = state.status === "running";
+              const primaryArgs = cmd.variants[0]?.args ?? [];
+              const key = runKey(cmd.name, primaryArgs);
+              const state = getState(key);
+              const isRunning = state.status === "running" || Boolean(cmd.running);
               const hasOutput = state.lines.length > 0;
               const isDestructive = cmd.name === "migrate" || cmd.name.includes("apply");
               const isLongRunning = cmd.longRunning;
@@ -182,24 +207,40 @@ export function RunnerPage() {
                           {state.status === "error" && `✗ Exit ${state.exitCode ?? 1}`}
                         </span>
                       )}
-                      {isRunning ? (
-                        <button type="button" className="btn-danger-sm" onClick={() => cancelCommand(cmd.name)}>
-                          Cancel
+                      {isRunning && cmd.supportsStop ? (
+                        <button type="button" className="btn-danger-sm" onClick={() => stopCommand(cmd.name, cmd.running?.args ?? primaryArgs)}>
+                          Stop
                         </button>
                       ) : (
-                        <button type="button" className="btn-primary-sm" onClick={() => runCommand(cmd.name)} disabled={!cmd.canRun}>
+                        <button type="button" className="btn-primary-sm" onClick={() => runCommand(cmd.name, primaryArgs)} disabled={!cmd.canRun}>
                           Run ▶
                         </button>
                       )}
                     </div>
                   </div>
 
+                  {cmd.variants.length > 1 && (
+                    <div className="run-card-variants">
+                      {cmd.variants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          className="btn"
+                          onClick={() => runCommand(cmd.name, variant.args)}
+                          disabled={!cmd.canRun && variant.args[0] !== "stop"}
+                        >
+                          {variant.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {hasOutput && (
                     <div
                       className="run-log-surface"
                       ref={(el) => {
-                        if (el) logRefsMap.current.set(cmd.name, el);
-                        else logRefsMap.current.delete(cmd.name);
+                        if (el) logRefsMap.current.set(key, el);
+                        else logRefsMap.current.delete(key);
                       }}
                     >
                       {state.lines.map((entry, i) => (

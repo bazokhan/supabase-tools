@@ -34,13 +34,14 @@ This document is the **single source of truth** for official artifact IDs in sup
 | `studio.sql.ast` | plugin-migration-studio | 1.0.0 | Active | Migration file parse results — per-file AST, extracted intent nodes, aggregated entity/policy/function arrays |
 | `studio.intent.sync-report` | plugin-migration-studio | 1.0.0 | Active | Confidence-scored match between DB snapshot and SQL AST; matched, unmatchedDb, unmatchedIntent lists |
 | `studio.intent.graph` | plugin-migration-studio | 1.0.0 | Active | Final intent graph — managed/assisted/opaque entity nodes, opaque blocks, managed scope declaration |
-| `studio.rls.plan` | plugin-migration-studio | 1.0.0 | Planned | RLS policy plan for managed entities |
-| `studio.rls.report` | plugin-migration-studio | 1.0.0 | Planned | RLS policy application report |
-| `studio.rpc.plan` | plugin-migration-studio | 1.0.0 | Planned | RPC/function generation plan |
-| `studio.migration.plan` | plugin-migration-studio | 1.0.0 | Planned | Migration generation plan from intent graph diff |
-| `studio.migration.lint` | plugin-migration-studio | 1.0.0 | Planned | Migration lint results (destructive ops, missing transactions, etc.) |
-| `studio.release.gate` | plugin-migration-studio | 1.0.0 | Planned | Release gate decision — go/no-go with blocking issues |
+| `studio.rls.plan` | plugin-migration-studio | 1.0.0 | Active | RLS policy plan for managed entities — proposed policies, coverage gaps |
+| `studio.rls.report` | plugin-migration-studio | 1.0.0 | Active | RLS coverage report — per-entity gap analysis, SECURITY DEFINER warnings |
+| `studio.rpc.plan` | plugin-migration-studio | 1.0.0 | Active | RPC/function security audit — DEFINER_NO_SEARCH_PATH, public exposure, empty body |
+| `studio.migration.plan` | plugin-migration-studio | 1.0.0 | Active | Ordered SQL change plan with change-class annotations; includes `snapshotHash` |
+| `studio.migration.lint` | plugin-migration-studio | 1.0.0 | Active | Migration lint results — destructive ops, missing transactions, naming violations |
+| `studio.release.gate` | plugin-migration-studio | 1.0.0 | Active | Release gate decision — pass/fail with blocking reasons; read by `POST /api/apply` |
 | `studio.workflow.run` | plugin-migration-studio | 1.0.0 | Active | Workflow run state — step results, status, timestamps, current step pointer |
+| `studio.apply.log` | plugin-migration-studio | 1.0.0 | Active | Apply audit record — `appliedAt`, truncated `output`, `success`; written after every successful apply |
 | `typescript.schema-types` | plugin-typegen | — | Optional | Typegen output metadata (path, hash, timestamp) |
 | `depgraph.graph` | plugin-depgraph | 1.0.0 | Producing | Dependency graph |
 | `frontend.usage` | plugin-frontend-usage | 1.0.0 | Producing | Frontend usage scan results |

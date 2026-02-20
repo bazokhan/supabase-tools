@@ -1,5 +1,6 @@
 import React from "react";
 import { Badge } from "../components/Badge";
+import { useDashboardEvents } from "../hooks/useDashboardEvents";
 import { usePlugins, type PluginItem } from "../hooks/usePlugins";
 
 function statusRows(item: PluginItem): Array<{ label: string; tone: "good" | "warn" | "bad" | "default" }> {
@@ -15,14 +16,35 @@ export function PluginsPage() {
   const { plugins, loading, error, busyPlugin, act, refresh } = usePlugins();
   const [message, setMessage] = React.useState<string>("");
 
-  const doAction = async (plugin: string, action: "add" | "remove" | "enable" | "disable") => {
+  const doAction = async (
+    plugin: string,
+    action: "add" | "remove" | "enable" | "disable",
+    options?: { install?: boolean },
+  ) => {
     try {
-      const result = await act(plugin, action);
-      setMessage(result.message + (result.restartRequired ? " Restart `sbt dashboard` to reload plugin runtime." : ""));
+      const result = await act(plugin, action, options);
+      const installLine = result.install?.attempted
+        ? result.install.success
+          ? " npm install completed."
+          : ` npm install failed: ${result.install.error ?? "unknown error"}.`
+        : "";
+      setMessage(
+        result.message +
+        installLine +
+        (result.restartRequired ? " Restart `sbt dashboard` to reload plugin runtime." : ""),
+      );
     } catch (e) {
       setMessage((e as Error).message);
     }
   };
+
+  useDashboardEvents(
+    React.useCallback((event) => {
+      if (typeof event.type === "string" && event.type.startsWith("plugins:")) {
+        refresh();
+      }
+    }, [refresh]),
+  );
 
   if (loading) {
     return <section className="panel"><p className="empty-state">Loading plugins...</p></section>;
@@ -68,6 +90,7 @@ export function PluginsPage() {
               {!item.installed ? <p className="plugin-install-hint"><code>npm install {item.name}</code></p> : null}
               <div className="plugin-actions">
                 <button type="button" className="btn-primary-sm" disabled={!canAdd || busy} onClick={() => doAction(item.name, "add")}>Add</button>
+                <button type="button" className="btn-primary-sm" disabled={!canAdd || busy || !item.name.startsWith("@")} onClick={() => doAction(item.name, "add", { install: true })}>Add + Install</button>
                 <button type="button" className="btn-primary-sm" disabled={!canEnable || busy} onClick={() => doAction(item.name, "enable")}>Enable</button>
                 <button type="button" className="btn" disabled={!canDisable || busy} onClick={() => doAction(item.name, "disable")}>Disable</button>
                 <button type="button" className="btn-danger-sm" disabled={!canRemove || busy} onClick={() => doAction(item.name, "remove")}>Remove</button>

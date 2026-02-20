@@ -1,11 +1,20 @@
 import React from "react";
 import { AppDataTable } from "../components/AppDataTable";
 import { Badge } from "../components/Badge";
+import { useDashboardEvents } from "../hooks/useDashboardEvents";
 import { toRows, type AtlasRow } from "../lib/model";
 import { useServices } from "../hooks/useServices";
 
 export function ServicesPage() {
   const { services, uiEndpoints, docsSpecPresent, loading, error, refresh } = useServices();
+
+  useDashboardEvents(
+    React.useCallback((event) => {
+      if (event.type === "command:finished" || event.type === "command:started" || event.type === "command:stopping") {
+        refresh();
+      }
+    }, [refresh]),
+  );
 
   if (loading) {
     return <section className="panel"><p className="empty-state">Loading services...</p></section>;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export interface ServiceItem {
   service: string;
@@ -22,7 +22,7 @@ export function useServices() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = () =>
+  const refresh = useCallback(() =>
     fetch("/api/services")
       .then((r) => {
         if (!r.ok) throw new Error(`Failed to load services: ${r.status}`);
@@ -38,13 +38,13 @@ export function useServices() {
         setError(null);
       })
       .catch((e) => setError((e as Error).message))
-      .finally(() => setLoading(false));
+      .finally(() => setLoading(false)), []);
 
   useEffect(() => {
     refresh();
     const interval = setInterval(refresh, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refresh]);
 
   return { services, uiEndpoints, docsSpecPresent, loading, error, refresh };
 }

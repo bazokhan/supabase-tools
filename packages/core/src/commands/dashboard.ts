@@ -1,7 +1,7 @@
 /**
  * dashboard command — Serve the React dashboard SPA with API routes.
  */
-import { execSync, spawn, type ChildProcess } from "node:child_process";
+import { execSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
@@ -163,9 +163,12 @@ interface ConfigFile {
 }
 
 interface RunningCommand {
+  key: string;
   command: string;
+  args: string[];
   pid: number;
   startedAt: string;
+  child: ChildProcess;
 }
 
 interface CommandRule {
@@ -175,16 +178,22 @@ interface CommandRule {
   singleton?: boolean;
 }
 
+interface CommandVariant {
+  id: string;
+  label: string;
+  args: string[];
+}
+
 const COMMAND_RULES: Record<string, CommandRule> = {
-  start: { singleton: true, longRunning: true },
-  stop: { singleton: true },
-  restart: { singleton: true },
+  start: {},
+  stop: {},
+  restart: {},
   status: {},
   migrate: { requiresServices: ["db"] },
   snapshot: { requiresServices: ["db"] },
   watch: { requiresServices: ["db"], singleton: true, longRunning: true },
   "generate-atlas": {},
-  docs: { singleton: true, longRunning: true },
+  docs: {},
   dashboard: { singleton: true, longRunning: true },
   init: {},
   plugin: {},
@@ -201,6 +210,16 @@ const COMMAND_RULES: Record<string, CommandRule> = {
   "deno-functions": { requiresPlugins: ["@sbtools/plugin-deno-functions"] },
   "frontend-usage": { requiresPlugins: ["@sbtools/plugin-frontend-usage"] },
   "plugin-scaffold": { requiresPlugins: ["@sbtools/plugin-scaffold"] },
+};
+
+const COMMAND_VARIANTS: Record<string, CommandVariant[]> = {
+  docs: [
+    { id: "docs-all", label: "Start docs", args: [] },
+    { id: "docs-swagger", label: "Swagger", args: ["swagger"] },
+    { id: "docs-redoc", label: "ReDoc", args: ["redoc"] },
+    { id: "docs-schemaspy", label: "SchemaSpy", args: ["schemaspy"] },
+    { id: "docs-stop", label: "Stop docs", args: ["stop"] },
+  ],
 };
 
 function resolveDashboardDir(): string {
@@ -362,6 +381,40 @@ function readJsonBody<T>(req: http.IncomingMessage): Promise<T> {
     });
     req.on("error", reject);
   });
+}
+
+function commandKey(command: string, args: string[]): string {
+  return `${command}::${args.join("\u0001")}`;
+}
+
+function installPluginPackage(projectRoot: string, pluginName: string): {
+  attempted: boolean;
+  success: boolean;
+  output: string;
+  error?: string;
+} {
+  if (!isPackageName(pluginName)) {
+    return {
+      attempted: false,
+      success: false,
+      output: "",
+      error: "Automatic install is only supported for npm package plugins.",
+    };
+  }
+
+  const result = spawnSync("npm", ["install", pluginName], {
+    cwd: projectRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    shell: process.platform === "win32",
+  });
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim();
+  return {
+    attempted: true,
+    success: (result.status ?? 1) === 0,
+    output: output.slice(-4000),
+    error: (result.status ?? 1) === 0 ? undefined : `npm install exited with ${result.status ?? 1}`,
+  };
 }
 
 function collectDashboardSections(ctx: PluginContext): DashboardSectionDef[] {
@@ -560,7 +613,7 @@ function resolveErdDir(ctx: PluginContext): string {
   return path.join(ctx.paths.docsOutput, "entity-relations");
 }
 
-const BLOCKED_COMMANDS = new Set(["dashboard", "docs", "init"]);
+const BLOCKED_COMMANDS = new Set(["dashboard", "init"]);
 
 function findSbtBin(projectRoot: string): string {
   const ext = process.platform === "win32" ? ".cmd" : "";
@@ -591,7 +644,9 @@ function collectCommands(
   missingServices: string[];
   longRunning: boolean;
   singleton: boolean;
-  running: RunningCommand | null;
+  running: { key: string; command: string; args: string[]; pid: number; startedAt: string } | null;
+  variants: CommandVariant[];
+  supportsStop: boolean;
   canRun: boolean;
   blockedReason: string | null;
 }> {
@@ -619,7 +674,7 @@ function collectCommands(
     });
     const requiresServices = rule.requiresServices ?? [];
     const missingServices = requiresServices.filter((service) => !serviceStatusMap.get(service));
-    const active = running.get(command.name) ?? null;
+    const active = Array.from(running.values()).find((entry) => entry.command === command.name) ?? null;
 
     let blockedReason: string | null = null;
     if (missingPlugins.length > 0) blockedReason = `Missing plugin setup: ${missingPlugins.join(", ")}`;
@@ -634,7 +689,11 @@ function collectCommands(
       missingServices,
       longRunning: Boolean(rule.longRunning),
       singleton: Boolean(rule.singleton),
-      running: active,
+      running: active
+        ? { key: active.key, command: active.command, args: active.args, pid: active.pid, startedAt: active.startedAt }
+        : null,
+      variants: COMMAND_VARIANTS[command.name] ?? [],
+      supportsStop: Boolean(rule.longRunning || command.name === "watch" || command.name === "migration-studio"),
       canRun: !blockedReason,
       blockedReason,
     };
@@ -644,6 +703,18 @@ function collectCommands(
 function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
   const atlasDataPath = path.join(ctx.paths.docsOutput, "backend-atlas-data.json");
   const runningCommands = new Map<string, RunningCommand>();
+  const eventClients = new Set<http.ServerResponse>();
+
+  const emitEvent = (type: string, payload?: Record<string, unknown>) => {
+    const message = JSON.stringify({ type, at: new Date().toISOString(), ...(payload ?? {}) });
+    for (const client of eventClients) {
+      try {
+        client.write(`data: ${message}\n\n`);
+      } catch {
+        eventClients.delete(client);
+      }
+    }
+  };
 
   const collectUiEndpoints = async () => {
     const cfg = readConfigFile(ctx.projectRoot);
@@ -724,7 +795,7 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
     }
 
     if (pathname === "/api/plugins" && req.method === "POST") {
-      readJsonBody<{ action?: "add" | "remove" | "enable" | "disable"; plugin?: string }>(req)
+      readJsonBody<{ action?: "add" | "remove" | "enable" | "disable"; plugin?: string; install?: boolean }>(req)
         .then((body) => {
           const action = body.action;
           const pluginName = String(body.plugin ?? "").trim();
@@ -734,13 +805,24 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
           }
 
           const result = applyPluginAction(ctx.projectRoot, action, pluginName);
+          const installResult = action === "add" && body.install === true
+            ? installPluginPackage(ctx.projectRoot, pluginName)
+            : null;
           const pluginState = collectPluginState(ctx).find((plugin) => plugin.name === pluginName);
+          emitEvent("plugins:changed", { action, plugin: pluginName, changed: result.changed });
+          if (installResult?.attempted) {
+            emitEvent("plugins:installed", {
+              plugin: pluginName,
+              success: installResult.success,
+            });
+          }
           sendJson(res, 200, {
             ok: true,
             changed: result.changed,
             message: result.message,
             restartRequired: result.changed,
             installHint: isPackageName(pluginName) ? `npm install ${pluginName}` : null,
+            install: installResult,
             plugin: pluginState ?? null,
           });
         })
@@ -860,9 +942,13 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       });
-      res.write("data: {\"type\":\"init\"}\n\n");
+      eventClients.add(res);
+      res.write(`data: ${JSON.stringify({ type: "init", at: new Date().toISOString() })}\n\n`);
       const interval = setInterval(() => res.write(": ping\n\n"), 30000);
-      req.on("close", () => clearInterval(interval));
+      req.on("close", () => {
+        clearInterval(interval);
+        eventClients.delete(res);
+      });
       return;
     }
 
@@ -871,12 +957,49 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       return;
     }
 
+    if (pathname === "/api/run/stop" && req.method === "POST") {
+      readJsonBody<{ command?: string; args?: string[] }>(req)
+        .then((body) => {
+          const command = String(body.command ?? "").trim();
+          const args = Array.isArray(body.args) ? body.args.map((entry) => String(entry)) : [];
+          const key = commandKey(command, args);
+          const active = runningCommands.get(key);
+          if (!active) {
+            sendJson(res, 404, { error: `No running process found for '${command}'.` });
+            return;
+          }
+
+          try {
+            active.child.kill("SIGTERM");
+          } catch {
+            // ignore
+          }
+
+          sendJson(res, 200, { ok: true, message: `Stopping '${command}'.` });
+          emitEvent("command:stopping", { command, args });
+        })
+        .catch((err) => sendJson(res, 400, { error: (err as Error).message }));
+      return;
+    }
+
     if (pathname === "/api/run/stream") {
       const parsed = new URL(url, "http://localhost");
       const command = parsed.searchParams.get("command") ?? "";
+      const argsRaw = parsed.searchParams.get("args");
+      let runArgs: string[] = [];
+      if (argsRaw) {
+        try {
+          const parsedArgs = JSON.parse(argsRaw) as unknown;
+          if (Array.isArray(parsedArgs)) runArgs = parsedArgs.map((entry) => String(entry));
+        } catch {
+          sendJson(res, 400, { error: "Invalid args payload." });
+          return;
+        }
+      }
       const commands = collectCommands(ctx, runningCommands);
       const commandInfo = commands.find((item) => item.name === command);
       const knownCommands = new Set(commands.map((c) => c.name));
+      const key = commandKey(command, runArgs);
 
       if (!command || BLOCKED_COMMANDS.has(command) || !knownCommands.has(command)) {
         sendJson(res, 400, { error: `Command '${command}' cannot be invoked from the dashboard.` });
@@ -894,21 +1017,25 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       });
 
       const bin = findSbtBin(ctx.projectRoot);
-      const child = spawn(bin, [command], {
+      const child = spawn(bin, [command, ...runArgs], {
         cwd: ctx.projectRoot,
         shell: true,
         stdio: ["ignore", "pipe", "pipe"],
         env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" },
       });
       if (child.pid) {
-        runningCommands.set(command, {
+        runningCommands.set(key, {
+          key,
           command,
+          args: runArgs,
           pid: child.pid,
           startedAt: new Date().toISOString(),
+          child,
         });
       }
 
-      res.write(`data: ${JSON.stringify({ type: "start", command, pid: child.pid })}\n\n`);
+      emitEvent("command:started", { command, args: runArgs, pid: child.pid ?? null });
+      res.write(`data: ${JSON.stringify({ type: "start", command, args: runArgs, pid: child.pid })}\n\n`);
 
       const pipeStream = (stream: NodeJS.ReadableStream | null, streamType: "stdout" | "stderr") => {
         if (!stream) return;
@@ -933,20 +1060,23 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
       pipeStream(child.stderr, "stderr");
 
       child.on("close", (code) => {
-        runningCommands.delete(command);
+        runningCommands.delete(key);
+        emitEvent("command:finished", {
+          command,
+          args: runArgs,
+          code: code ?? 1,
+          success: code === 0,
+        });
         res.write(`data: ${JSON.stringify({ type: "exit", code: code ?? 1, success: code === 0 })}\n\n`);
         res.end();
       });
 
       child.on("error", (err) => {
-        runningCommands.delete(command);
+        runningCommands.delete(key);
+        emitEvent("command:finished", { command, args: runArgs, code: 1, success: false });
         res.write(`data: ${JSON.stringify({ type: "stderr", line: `Failed to start process: ${(err as Error).message}` })}\n\n`);
         res.write(`data: ${JSON.stringify({ type: "exit", code: 1, success: false })}\n\n`);
         res.end();
-      });
-
-      req.on("close", () => {
-        try { child.kill("SIGTERM"); } catch { /* ignore */ }
       });
       return;
     }

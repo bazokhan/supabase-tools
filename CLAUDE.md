@@ -55,7 +55,7 @@ This repo uses `@changesets/cli`. Create changesets for any package whose public
 | `@sbtools/core` | CLI entry point, command registry, plugin loader, snapshot/generate/dashboard/watch/migrate commands, HTTP server |
 | `@sbtools/ui-web` | React SPA (Vite) + HTML renderers; served by core's dashboard command from `dist/dashboard/` |
 | `@sbtools/plugin-erd` | Mermaid ERD generation; contributes `erd_diagrams` to atlas data and ERD page to dashboard |
-| `@sbtools/plugin-migration-studio` | CodeMirror SQL editor; apply migrations from browser; SQL AST parsing via `@supabase/pg-parser`; artifact writers; brownfield adoption tools (introspect, sql-parse, intent-sync, intent-init); workflow engine |
+| `@sbtools/plugin-migration-studio` | CodeMirror SQL editor; apply migrations from browser; SQL AST parsing via `@supabase/pg-parser`; artifact writers; brownfield adoption tools (introspect, sql-parse, intent-sync, intent-init); workflow engine; scaffold tools (add-column, add-function, create-rpc, create-table, add-rls-policy, add-index, add-constraint, create-view); greenfield init; validation tools (rls-check, migration-lint, rpc-lint, migration-plan, release-gate); intent graph mutation; endpoint mapping; CLI commands; studio server (port 3335) |
 | `@sbtools/plugin-migration-audit` | Audit migration files vs DB tracking table; detect drift |
 | `@sbtools/plugin-depgraph` | TypeScript function/table dependency graph |
 | `@sbtools/plugin-typegen` | Generate TS types from Supabase `/pg/generators/typescript` |
@@ -84,8 +84,25 @@ packages/plugin-migration-studio/src/
   tools/sql-parse.ts      – migration files → AST extraction → studio.sql.ast
   tools/intent-sync.ts    – DB vs SQL confidence scoring → studio.intent.sync-report
   tools/intent-init.ts    – build IntentGraph from sync report → studio.intent.graph
+  tools/generate-add-column.ts  – ADD COLUMN migration from intent graph entity
+  tools/generate-add-function.ts – CREATE FUNCTION migration
+  tools/generate-create-rpc.ts – RPC migration (schema: public)
+  tools/generate-create-table.ts – CREATE TABLE migration
+  tools/generate-add-rls-policy.ts – CREATE POLICY migration
+  tools/generate-add-index.ts – CREATE INDEX migration
+  tools/generate-add-constraint.ts – ALTER TABLE ADD CONSTRAINT migration
+  tools/generate-create-view.ts – CREATE OR REPLACE VIEW migration
+  tools/greenfield-init.ts – initialize intent graph for a greenfield project
+  tools/rls-check.ts      – RLS coverage check against intent graph
+  tools/migration-lint.ts – risk flags, naming violations, lock-safety checks
+  tools/rpc-lint.ts       – function security audit (authz, search_path, input validation)
+  tools/migration-plan.ts – ordered SQL change plan with change-class annotations
+  tools/release-gate.ts   – aggregated pass/fail gate with blocking reasons
+  tools/intent-patch.ts   – mutate entity managed-status in the intent graph
+  tools/endpoint-map.ts   – map PostgREST endpoints from intent graph entities/functions
   engine/runner.ts        – sequential pipeline runner (startWorkflow, resumeWorkflow)
   workflows/adopt-backend.ts – 4-step brownfield adoption workflow definition
+  server.ts               – HTTP server on 3335; studio API routes (introspect, adopt, scaffold, validate, apply)
 
 packages/core/src/
   cli.ts              – entry; parses argv, loads plugins, dispatches commands
@@ -109,7 +126,7 @@ packages/ui-web/src/
   dashboard/App.tsx          – main router; dark mode; search
   dashboard/hooks/           – useAtlasData, useDashboardConfig, useCommands, usePlugins, useServices
   dashboard/lib/model.ts     – route parsing, search indexing, nav building
-  dashboard/pages/           – Overview, Details, Migrations, MigrationStudio, Depgraph, Logs, FrontendUsage, Erd, Runner, Plugins, Services
+  dashboard/pages/           – Overview, Details, Migrations, MigrationStudio, Depgraph, Logs, FrontendUsage, Erd, Runner, Adoption, SchemaBuilder, Plugins, Services
   renderers/                 – standalone HTML page generators (migration-audit, depgraph, logs-viewer)
 ```
 
@@ -163,13 +180,49 @@ interface PluginContext {
 | `GET /api/dashboard-config` | plugin-contributed section definitions |
 | `GET /api/services` | Docker service statuses + local UI endpoint reachability |
 | `GET /api/plugins` | built-in + configured plugin state (configured/enabled/installed/loaded) |
-| `POST /api/plugins` | plugin config actions (`add`, `remove`, `enable`, `disable`) |
+| `POST /api/plugins` | plugin config actions (`add`, `remove`, `enable`, `disable`), optional `add+install` |
 | `GET /api/commands` | runnable command list with prerequisites and running-state metadata |
+| `POST /api/run/stop` | stop a running long-lived command started from dashboard |
+| `GET /api/events` | SSE event stream for plugin/command state changes |
 | `GET /api/logs/stream` | SSE Docker log stream |
 | `GET /api/fs/list` | snapshot/migrations/docs directory listing |
 | `GET /api/fs/file` | raw file content |
 | `GET /dependency-graph.html` | serves generated depgraph HTML from docsOutput |
 | `GET /migration-audit.html` | serves generated audit HTML from docsOutput |
+
+### Migration Studio API Routes (port 3335, plugin-migration-studio/server.ts)
+
+| Route | Returns |
+|---|---|
+| `GET /api/schema` | Live DB schema (tables, columns, policies, functions) |
+| `GET /api/templates` | Migration template list |
+| `GET /api/migrations` | Migration file list |
+| `POST /api/analyze` | SQL analysis (parse + validate) |
+| `POST /api/validate` | SQL validation against live schema |
+| `POST /api/save` | Save SQL to a migration file |
+| `POST /api/apply` | Apply pending migrations; includes `snapshotStale` flag and writes `studio.apply.log` |
+| `POST /api/studio/introspect` | `{ entities, policies, infrastructure }` counts |
+| `POST /api/studio/sql-parse` | `{ files, totalStatements, totalOpaqueBlocks }` |
+| `GET /api/studio/intent-graph` | Full `IntentGraph` or `null` |
+| `GET /api/studio/adopt/status` | `WorkflowRun` or `{ status: 'not_started' }` |
+| `POST /api/studio/adopt/start` | `WorkflowRun` after checkpoint/completion |
+| `POST /api/studio/adopt/resume` | `WorkflowRun` after next checkpoint/completion |
+| `POST /api/studio/scaffold/add-column` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/add-function` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/create-rpc` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/create-table` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/add-rls-policy` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/add-index` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/add-constraint` | `{ sql, filename }` |
+| `POST /api/studio/scaffold/create-view` | `{ sql, filename }` |
+| `POST /api/studio/greenfield-init` | `{ mode, entities }` |
+| `POST /api/studio/intent-graph/entity` | `IntentPatchResult` |
+| `POST /api/studio/endpoint-map` | `{ entityEndpoints, rpcEndpoints, total }` |
+| `POST /api/studio/rls-check` | `{ report, plan }` |
+| `POST /api/studio/migration-lint` | `MigrationLintData` |
+| `POST /api/studio/rpc-lint` | `RpcPlanData` |
+| `POST /api/studio/migration-plan` | `MigrationPlanData` |
+| `POST /api/studio/release-gate` | `ReleaseGateData` |
 
 ### Build & Scripts
 

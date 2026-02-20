@@ -12,6 +12,7 @@ import {
   Server,
   Share2,
   SquareTerminal,
+  Wrench,
 } from "lucide-react";
 import {
   IconBack,
@@ -25,6 +26,7 @@ import { Dropdown } from "./components/Dropdown";
 import { ShellLoadingSkeleton } from "./components/Skeleton";
 import { Tooltip } from "./components/Tooltip";
 import { useAtlasData } from "./hooks/useAtlasData";
+import { useDashboardEvents } from "./hooks/useDashboardEvents";
 import { useDashboardConfig } from "./hooks/useDashboardConfig";
 import {
   buildSearchIndex,
@@ -50,6 +52,8 @@ import { NotFoundPage } from "./pages/NotFound";
 import { OverviewPage } from "./pages/Overview";
 import { PluginsPage } from "./pages/Plugins";
 import { RunnerPage } from "./pages/Runner";
+import { AdoptionPage } from "./pages/Adoption";
+import { SchemaBuilderPage } from "./pages/SchemaBuilder";
 import { ServicesPage } from "./pages/Services";
 
 const DARK_STORAGE_KEY = "sbt-dashboard-dark";
@@ -79,6 +83,10 @@ function NavIcon({ item }: { item: NavItem }) {
       return <Plug size={16} />;
     case "services":
       return <Server size={16} />;
+    case "adoption":
+      return <GitMerge size={16} />;
+    case "builder":
+      return <Wrench size={16} />;
     default:
       return <LayoutDashboard size={16} />;
   }
@@ -106,12 +114,36 @@ function routeActions(route: RouteName): Array<{ label: string; href: string; ic
       { label: "Swagger", href: "http://localhost:8081", icon: <IconExternal size={14} /> },
     ];
   }
+  if (route === "adoption") {
+    return [{ label: "Studio Server", href: "http://localhost:3335", icon: <IconExternal size={14} /> }];
+  }
+  if (route === "builder") {
+    return [{ label: "Studio Server", href: "http://localhost:3335", icon: <IconExternal size={14} /> }];
+  }
   return [];
 }
 
 export function App() {
   const atlas = useAtlasData();
   const dashboard = useDashboardConfig();
+
+  const handleDashboardEvent = React.useCallback((event: { type?: string }) => {
+    const type = event.type ?? "";
+    if (type.startsWith("plugins:")) {
+      dashboard.refresh();
+      return;
+    }
+    if (type === "command:finished") {
+      atlas.refresh();
+      dashboard.refresh();
+      return;
+    }
+    if (type === "command:started" || type === "command:stopping") {
+      return;
+    }
+  }, [atlas.refresh, dashboard.refresh]);
+
+  useDashboardEvents(handleDashboardEvent);
 
   const [dark, setDark] = React.useState(getInitialDark);
   const [route, setRoute] = React.useState<RouteName>(() => normalizePath(window.location.pathname));
@@ -195,7 +227,7 @@ export function App() {
   const title = route === "notfound" ? "Not Found" : activeNav?.label ?? "Details";
   const subtitle = route === "notfound" ? "Unknown dashboard route" : activeNav?.subtitle ?? "Detailed object view";
   const searchParams = new URLSearchParams(window.location.search);
-  const atlasOptionalRoute = route === "runner" || route === "studio" || route === "plugins" || route === "services";
+  const atlasOptionalRoute = route === "runner" || route === "studio" || route === "plugins" || route === "services" || route === "adoption" || route === "builder";
 
   return (
     <div className="app-shell">
@@ -401,6 +433,10 @@ export function App() {
               <RunnerPage />
             ) : route === "studio" ? (
               <MigrationStudioPage categories={categories} onOpenDetail={openDetail} enabled={availability.studio} />
+            ) : route === "adoption" ? (
+              <AdoptionPage />
+            ) : route === "builder" ? (
+              <SchemaBuilderPage />
             ) : route === "plugins" ? (
               <PluginsPage />
             ) : route === "services" ? (
@@ -440,6 +476,8 @@ export function App() {
               <DependenciesPage categories={categories} onOpenDetail={openDetail} enabled={availability.depgraph} />
             ) : route === "studio" ? (
               <MigrationStudioPage categories={categories} onOpenDetail={openDetail} enabled={availability.studio} />
+            ) : route === "adoption" ? (
+              <AdoptionPage />
             ) : route === "logs" ? (
               <LogsPage categories={categories} enabled={availability.logs} />
             ) : route === "frontend" ? (

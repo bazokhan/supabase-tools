@@ -4,7 +4,7 @@ import { resolve } from "./field-resolver";
 export type AtlasRow = Record<string, unknown>;
 export type CategoryMap = Record<string, unknown[]>;
 
-export type RouteName = "overview" | "migrations" | "studio" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "plugins" | "services" | "details" | "notfound";
+export type RouteName = "overview" | "migrations" | "studio" | "depgraph" | "logs" | "frontend" | "erd" | "runner" | "plugins" | "services" | "adoption" | "builder" | "details" | "notfound";
 
 export interface SearchHit {
   id: string;
@@ -20,7 +20,7 @@ export interface NavItem {
   label: string;
   subtitle: string;
   enabled: boolean;
-  icon: "home" | "migrations" | "studio" | "graph" | "logs" | "frontend" | "erd" | "runner" | "plugins" | "services";
+  icon: "home" | "migrations" | "studio" | "graph" | "logs" | "frontend" | "erd" | "runner" | "plugins" | "services" | "adoption" | "builder";
 }
 
 export interface PluginAvailability {
@@ -32,6 +32,8 @@ export interface PluginAvailability {
   erd: boolean;
   plugins: boolean;
   services: boolean;
+  adoption: boolean;
+  builder: boolean;
 }
 
 export interface GraphNode {
@@ -63,6 +65,8 @@ const ROUTE_PREFIXES: Array<{ route: RouteName; prefix: string }> = [
   { route: "runner", prefix: "/runner" },
   { route: "plugins", prefix: "/plugins" },
   { route: "services", prefix: "/services" },
+  { route: "adoption", prefix: "/adoption" },
+  { route: "builder", prefix: "/schema-builder" },
   { route: "details", prefix: "/details" },
 ];
 
@@ -71,11 +75,12 @@ function hasSection(sections: DashboardSectionDef[], predicate: (section: Dashbo
 }
 
 export function inferPluginAvailability(categories: CategoryMap, sections: DashboardSectionDef[]): PluginAvailability {
+  const hasStudio = hasSection(sections, (section) => section.id === "migration_studio");
   return {
     migrations:
       Boolean(categories.migration_audit?.length) ||
       hasSection(sections, (section) => section.dataKey === "migration_audit" || section.id.includes("migration")),
-    studio: hasSection(sections, (section) => section.id.includes("migration_studio") || section.id.includes("studio")),
+    studio: hasStudio,
     depgraph:
       Boolean(categories.dependency_graph?.length) ||
       hasSection(sections, (section) => section.dataKey === "dependency_graph" || section.id.includes("depgraph")),
@@ -88,6 +93,8 @@ export function inferPluginAvailability(categories: CategoryMap, sections: Dashb
       hasSection(sections, (section) => section.dataKey === "erd_diagrams" || section.id === "erd"),
     plugins: true,
     services: true,
+    adoption: hasStudio,
+    builder: hasStudio,
   };
 }
 
@@ -149,6 +156,22 @@ export function getNavItems(availability: PluginAvailability): NavItem[] {
       subtitle: "Run sbt commands and stream output",
       enabled: true,
       icon: "runner",
+    },
+    {
+      route: "adoption",
+      path: "/adoption",
+      label: "Adoption",
+      subtitle: "Brownfield adoption workflow",
+      enabled: availability.adoption,
+      icon: "adoption",
+    },
+    {
+      route: "builder",
+      path: "/schema-builder",
+      label: "Schema Builder",
+      subtitle: "Design tables and RLS policies visually",
+      enabled: availability.builder,
+      icon: "builder",
     },
     {
       route: "plugins",

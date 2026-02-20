@@ -27,4 +27,6 @@ export const STUDIO_ARTIFACTS = {
   RELEASE_GATE: { id: "studio.release.gate", version: "1.0.0" },
   /** Workflow run state: step status, timestamps, artifact refs. */
   WORKFLOW_RUN: { id: "studio.workflow.run", version: "1.0.0" },
+  /** Apply log: record of the most recent successful migration apply. */
+  APPLY_LOG: { id: "studio.apply.log", version: "1.0.0" },
 } as const;

@@ -2323,18 +2323,18 @@ a.dropdown-service-item {
 
 .plugin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: var(--space-12);
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-16);
 }
 
 .plugin-card {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: var(--space-14);
+  padding: var(--space-16);
   background: var(--surface-soft);
   display: flex;
   flex-direction: column;
-  gap: var(--space-10);
+  gap: var(--space-12);
 }
 
 .plugin-card-head {
@@ -2358,7 +2358,8 @@ a.dropdown-service-item {
 .plugin-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-8);
+  gap: var(--space-10);
+  margin-top: var(--space-4);
 }
 
 .plugin-install-hint {
@@ -2368,18 +2369,18 @@ a.dropdown-service-item {
 
 .service-link-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--space-10);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-14);
 }
 
 .service-link-card {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: var(--space-12);
+  padding: var(--space-14);
   background: var(--surface-soft);
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-10);
 }
 
 .service-link-head {
@@ -2393,6 +2394,13 @@ a.dropdown-service-item {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+}
+
+.run-card-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  padding: 0 var(--space-12) var(--space-10);
 }
 
 .run-log-surface {

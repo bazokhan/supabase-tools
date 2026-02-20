@@ -1,16 +1,76 @@
 ---
-description: Understand your existing Postgres/Supabase backend. Brownfield adoption workflow — introspect, parse, confidence-score, and map what's managed vs opaque.
+description: Full-stack backend design platform — understand, design, generate, validate, and apply schema changes with confidence.
 ---
 
 # Migration Studio Platform
 
 [![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-studio.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-studio)
 
-The Migration Studio Platform transforms the SQL editor into a **workflow-driven backend platform**. It adds a layer on top of raw SQL authoring: structured tools that inspect your live database and migration history, understand what they contain, and build a typed *intent graph* that records what the platform knows how to manage safely.
+The Migration Studio Platform is a workflow-driven backend design system that replaces raw SQL authoring with structured intent. It covers five layers:
 
-This page covers the **brownfield adoption toolchain** — the part that works with existing schemas. If you have a Supabase project already in production and want to understand it programmatically, these are the tools for you.
+1. **Understand** — Introspect your live DB and parse migrations into a confidence-scored *intent graph*
+2. **Design** — Visual Schema Builder in the dashboard (tables, policies, functions, RPCs, views)
+3. **Generate** — Scaffold tools write migration files from intent; no raw SQL authoring needed
+4. **Validate** — RLS coverage check, migration lint, RPC security audit, release gate
+5. **Apply** — Gate-enforced apply with snapshot staleness detection and audit log
 
-## What it does
+Works for both brownfield (existing Postgres/Supabase projects) and greenfield (start from scratch).
+
+## Quick Start
+
+**Brownfield (existing project):**
+```bash
+sbt studio-adopt          # introspect DB + parse migrations → intent graph
+sbt studio-rls-check      # check RLS coverage
+sbt studio-release-gate   # gate: pass/fail
+sbt migration-studio      # open editor, apply
+```
+
+**Greenfield (new project):**
+```bash
+sbt studio-greenfield-init            # create empty intent graph
+# open dashboard → Schema Builder → design tables and policies
+sbt studio-release-gate               # run gate
+sbt migration-studio                  # apply
+```
+
+## Commands
+
+### Layer 1 — Understand
+
+| Command | Description |
+|---------|-------------|
+| `studio-introspect` | Query live DB → `studio.schema.snapshot` |
+| `studio-sql-parse` | Parse migration files → `studio.sql.ast` |
+| `studio-adopt` | Full adoption workflow (introspect → sql-parse → review → intent-sync → approve → intent-init) |
+| `studio-intent-patch --entity <id> --action <exclude\|set-status> [--status managed\|assisted]` | Mutate a single entity's managed-status in the intent graph |
+| `studio-endpoint-map` | Derive PostgREST `EndpointNode` declarations for all managed entities and public-schema functions |
+
+### Layer 2 — Generate
+
+| Command | Description |
+|---------|-------------|
+| `studio-greenfield-init` | Initialize an empty intent graph (mode: `greenfield`) |
+| `studio-create-table --schema <s> --name <n> [--no-rls]` | `CREATE TABLE` migration |
+| `studio-add-column --entity <schema.table> --name <col> --type <type> [--nullable] [--default <val>]` | `ALTER TABLE ... ADD COLUMN` (requires intent graph) |
+| `studio-add-rls-policy --entity <id> --name <n> --command <SELECT\|...> --roles <r> [--using <expr>]` | `CREATE POLICY` migration |
+| `studio-add-index --entity <id> --name <n> --columns <cols> [--unique]` | `CREATE INDEX` migration |
+| `studio-add-constraint --entity <id> --name <n> --type <fk\|unique\|check>` | `ALTER TABLE ... ADD CONSTRAINT` |
+| `studio-add-function --schema <s> --name <n> --returns <type> --language <sql\|plpgsql> --body-file <path>` | `CREATE OR REPLACE FUNCTION` |
+| `studio-create-rpc --name <n> --returns <type> --language <sql\|plpgsql> --body-file <path>` | Same as add-function, forces `schema: public` |
+| `studio-create-view --schema <s> --name <n> --query "SELECT ..."` | `CREATE OR REPLACE VIEW` |
+
+### Layer 4 — Validate
+
+| Command | Description |
+|---------|-------------|
+| `studio-rls-check` | RLS coverage check per managed entity → `studio.rls.plan` + `studio.rls.report` |
+| `studio-rpc-lint` | Function security audit (DEFINER/search_path/exposure) → `studio.rpc.plan` |
+| `studio-migration-plan` | Diff intent graph vs DB snapshot, classify changes → `studio.migration.plan` |
+| `studio-lint` | Lint migration files (destructive ops, naming, lock safety) → `studio.migration.lint` |
+| `studio-release-gate` | Aggregate all findings → pass/fail decision → `studio.release.gate` |
+
+## Pipeline
 
 ```
 Live DB ──────────────────► introspect ──────► studio.schema.snapshot
@@ -208,41 +268,126 @@ Builds the intent graph from the sync report. High-confidence entities become `m
 }
 ```
 
-## Running the adoption workflow
+## Running the workflow
 
-The adoption workflow is implemented as a typed pipeline definition. To run it programmatically:
+Run via CLI (`sbt studio-adopt`), dashboard Adoption page (`sbt migration-studio` then `sbt dashboard` → Adoption → Start Adoption), or API (`startWorkflow` / `resumeWorkflow` from `engine/runner.js`). The Adoption page fetches live data from the studio server (port 3335); it does not use `backend-atlas-data.json`.
 
-```ts
-import { startWorkflow, resumeWorkflow } from "@sbtools/plugin-migration-studio/src/engine/runner.js";
-import {
-  adoptBackendSteps,
-  adoptBackendRegistry,
-  ADOPT_BACKEND_WORKFLOW_ID,
-} from "@sbtools/plugin-migration-studio/src/workflows/adopt-backend.js";
+## Scaffold Tools (Layer 3 — Generate)
 
-// Start — runs introspect + sql-parse, then pauses for review
-const run = await startWorkflow(
-  ADOPT_BACKEND_WORKFLOW_ID,
-  adoptBackendSteps,
-  ctx,           // PluginContext with sbtDataDir + paths.migrations
-  adoptBackendRegistry
-);
+All scaffold tools write a timestamped `.sql` migration file to your migrations directory and return `{ sql, filename }`. No DB connection required (except `studio-add-column`, which needs the intent graph).
 
-console.log(run.status); // 'waiting_checkpoint' — paused after sql-parse
-console.log(run.steps);  // [{ stepId: 'introspect', status: 'completed' }, { stepId: 'sql-parse', status: 'completed' }]
+| Tool | Generates | Intent graph required? |
+|------|-----------|----------------------|
+| `studio-create-table` | `CREATE TABLE ... ENABLE ROW LEVEL SECURITY` | No |
+| `studio-add-column` | `ALTER TABLE ... ADD COLUMN ...` | Yes (entity must be managed) |
+| `studio-add-rls-policy` | `CREATE POLICY "..." ON ... FOR ... TO ... USING (...)` | No |
+| `studio-add-index` | `CREATE INDEX ... ON ... (...)` | No |
+| `studio-add-constraint` | `ALTER TABLE ... ADD CONSTRAINT ...` | No |
+| `studio-add-function` | `CREATE OR REPLACE FUNCTION ...` | No |
+| `studio-create-rpc` | Same as add-function, forces `schema: public` | No |
+| `studio-create-view` | `CREATE OR REPLACE VIEW schema.name AS <query>` | No |
 
-// Review .sbt/artifacts/studio.intent.sync-report/... then resume
-const completed = await resumeWorkflow(run, adoptBackendSteps, ctx, adoptBackendRegistry);
-console.log(completed.status); // 'waiting_checkpoint' — paused after intent-sync
+## Validation Tools (Layer 4 — Validate)
 
-// Approve managed scope, then resume once more
-const done = await resumeWorkflow(completed, adoptBackendSteps, ctx, adoptBackendRegistry);
-console.log(done.status); // 'completed'
+Each validation tool reads existing artifacts and produces structured findings. No DB writes.
+
+### `studio-rls-check` → `studio.rls.plan` + `studio.rls.report`
+
+For every managed entity with RLS enabled:
+- Verifies SELECT/INSERT/UPDATE/DELETE policy coverage (ALL command counts for all)
+- Flags tables with no policies at all
+- Flags SECURITY DEFINER functions that could bypass RLS
+
+### `studio-rpc-lint` → `studio.rpc.plan`
+
+For every `FunctionNode` in the intent graph:
+- `DEFINER_NO_SEARCH_PATH` — definer function without `search_path` set (SQL injection risk)
+- `DEFINER_PUBLIC_EXPOSURE` — definer function in public schema exposed to PostgREST without explicit auth guard
+- `EMPTY_FUNCTION_BODY` — function registered in intent graph with no body
+
+### `studio-migration-plan` → `studio.migration.plan`
+
+Diffs the intent graph against the live DB snapshot. Classifies each change:
+
+| Change class | Example | Safety |
+|---|---|---|
+| `additive_safe` | Add nullable column | Always safe |
+| `additive_with_default` | Add NOT NULL column with default | Safe with lock note |
+| `type_change_narrowing` | `text` → `varchar(100)` | Risky |
+| `drop` | Drop column or table | Dangerous |
+| `policy_change` | Update RLS expression | Review carefully |
+| `constraint_change` | Add FK | Table scan required |
+
+Additive changes are ordered first; destructive changes last. Includes a `snapshotHash` to detect stale plans.
+
+### `studio-lint` → `studio.migration.lint`
+
+Reads the SQL AST artifact. Checks per migration file:
+- `TRUNCATE_DETECTED` — error (blocks release gate)
+- `DROP_DETECTED` — warning
+- `DESTRUCTIVE_NO_TRANSACTION` — warning (DROP/TRUNCATE not wrapped in transaction)
+- `LOW_PARSE_CONFIDENCE` — info (high opaque block ratio)
+- `NAMING_VIOLATION` — info (filename not timestamp-prefixed)
+
+### `studio-release-gate` → `studio.release.gate`
+
+Aggregates all findings from RLS report, RPC plan, and migration lint:
+- Any lint error or RLS gap → `status: 'fail'` (blocking)
+- Any warning → gate warning (non-blocking)
+- `NO_VALIDATION` when no evidence artifacts exist
+
+`POST /api/apply` reads this artifact. If `status === 'fail'` → 422 response, apply blocked. If no gate artifact → apply proceeds with a `gateWarning` in the response.
+
+## Greenfield Workflow
+
+For new projects with no existing DB:
+
+```bash
+sbt studio-greenfield-init   # creates empty intent graph (mode: 'greenfield')
+# open dashboard → /schema-builder → design tables, policies, functions, views
+# each "Generate Migration" button writes a .sql file to your migrations dir
+sbt studio-release-gate      # validate before applying
+sbt migration-studio         # apply via browser editor
 ```
 
-::: tip CLI commands coming
-`sbt studio-adopt`, `sbt studio-introspect`, and `sbt studio-sync` commands are planned. The toolchain is infrastructure-complete; CLI wiring and HTTP API routes are next.
-:::
+## Intent Graph Mutation
+
+After the adoption workflow, you can reclassify entities without re-running the full workflow:
+
+```bash
+# Exclude a table from management (e.g. a Supabase internal table)
+sbt studio-intent-patch --entity public.audit_log --action exclude
+
+# Promote an assisted entity to managed
+sbt studio-intent-patch --entity public.orders --action set-status --status managed
+```
+
+The Adoption dashboard page provides the same functionality via per-row "Manage" and "Exclude" buttons with color-coded status badges.
+
+## Endpoint Mapping
+
+Derives PostgREST endpoint declarations from the intent graph:
+
+```bash
+sbt studio-endpoint-map
+```
+
+For each managed entity: creates a `table-crud` endpoint with `allowedRoles` derived from its RLS policies. For each managed public-schema function: creates an `rpc` endpoint. Results are written back into the intent graph as `EndpointNode[]`.
+
+## Apply (Layer 5)
+
+`POST /api/apply` in the migration studio server enforces the full apply safety chain:
+
+1. **Gate check** — reads `studio.release.gate`; blocks with 422 if `status === 'fail'`
+2. **Snapshot staleness** — reads `studio.migration.plan`'s `snapshotHash`, recomputes from current snapshot; includes `snapshotStale: true` in the response if the DB has changed since the plan was generated (non-blocking warning)
+3. **Apply** — runs migrations
+4. **Audit log** — writes `studio.apply.log` with `{ appliedAt, output, success: true }` for every successful apply
+
+## Dashboard Integration
+
+- **Adoption page** (`/adoption`) — workflow status, Start/Resume/Restart, step table, intent graph entity list with interactive status badges and "Manage"/"Exclude" buttons per row, "Map Endpoints" button. Requires `sbt migration-studio` running.
+- **Schema Builder page** (`/schema-builder`) — visual forms for creating tables, RLS policies, functions, RPCs, and views; live SQL preview; "Initialize Greenfield Project" when no intent graph exists; Release Gate panel.
+- **Overview** — intent entities appear as a tab after `sbt generate-atlas`. The plugin contributes `studio_intent_entities` via `getAtlasData()`.
 
 ## Reading the artifacts
 
@@ -250,11 +395,18 @@ All artifacts land in `.sbt/artifacts/` as `latest.json` files:
 
 ```
 .sbt/artifacts/
-  studio.schema.snapshot/1.0.0/latest.json   ← live DB state
-  studio.sql.ast/1.0.0/latest.json            ← migration file parse results
-  studio.intent.sync-report/1.0.0/latest.json ← confidence-scored match
-  studio.intent.graph/1.0.0/latest.json       ← final intent graph
-  studio.workflow.run/1.0.0/latest.json       ← run state (step results, status)
+  studio.schema.snapshot/1.0.0/latest.json        ← live DB state
+  studio.sql.ast/1.0.0/latest.json                 ← migration file parse results
+  studio.intent.sync-report/1.0.0/latest.json      ← confidence-scored match
+  studio.intent.graph/1.0.0/latest.json            ← final intent graph + endpoints
+  studio.workflow.run/1.0.0/latest.json            ← run state (step results, status)
+  studio.rls.plan/1.0.0/latest.json                ← proposed RLS policies
+  studio.rls.report/1.0.0/latest.json              ← coverage gaps and warnings
+  studio.rpc.plan/1.0.0/latest.json                ← function security findings
+  studio.migration.plan/1.0.0/latest.json          ← ordered SQL change plan
+  studio.migration.lint/1.0.0/latest.json          ← migration file lint results
+  studio.release.gate/1.0.0/latest.json            ← pass/fail release decision
+  studio.apply.log/1.0.0/latest.json               ← most recent apply record
 ```
 
 Read them from code:
@@ -297,21 +449,22 @@ if (existingRun?.status === 'waiting_checkpoint') {
 }
 ```
 
-## Artifact artifact IDs
+## Artifact IDs
 
-| Artifact | ID | Version |
-|----------|----|---------|
-| DB schema snapshot | `studio.schema.snapshot` | 1.0.0 |
-| SQL AST parse results | `studio.sql.ast` | 1.0.0 |
-| Intent graph | `studio.intent.graph` | 1.0.0 |
-| Sync report | `studio.intent.sync-report` | 1.0.0 |
-| RLS plan | `studio.rls.plan` | 1.0.0 |
-| RLS report | `studio.rls.report` | 1.0.0 |
-| RPC plan | `studio.rpc.plan` | 1.0.0 |
-| Migration plan | `studio.migration.plan` | 1.0.0 |
-| Migration lint | `studio.migration.lint` | 1.0.0 |
-| Release gate | `studio.release.gate` | 1.0.0 |
-| Workflow run | `studio.workflow.run` | 1.0.0 |
+| Artifact | ID | Version | Written by |
+|----------|----|---------|-----------|
+| DB schema snapshot | `studio.schema.snapshot` | 1.0.0 | `studio-introspect` |
+| SQL AST parse results | `studio.sql.ast` | 1.0.0 | `studio-sql-parse` |
+| Confidence sync report | `studio.intent.sync-report` | 1.0.0 | `studio-intent-sync` |
+| Intent graph | `studio.intent.graph` | 1.0.0 | `studio-intent-init`, `studio-intent-patch`, `studio-endpoint-map`, `studio-greenfield-init` |
+| Workflow run | `studio.workflow.run` | 1.0.0 | workflow engine |
+| RLS plan | `studio.rls.plan` | 1.0.0 | `studio-rls-check` |
+| RLS coverage report | `studio.rls.report` | 1.0.0 | `studio-rls-check` |
+| RPC security plan | `studio.rpc.plan` | 1.0.0 | `studio-rpc-lint` |
+| Migration change plan | `studio.migration.plan` | 1.0.0 | `studio-migration-plan` |
+| Migration lint results | `studio.migration.lint` | 1.0.0 | `studio-lint` |
+| Release gate decision | `studio.release.gate` | 1.0.0 | `studio-release-gate` |
+| Apply audit log | `studio.apply.log` | 1.0.0 | `POST /api/apply` |
 
 ## Confidence scoring explained
 
