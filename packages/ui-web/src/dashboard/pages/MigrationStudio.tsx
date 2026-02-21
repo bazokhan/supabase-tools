@@ -98,6 +98,9 @@ CREATE TABLE IF NOT EXISTS public.example (
   const [currentMigrationFilename, setCurrentMigrationFilename] = React.useState<string | null>(null);
   const [currentMigrationStatus, setCurrentMigrationStatus] = React.useState<string | null>(null);
   const [flashMessage, setFlashMessage] = React.useState("");
+  const [flashIsError, setFlashIsError] = React.useState(false);
+  const [applyBusy, setApplyBusy] = React.useState(false);
+  const [applyHadRlsGaps, setApplyHadRlsGaps] = React.useState(false);
   const editorHostRef = React.useRef<HTMLDivElement | null>(null);
   const editorViewRef = React.useRef<EditorView | null>(null);
   const schemaRef = React.useRef<StudioSchema>({});
@@ -395,16 +398,52 @@ CREATE TABLE IF NOT EXISTS public.example (
     setCurrentMigrationFilename(result.filename);
     setCurrentMigrationStatus("pending");
     setFlashMessage(`Saved ${result.filename}`);
+    setFlashIsError(false);
     await loadMigrations();
   };
 
   const applyMigrations = async () => {
     if (!connected) return;
-    const result = await requestJson<{ success: boolean; output?: string; error?: string }>(apiUrl("/api/apply"), {
-      method: "POST",
-    });
-    setOutput(result.success ? result.output ?? "Applied." : result.error ?? "Apply failed.");
-    await loadMigrations();
+    setApplyBusy(true);
+    setFlashMessage("");
+    try {
+      const res = await fetch(apiUrl("/api/apply"), { method: "POST" });
+      const data = (await res.json()) as {
+        success?: boolean;
+        output?: string;
+        error?: string;
+        gateBlocked?: boolean;
+        blocking?: Array<{ code: string; message: string }>;
+      };
+      if (res.ok && data.success) {
+        setOutput(data.output ?? "Applied.");
+        setFlashMessage("Migrations applied successfully.");
+        setFlashIsError(false);
+        setApplyHadRlsGaps(false);
+        await loadMigrations();
+      } else {
+        const msg = data.error ?? `Apply failed (${res.status})`;
+        setFlashMessage(msg);
+        setFlashIsError(true);
+        const hasRlsGaps = data.gateBlocked && data.blocking?.some((b) => b.code === "RLS_GAP");
+        setApplyHadRlsGaps(Boolean(hasRlsGaps));
+        if (data.gateBlocked && data.blocking?.length) {
+          setOutput(
+            `${msg}\n\nBlocking issues:\n` +
+            data.blocking.map((b) => `  [${b.code}] ${b.message}`).join("\n")
+          );
+        } else {
+          setOutput(msg);
+        }
+      }
+    } catch (err) {
+      const msg = (err as Error).message ?? "Apply request failed";
+      setFlashMessage(msg);
+      setFlashIsError(true);
+      setOutput(msg);
+    } finally {
+      setApplyBusy(false);
+    }
   };
 
   const loadMigration = async (filename: string, status: string) => {
@@ -453,7 +492,7 @@ CREATE TABLE IF NOT EXISTS public.example (
           <span className="studio-meta-pill">Pending {pendingCount}</span>
         </div>
         {connectionError ? <p className="studio-error-line"><Unplug size={13} /> {connectionError}</p> : null}
-        {flashMessage ? <p className="studio-flash-line">{flashMessage}</p> : null}
+        {flashMessage ? <p className={`studio-flash-line ${flashIsError ? "is-error" : ""}`}>{flashMessage}</p> : null}
       </section>
 
       <section className="panel">
@@ -470,8 +509,9 @@ CREATE TABLE IF NOT EXISTS public.example (
           <button type="button" className="btn" onClick={() => saveMigration(true)} disabled={!connected}>
             Save as new
           </button>
-          <button type="button" className="btn btn-danger" onClick={applyMigrations} disabled={!connected}>
-            <Play size={14} /> Apply migrations
+          <button type="button" className="btn btn-danger" onClick={applyMigrations} disabled={!connected || applyBusy}>
+            {applyBusy ? <Loader2 size={14} className="studio-spin" /> : <Play size={14} />}{" "}
+            {applyBusy ? "Applying…" : "Apply migrations"}
           </button>
         </div>
         <div className="chip-bar studio-template-bar">
@@ -535,6 +575,13 @@ CREATE TABLE IF NOT EXISTS public.example (
         <article className="panel">
           <h3>Apply output</h3>
           <pre className="code-block">{output || "Apply output will appear here."}</pre>
+          {applyHadRlsGaps ? (
+            <p style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
+              <a href="/schema-builder?tab=policies" style={{ color: "var(--accent)", textDecoration: "underline" }}>
+                Fix RLS gaps in Schema Builder →
+              </a>
+            </p>
+          ) : null}
         </article>
       </section>
     </div>

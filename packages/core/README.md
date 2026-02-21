@@ -44,7 +44,7 @@ Then `npm run start`, etc.
 | Docker | Must be running for `start`, `stop`, `restart`, `status`, `snapshot`, `migrate` |
 | Compose files | `docker-compose.db.yml` in toolsDir |
 | Migrations dir | `config.paths.migrations` must exist for `migrate` |
-| Snapshot meta | `supabase/current/_meta/snapshot.json` must exist for `generate-atlas` (run `sbt snapshot` first) |
+| Snapshot meta | `{paths.snapshot}/_meta/snapshot.json` must exist for `generate-atlas` (default: `.sbt/snapshot/`; run `sbt snapshot` first) |
 
 ## Plugins
 

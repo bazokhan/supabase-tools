@@ -14,8 +14,8 @@ describe("init default config structure", () => {
     const defaultConfig = {
       paths: {
         migrations: "supabase/migrations",
-        snapshot: "supabase/current",
-        docsOutput: "docs",
+        snapshot: ".sbt/snapshot",
+        docsOutput: ".sbt/docs",
         functions: "supabase/functions",
       },
       db: {

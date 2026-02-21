@@ -74,9 +74,12 @@ The studio serves a local HTTP server on port 3335 with:
 **Adoption / understanding routes:**
 - `POST /api/studio/introspect` — Introspect live DB → `studio.schema.snapshot`
 - `POST /api/studio/sql-parse` — Parse migration files → `studio.sql.ast`
+- `POST /api/studio/intent-sync` — Run confidence sync tool → `studio.intent.sync-report`
+- `POST /api/studio/intent-init` — Build intent graph from sync report → `studio.intent.graph`
 - `GET /api/studio/intent-graph` — Read current intent graph or `null`
 - `GET /api/studio/adopt/status` — Workflow run state
 - `POST /api/studio/adopt/start` / `/resume` — Run adoption workflow
+- `GET /api/studio/catalog` — Filterable catalog of discovered tools/workflows (`audience`, `mode`, `type`)
 
 **Scaffold routes (generate migration files):**
 - `POST /api/studio/scaffold/create-table`

@@ -6,7 +6,7 @@
 
 /**
  * Metadata for a database snapshot produced by db-snapshot and consumed by db-visualize.
- * Written to supabase/current/_meta/snapshot.json.
+ * Written to {snapshot}/_meta/snapshot.json (default: .sbt/snapshot/_meta/snapshot.json).
  */
 export interface SnapshotMeta {
     timestamp: string;

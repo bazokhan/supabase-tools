@@ -44,7 +44,7 @@ Run `npx sbt help` to list available commands (including installed plugins).
 
 | Command | Description |
 |---------|-------------|
-| `generate-atlas` | Generate Backend Atlas data (`docs/backend-atlas-data.json`) |
+| `generate-atlas` | Generate Backend Atlas data (`.sbt/docs/backend-atlas-data.json` by default) |
 | `init` | Generate `supabase-tools.config.json` with defaults |
 
 ### Other
@@ -158,6 +158,7 @@ Requires DB for schema introspection (falls back to atlas-data/artifact when unr
 | `studio-introspect` | Query live DB → `studio.schema.snapshot` artifact |
 | `studio-sql-parse` | Parse migration files → `studio.sql.ast` artifact |
 | `studio-adopt` | Full adoption workflow (introspect → sql-parse → review → intent-sync → approve → intent-init) |
+| `studio-catalog [--audience <backend-dev\|business\|mixed>] [--mode <managed\|assisted\|loose>] [--type <tools\|workflows\|all>]` | List discovered tools/workflows from catalog with persona/control-mode filters |
 | `studio-intent-patch --entity <id> --action <exclude\|set-status> [--status <managed\|assisted>]` | Mutate a single entity's managed-status in the intent graph |
 | `studio-endpoint-map` | Derive PostgREST `EndpointNode` declarations for all managed entities/functions |
 
@@ -183,6 +184,7 @@ Requires DB for schema introspection (falls back to atlas-data/artifact when unr
 | `studio-rpc-lint` | Function security audit (DEFINER/search_path/exposure) → `studio.rpc.plan` |
 | `studio-migration-plan` | Intent graph diff → ordered SQL change plan → `studio.migration.plan` |
 | `studio-lint` | Migration file lint (destructive ops, naming, lock safety) → `studio.migration.lint` |
+| `studio-migration-lint` | Alias for `studio-lint` |
 | `studio-release-gate` | Aggregate RLS/RPC/lint findings → pass/fail → `studio.release.gate` |
 
 ### plugin-logs

@@ -43,6 +43,7 @@ sbt migration-studio                  # apply
 | `studio-introspect` | Query live DB → `studio.schema.snapshot` |
 | `studio-sql-parse` | Parse migration files → `studio.sql.ast` |
 | `studio-adopt` | Full adoption workflow (introspect → sql-parse → review → intent-sync → approve → intent-init) |
+| `studio-catalog [--audience <backend-dev\|business\|mixed>] [--mode <managed\|assisted\|loose>] [--type <tools\|workflows\|all>]` | List discovered tools/workflows from catalog with persona/control-mode filters |
 | `studio-intent-patch --entity <id> --action <exclude\|set-status> [--status managed\|assisted]` | Mutate a single entity's managed-status in the intent graph |
 | `studio-endpoint-map` | Derive PostgREST `EndpointNode` declarations for all managed entities and public-schema functions |
 
@@ -68,6 +69,7 @@ sbt migration-studio                  # apply
 | `studio-rpc-lint` | Function security audit (DEFINER/search_path/exposure) → `studio.rpc.plan` |
 | `studio-migration-plan` | Diff intent graph vs DB snapshot, classify changes → `studio.migration.plan` |
 | `studio-lint` | Lint migration files (destructive ops, naming, lock safety) → `studio.migration.lint` |
+| `studio-migration-lint` | Alias for `studio-lint` |
 | `studio-release-gate` | Aggregate all findings → pass/fail decision → `studio.release.gate` |
 
 ## Pipeline
@@ -101,6 +103,15 @@ The **adopt-backend** workflow runs all four tools in sequence with two human ch
 | 4 | `studio-intent-init` | `studio.intent.graph` | — |
 
 After step 2 the workflow pauses. You review the sync report to see which entities were matched between DB and migrations, and at what confidence. After you approve, `intent-init` builds the final intent graph.
+
+### Workflow catalog (current)
+
+| Workflow | Steps | Status |
+|------|-------|--------|
+| `adopt-backend` | `studio-introspect -> studio-sql-parse -> studio-intent-sync -> studio-intent-init` | Implemented |
+| `release-check` | `studio-rls-check -> studio-rpc-lint -> studio-lint -> studio-release-gate` | Implemented |
+| `create-table` | `studio-create-table -> studio-lint` | Implemented (guided workflow definition) |
+| `add-rls-policy` | `studio-add-rls-policy -> studio-rls-check` | Implemented (guided workflow definition) |
 
 ## What each tool produces
 

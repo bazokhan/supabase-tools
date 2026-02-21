@@ -11,6 +11,15 @@ const DASHBOARD_API = `http://127.0.0.1:${DASHBOARD_API_PORT}`;
 export default defineConfig({
   plugins: [react()],
   root: path.join(dir, "src/dashboard"),
+  resolve: {
+    alias: {
+      "@": path.join(dir, "src/dashboard"),
+    },
+    dedupe: ["react", "react-dom"],
+  },
+  optimizeDeps: {
+    include: ["lucide-react", "react", "react-dom"],
+  },
   server: {
     port: 5173,
     proxy: {
@@ -32,10 +41,5 @@ export default defineConfig({
   build: {
     outDir: path.join(dir, "dist/dashboard"),
     emptyOutDir: true,
-  },
-  resolve: {
-    alias: {
-      "@": path.join(dir, "src/dashboard"),
-    },
   },
 });

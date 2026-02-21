@@ -331,3 +331,37 @@ export function IconTerminal(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function IconLoader(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M21 12a9 9 0 1 1-6.22-8.56" />
+    </BaseIcon>
+  );
+}
+
+export function IconPlay(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </BaseIcon>
+  );
+}
+
+export function IconRefresh(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </BaseIcon>
+  );
+}
+
+export function IconMap(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+      <path d="M8 2v16M16 6v16" />
+    </BaseIcon>
+  );
+}

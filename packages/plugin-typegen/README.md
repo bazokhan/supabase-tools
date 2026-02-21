@@ -7,7 +7,7 @@ Plugin for [supabase-tools](https://github.com/supabase/supabase) that generates
 ```bash
 # Ensure database is running (sbt start)
 npm run sbt -- generate-types
-# Output: src/integrations/supabase/types.ts (or configured path)
+# Output: .sbt/types/supabase.ts (or configured path)
 ```
 
 ## Commands
@@ -31,7 +31,7 @@ Plugin config goes in `plugins[].config`:
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `typesOutput` | `src/integrations/supabase/types.ts` | Output file path |
+| `typesOutput` | `.sbt/types/supabase.ts` | Output file path |
 
 Environment: `SUPABASE_TYPES_SCHEMAS` to limit schemas (comma-separated).
 

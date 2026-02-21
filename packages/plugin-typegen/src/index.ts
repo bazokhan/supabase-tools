@@ -5,7 +5,7 @@ import type { SbtPlugin, PluginContext } from "@sbtools/sdk";
 
 /** Resolve the types output file path from plugin context. */
 export function resolveTypesOutput(ctx: PluginContext): string {
-  return resolveConfigPath(ctx, "typesOutput", "src/integrations/supabase/types.ts");
+  return resolveConfigPath(ctx, "typesOutput", ".sbt/types/supabase.ts");
 }
 
 const GENERATE_TYPES_HELP = `
@@ -14,7 +14,7 @@ generate-types — Generate TypeScript types from the running Supabase instance
 Usage:
   sbt generate-types
 
-Output: src/integrations/supabase/types.ts (or configured typesOutput)
+Output: .sbt/types/supabase.ts (or configured typesOutput)
 
 Requires the database to be running (sbt start).
 Set SUPABASE_TYPES_SCHEMAS to restrict schemas (e.g. public,auth).

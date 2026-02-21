@@ -6,7 +6,7 @@ Plugin that generates TypeScript types from the PostgREST types generator. Lives
 
 Use this plugin when the user needs to:
 - Generate or regenerate Supabase TypeScript types
-- Keep `src/integrations/supabase/types.ts` in sync with the database schema
+- Keep `.sbt/types/supabase.ts` in sync with the database schema (or configured `typesOutput`)
 - Get typed client after schema changes
 
 ## CLI Commands
@@ -15,7 +15,7 @@ Use this plugin when the user needs to:
 
 ## Configuration
 
-- `typesOutput` — Output file (default: `src/integrations/supabase/types.ts`)
+- `typesOutput` — Output file (default: `.sbt/types/supabase.ts`)
 - `SUPABASE_TYPES_SCHEMAS` — Optional env var to limit schemas (e.g. `public,auth`)
 
 ## File Layout
