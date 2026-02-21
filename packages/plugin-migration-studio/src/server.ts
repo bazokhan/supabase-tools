@@ -26,12 +26,41 @@ function sendJson(res: http.ServerResponse, status: number, data: unknown): void
   res.end(JSON.stringify(data));
 }
 
+function logInternalError(error: unknown): void {
+  // Log full error details on the server for debugging/monitoring.
+  if (error instanceof Error) {
+    // Prefer stack if available, as it includes message.
+    if (error.stack) {
+      console.error(error.stack);
+      return;
+    }
+    console.error(error.message);
+    return;
+  }
+  console.error(error);
+}
+
 function sendError(res: http.ServerResponse, error: unknown): void {
   const e = error as { message?: string; status?: number; code?: string };
-  const message = e.message ?? String(error);
-  const status = e.status ?? (/required|invalid|must/i.test(message) ? 400 : 500);
-  const payload = e.code ? { error: message, code: e.code } : { error: message };
-  sendJson(res, status, payload);
+  const hasExplicitStatus = typeof e.status === "number";
+  const hasExplicitCode = typeof e.code === "string" && e.code.length > 0;
+
+  // Treat errors with an explicit status or code as application/validation errors.
+  if (hasExplicitStatus || hasExplicitCode) {
+    const message = e.message ?? "Request failed";
+    const status =
+      e.status ??
+      (/required|invalid|must/i.test(message) ? 400 : 500);
+    const payload = hasExplicitCode
+      ? { error: message, code: e.code }
+      : { error: message };
+    sendJson(res, status, payload);
+    return;
+  }
+
+  // For unexpected/internal errors, avoid leaking details to the client.
+  logInternalError(error);
+  sendJson(res, 500, { error: "Internal server error" });
 }
 
 function buildWorkflowRegistry(workflowId: string): Record<string, (ctx: PluginContext) => Promise<void>> {
