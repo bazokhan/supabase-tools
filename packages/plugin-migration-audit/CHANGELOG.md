@@ -1,5 +1,12 @@
 # @sbtools/plugin-migration-audit
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [c2c54f5]
+  - @sbtools/ui-web@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes
