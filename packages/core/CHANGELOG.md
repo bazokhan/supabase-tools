@@ -1,5 +1,28 @@
 # @sbtools/core
 
+## 0.9.0
+
+### Minor Changes
+
+- c2c54f5: Default all generated output paths to `.sbt/` (git-ignored)
+
+  Previously, `snapshot` defaulted to `supabase/current` and `docsOutput` to `docs`, causing
+  generated files to be tracked by git unless users explicitly overrode them.
+
+  Both now default to `.sbt/snapshot` and `.sbt/docs` respectively — already inside the
+  git-ignored `.sbt/` directory. `migrations` and `functions` are unchanged (user-authored files
+  that should be committed).
+
+  `plugin-typegen` type output now defaults to `.sbt/types/supabase.ts` instead of
+  `src/integrations/supabase/types.ts`.
+
+  Users with explicit path overrides in `supabase-tools.config.json` are unaffected.
+
+### Patch Changes
+
+- Updated dependencies [c2c54f5]
+  - @sbtools/ui-web@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes
