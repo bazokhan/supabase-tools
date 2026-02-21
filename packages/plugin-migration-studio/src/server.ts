@@ -147,7 +147,14 @@ async function validateSql(sql: string): Promise<{ valid: boolean; error?: strin
     if (msg.includes("connect") || msg.includes("ECONNREFUSED") || msg.includes("timeout")) {
       return { valid: true, dbConnected: false };
     }
-    return { valid: false, error: msg, line: parsePgErrorLine(msg), dbConnected: true };
+    // Log the detailed error server-side, but return a generic message to the client.
+    logInternalError(e);
+    return {
+      valid: false,
+      error: "SQL validation failed. See server logs for details.",
+      line: parsePgErrorLine(msg),
+      dbConnected: true,
+    };
   }
 }
 
