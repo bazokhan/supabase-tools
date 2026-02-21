@@ -467,7 +467,7 @@ export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMes
       handler = handleMigrationFile;
     }
 
-    if (!handler) {
+    if (!handler || typeof handler !== "function") {
       res.writeHead(404);
       res.end("Not found");
       return;
