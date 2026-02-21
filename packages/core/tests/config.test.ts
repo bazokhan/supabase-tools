@@ -11,8 +11,8 @@ describe("validateConfig", () => {
     const result = validateConfig({
       paths: {
         migrations: "supabase/migrations",
-        snapshot: "supabase/current",
-        docsOutput: "docs",
+        snapshot: ".sbt/snapshot",
+        docsOutput: ".sbt/docs",
         functions: "supabase/functions",
       },
       db: {
@@ -97,8 +97,8 @@ describe("validateConfig", () => {
 
   it("accepts init-shaped config (no plugin-specific keys)", () => {
     const result = validateConfig({
-      paths: { migrations: "supabase/migrations", snapshot: "supabase/current",
-        docsOutput: "docs", functions: "supabase/functions" },
+      paths: { migrations: "supabase/migrations", snapshot: ".sbt/snapshot",
+        docsOutput: ".sbt/docs", functions: "supabase/functions" },
       db: { url: "postgresql://postgres:postgres@localhost:54322/postgres", container: "supabase-db" },
       api: { url: "http://localhost:54321", studioUrl: "http://localhost:54323", inbucketUrl: "http://localhost:54324" },
       project: { name: "test-project" },

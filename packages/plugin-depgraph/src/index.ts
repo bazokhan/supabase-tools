@@ -60,8 +60,8 @@ Options:
   --no-open    Skip opening the result in the browser
   -h, --help   Show this help
 
-The plugin reads from docs/backend-atlas-data.json (produced by 'sbt generate-atlas')
-and supabase/current/ snapshot files. No running database is required.
+The plugin reads from the atlas data file (produced by 'sbt generate-atlas')
+and snapshot files. No running database is required.
 `;
 
 async function depgraphCommand(args: string[], ctx: PluginContext): Promise<void> {

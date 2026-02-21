@@ -80,6 +80,11 @@ packages/plugin-migration-studio/src/
   artifacts/writers.ts    – typed artifact writer factories (SchemaSnapshotData, SqlAstData, IntentSyncData, etc.)
   artifacts/schemas.ts    – Zod validation schemas for all studio artifacts
   sql-parser.ts           – WASM SQL parser (parseMigrationSql, extractSchemaNodes)
+  tools/tool-definition.ts – tool contract (CLI/HTTP/workflow metadata + non-technical metadata)
+  tools/discovery.ts      – convention-based tool discovery (`*.tool.ts`) and registry maps
+  tools/core/*.core.ts    – tool core implementations (SQL/artifact logic) consumed by canonical modules + tests
+  tools/modules/*.tool.ts – canonical self-contained tool modules (run + cli/http adapters + metadata)
+  catalog.ts              – filterable catalog view (audience/mode/type) used by CLI and HTTP surfaces
   tools/introspect.ts     – DB queries → SchemaSnapshotData → studio.schema.snapshot
   tools/sql-parse.ts      – migration files → AST extraction → studio.sql.ast
   tools/intent-sync.ts    – DB vs SQL confidence scoring → studio.intent.sync-report
@@ -101,8 +106,15 @@ packages/plugin-migration-studio/src/
   tools/intent-patch.ts   – mutate entity managed-status in the intent graph
   tools/endpoint-map.ts   – map PostgREST endpoints from intent graph entities/functions
   engine/runner.ts        – sequential pipeline runner (startWorkflow, resumeWorkflow)
-  workflows/adopt-backend.ts – 4-step brownfield adoption workflow definition
-  server.ts               – HTTP server on 3335; studio API routes (introspect, adopt, scaffold, validate, apply)
+  workflows/workflow-definition.ts – workflow contract type
+  workflows/discovery.ts  – convention-based workflow discovery (`*.workflow.ts`)
+  workflows/*.workflow.ts – workflow catalog definitions (adopt-backend, release-check, create-table, add-rls-policy)
+  server.ts               – HTTP server on 3335; tool routes generated from discovered tool modules
+  index.ts                – plugin entry; CLI commands generated from discovered tool modules
+  tests/workflows/*.test.ts – workflow/catalog unit tests
+  tests/e2e/*.test.ts     – DB-aware workflow e2e tests for all discovered workflows (real files + DB assertions)
+  tests/e2e/harness/*.ts  – shared e2e utilities (temp context, DB preflight, SQL assertions, strict DB mode)
+  docs/plugins/plugin-migration-studio-contributing.md – contributor guide for adding tools/workflows
 
 packages/core/src/
   cli.ts              – entry; parses argv, loads plugins, dispatches commands
@@ -110,7 +122,7 @@ packages/core/src/
   config.ts           – Zod config schema; loads supabase-tools.config.json
   plugin-loader.ts    – dynamic runtime import of plugins (no compile-time deps)
   commands/
-    snapshot.ts       – extracts DB objects via SQL; writes to supabase/[type]/
+    snapshot.ts       – extracts DB objects via SQL; writes to .sbt/snapshot/ (default)
     generate-data.ts  – builds backend-atlas-data.json; calls plugin.getAtlasData()
     dashboard.ts      – HTTP server on :3400; serves SPA + API routes
     watch.ts          – file/DB watcher; re-runs snapshot+generate on change
@@ -126,7 +138,7 @@ packages/ui-web/src/
   dashboard/App.tsx          – main router; dark mode; search
   dashboard/hooks/           – useAtlasData, useDashboardConfig, useCommands, usePlugins, useServices
   dashboard/lib/model.ts     – route parsing, search indexing, nav building
-  dashboard/pages/           – Overview, Details, Migrations, MigrationStudio, Depgraph, Logs, FrontendUsage, Erd, Runner, Adoption, SchemaBuilder, Plugins, Services
+  dashboard/pages/           – Overview, Details, Migrations, MigrationStudio, Depgraph, Logs, FrontendUsage, Erd, Runner, Adoption (tabbed: Readiness, Progress, Risk, API Surface, Overview, Entities, Graph, Endpoints, Policies, Opaque, Tools), SchemaBuilder, Plugins, Services
   renderers/                 – standalone HTML page generators (migration-audit, depgraph, logs-viewer)
 ```
 
@@ -164,13 +176,20 @@ interface PluginContext {
 
 ```json
 {
-  "paths": { "migrations", "snapshot", "docsOutput", "functions" },
+  "paths": {
+    "migrations": "supabase/migrations",
+    "snapshot": ".sbt/snapshot",
+    "docsOutput": ".sbt/docs",
+    "functions": "supabase/functions"
+  },
   "db": { "url", "container" },
   "api": { "url", "studioUrl", "inbucketUrl" },
   "project": { "name" },
   "plugins": [{ "path": "pkg-or-filepath", "enabled": true, "config": {} }]
 }
 ```
+
+`migrations` and `functions` are user-authored (committed). `snapshot` and `docsOutput` are generated outputs — both default to `.sbt/` (git-ignored).
 
 ### Dashboard API Routes (served by core/commands/dashboard.ts)
 

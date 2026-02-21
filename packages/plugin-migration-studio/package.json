@@ -36,6 +36,7 @@
     "build": "tsc --project tsconfig.json",
     "clean": "rimraf dist",
     "test": "vitest run",
+    "test:e2e": "vitest run tests/e2e",
     "test:watch": "vitest"
   },
   "dependencies": {

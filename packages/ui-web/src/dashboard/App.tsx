@@ -133,9 +133,9 @@ export function App() {
       dashboard.refresh();
       return;
     }
-    if (type === "command:finished") {
+    if (type === "atlas:regenerated" || type === "command:finished") {
       atlas.refresh();
-      dashboard.refresh();
+      if (type === "command:finished") dashboard.refresh();
       return;
     }
     if (type === "command:started" || type === "command:stopping") {

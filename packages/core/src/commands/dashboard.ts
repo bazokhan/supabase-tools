@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { deriveContainerPrefix, getArg, ui, withHelp } from "@sbtools/sdk";
 import type { DashboardSectionDef, PluginContext } from "@sbtools/sdk";
 import { allCommands } from "../command-registry.js";
+import { runGenerateData } from "./generate-data.js";
 import { BUILTIN_PLUGINS } from "../lib/plugin-catalog.js";
 
 const CORE_SECTIONS: DashboardSectionDef[] = [
@@ -750,6 +751,16 @@ function createRequestHandler(ctx: PluginContext, dashboardDir: string) {
   return (req: http.IncomingMessage, res: http.ServerResponse): void => {
     const url = req.url ?? "/";
     const [pathname] = url.split("?");
+
+    if (pathname === "/api/regenerate-atlas" && req.method === "POST") {
+      runGenerateData()
+        .then(() => {
+          sendJson(res, 200, { success: true });
+          emitEvent("atlas:regenerated", {});
+        })
+        .catch((err) => sendJson(res, 500, { success: false, error: (err as Error).message }));
+      return;
+    }
 
     if (pathname === "/api/atlas-data") {
       if (!fs.existsSync(atlasDataPath)) {

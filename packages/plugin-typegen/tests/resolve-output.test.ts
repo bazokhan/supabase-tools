@@ -23,9 +23,9 @@ function makeCtx(pluginConfig: Record<string, unknown> = {}): PluginContext {
 }
 
 describe("resolveTypesOutput", () => {
-  it("defaults to src/integrations/supabase/types.ts when no pluginConfig", () => {
+  it("defaults to .sbt/types/supabase.ts when no pluginConfig", () => {
     const result = resolveTypesOutput(makeCtx());
-    expect(result).toBe(path.join(PROJECT, "src", "integrations", "supabase", "types.ts"));
+    expect(result).toBe(path.join(PROJECT, ".sbt", "types", "supabase.ts"));
   });
 
   it("uses pluginConfig.typesOutput when set (relative)", () => {

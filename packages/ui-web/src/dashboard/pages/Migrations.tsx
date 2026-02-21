@@ -35,6 +35,16 @@ function MigrationsEnabled({ categories, onOpenDetail }: PageProps) {
 
   const [status, setStatus] = React.useState<string>("all");
   const [search, setSearch] = React.useState("");
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const refresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetch("/api/regenerate-atlas", { method: "POST" });
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const filtered = rows.filter((row) => {
     if (status !== "all" && String(row.status) !== status) return false;
@@ -82,6 +92,9 @@ function MigrationsEnabled({ categories, onOpenDetail }: PageProps) {
       <section className="panel">
         <div className="panel-head">
           <h2>Migration Inventory</h2>
+          <button type="button" className="btn" onClick={refresh} disabled={refreshing}>
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
           <input
             type="search"
             className="ui-input"

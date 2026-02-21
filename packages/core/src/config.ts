@@ -152,8 +152,8 @@ export function validateConfig(
 const DEFAULTS: Omit<SupabaseToolsConfig, "projectRoot" | "toolsDir" | "sbtDataDir" | "plugins"> & { plugins: PluginEntry[] } = {
   paths: {
     migrations: "supabase/migrations",
-    snapshot: "supabase/current",
-    docsOutput: "docs",
+    snapshot: ".sbt/snapshot",
+    docsOutput: ".sbt/docs",
     functions: "supabase/functions",
   },
   db: {

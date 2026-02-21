@@ -4,6 +4,7 @@
  */
 import React from "react";
 import { AlertTriangle, CheckCircle2, Loader2, Plus, ShieldAlert, Trash2, XCircle } from "lucide-react";
+import { IconPolicy, IconTable, IconFunction, IconView, IconAlert } from "../components/Icons";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -81,8 +82,9 @@ function buildPolicySqlPreview(entityId: string, policy: PolicyDef): string {
   let sql = `CREATE POLICY "${policy.name}"\n  ON ${schema}.${table}\n  AS ${permissive}\n  FOR ${policy.command}`;
   if (roles.length > 0) sql += `\n  TO ${roles.join(", ")}`;
   if (policy.using && policy.command !== "INSERT") sql += `\n  USING (${policy.using})`;
-  if (policy.withCheck && (policy.command === "INSERT" || policy.command === "UPDATE" || policy.command === "ALL")) {
-    sql += `\n  WITH CHECK (${policy.withCheck})`;
+  if (policy.command === "INSERT" || policy.command === "UPDATE" || policy.command === "ALL") {
+    const checkExpr = policy.withCheck?.trim() || "true";
+    sql += `\n  WITH CHECK (${checkExpr})`;
   }
   sql += ";";
   return sql;
@@ -179,7 +181,7 @@ function ErrorLine({ message }: { message: string }) {
   );
 }
 
-function TableBuilder({ base }: { base: string }) {
+function TableBuilder({ base, onMigrationCreated }: { base: string; onMigrationCreated?: () => void }) {
   const [schema, setSchema] = React.useState("public");
   const [tableName, setTableName] = React.useState("");
   const [columns, setColumns] = React.useState<Column[]>([
@@ -241,6 +243,7 @@ function TableBuilder({ base }: { base: string }) {
         }),
       });
       setSuccess(`Written: ${result.filename}`);
+      onMigrationCreated?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -398,11 +401,17 @@ function TableBuilder({ base }: { base: string }) {
 // RLS Policy Builder
 // ---------------------------------------------------------------------------
 
-function PolicyBuilder({ base }: { base: string }) {
-  const [entityId, setEntityId] = React.useState("");
+function PolicyBuilder({ base, onMigrationCreated }: { base: string; onMigrationCreated?: () => void }) {
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const initialEntity = params?.get("entity") ?? "";
+  const initialCommand = (params?.get("command") as PolicyCommand) ?? "SELECT";
+  const validCommand = ["SELECT", "INSERT", "UPDATE", "DELETE", "ALL"].includes(initialCommand) ? initialCommand : "SELECT";
+  const tableName = initialEntity.includes(".") ? initialEntity.split(".").pop() ?? "" : initialEntity;
+  const suggestedName = tableName && validCommand ? `${tableName}_${validCommand.toLowerCase()}_authenticated` : "";
+  const [entityId, setEntityId] = React.useState(initialEntity);
   const [policy, setPolicy] = React.useState<PolicyDef>({
-    name: "",
-    command: "SELECT",
+    name: suggestedName,
+    command: validCommand,
     roles: "authenticated",
     using: "auth.uid() = id",
     withCheck: "",
@@ -459,6 +468,7 @@ function PolicyBuilder({ base }: { base: string }) {
         }),
       });
       setSuccess(`Written: ${result.filename}`);
+      onMigrationCreated?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -638,7 +648,7 @@ function buildViewSqlPreview(schema: string, name: string, query: string): strin
   return `CREATE OR REPLACE VIEW ${schema || "public"}.${name} AS\n${query.trim()};`;
 }
 
-function FunctionBuilder({ base, rpcMode }: { base: string; rpcMode?: boolean }) {
+function FunctionBuilder({ base, rpcMode, onMigrationCreated }: { base: string; rpcMode?: boolean; onMigrationCreated?: () => void }) {
   const [schema, setSchema] = React.useState("public");
   const [fnName, setFnName] = React.useState("");
   const [params, setParams] = React.useState<FnParam[]>([]);
@@ -695,6 +705,7 @@ function FunctionBuilder({ base, rpcMode }: { base: string; rpcMode?: boolean })
         body: JSON.stringify(payload),
       });
       setSuccess(`Written: ${result.filename}`);
+      onMigrationCreated?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -863,7 +874,7 @@ function FunctionBuilder({ base, rpcMode }: { base: string; rpcMode?: boolean })
 // View Builder
 // ---------------------------------------------------------------------------
 
-function ViewBuilder({ base }: { base: string }) {
+function ViewBuilder({ base, onMigrationCreated }: { base: string; onMigrationCreated?: () => void }) {
   const [schema, setSchema] = React.useState("public");
   const [viewName, setViewName] = React.useState("");
   const [query, setQuery] = React.useState("");
@@ -892,6 +903,7 @@ function ViewBuilder({ base }: { base: string }) {
         body: JSON.stringify({ schema, name: viewName, query }),
       });
       setSuccess(`Written: ${result.filename}`);
+      onMigrationCreated?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -1175,6 +1187,21 @@ function ReleaseGatePanel({ base }: { base: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Tab config
+// ---------------------------------------------------------------------------
+
+type SchemaTab = "tables" | "policies" | "functions" | "rpcs" | "views" | "gate";
+
+const TAB_CONFIG: { id: SchemaTab; label: string; icon: React.ReactNode }[] = [
+  { id: "tables", label: "Tables", icon: <IconTable size={14} /> },
+  { id: "policies", label: "RLS Policies", icon: <IconPolicy size={14} /> },
+  { id: "functions", label: "Functions", icon: <IconFunction size={14} /> },
+  { id: "rpcs", label: "RPCs", icon: <IconFunction size={14} /> },
+  { id: "views", label: "Views", icon: <IconView size={14} /> },
+  { id: "gate", label: "Release Gate", icon: <IconAlert size={14} /> },
+];
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -1182,15 +1209,107 @@ export function SchemaBuilderPage() {
   const base = studioBase();
   const [refreshKey, setRefreshKey] = React.useState(0);
 
+  const refreshAtlas = React.useCallback(() => {
+    fetch("/api/regenerate-atlas", { method: "POST" }).catch(() => undefined);
+  }, []);
+
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const urlEntity = params?.get("entity") ?? "";
+  const urlCommand = params?.get("command") ?? "";
+  const urlTab = params?.get("tab") as SchemaTab | null;
+  const fromRlsGap = Boolean(urlEntity && urlCommand);
+
+  const [activeTab, setActiveTab] = React.useState<SchemaTab>(() =>
+    fromRlsGap ? "policies" : (urlTab && TAB_CONFIG.some((t) => t.id === urlTab) ? urlTab : "tables")
+  );
+
   return (
     <div className="content-stack">
       <ProjectSetup base={base} onInit={() => setRefreshKey((k) => k + 1)} />
-      <TableBuilder base={base} key={`table-${refreshKey}`} />
-      <PolicyBuilder base={base} />
-      <FunctionBuilder base={base} />
-      <FunctionBuilder base={base} rpcMode />
-      <ViewBuilder base={base} />
-      <ReleaseGatePanel base={base} />
+
+      <div className="schema-builder-tabs">
+        {TAB_CONFIG.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`schema-builder-tab ${activeTab === t.id ? "active" : ""}`}
+            onClick={() => setActiveTab(t.id)}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {fromRlsGap && activeTab === "policies" && (
+        <div className="context-banner" role="status">
+          <h3>Fixing RLS gap</h3>
+          <p>
+            You were directed here to add a policy for <strong>{urlEntity}</strong> ({urlCommand}). The form
+            below is prefilled — review, adjust if needed, and generate the migration.
+          </p>
+        </div>
+      )}
+
+      {activeTab === "tables" && (
+        <div className="builder-hero">
+          <div className="builder-hero-intro">
+            <p className="builder-hero-title">Create a new table</p>
+            <p className="builder-hero-subtitle">Define columns and generate a migration. Tables hold your data.</p>
+          </div>
+          <TableBuilder base={base} key={`table-${refreshKey}`} onMigrationCreated={refreshAtlas} />
+        </div>
+      )}
+
+      {activeTab === "policies" && (
+        <div className="builder-hero">
+          <div className="builder-hero-intro">
+            <p className="builder-hero-title">Who can do what?</p>
+            <p className="builder-hero-subtitle">Add a row-level security policy to control which users can read, create, update, or delete rows.</p>
+          </div>
+          <PolicyBuilder base={base} onMigrationCreated={refreshAtlas} />
+        </div>
+      )}
+
+      {activeTab === "functions" && (
+        <div className="builder-hero">
+          <div className="builder-hero-intro">
+            <p className="builder-hero-title">Create a stored function</p>
+            <p className="builder-hero-subtitle">Design a PostgreSQL function and generate a migration. Use for reusable logic inside the database.</p>
+          </div>
+          <FunctionBuilder base={base} onMigrationCreated={refreshAtlas} />
+        </div>
+      )}
+
+      {activeTab === "rpcs" && (
+        <div className="builder-hero">
+          <div className="builder-hero-intro">
+            <p className="builder-hero-title">Create an RPC endpoint</p>
+            <p className="builder-hero-subtitle">Design a public-schema function exposed as a PostgREST RPC. Clients call it via your API.</p>
+          </div>
+          <FunctionBuilder base={base} rpcMode onMigrationCreated={refreshAtlas} />
+        </div>
+      )}
+
+      {activeTab === "views" && (
+        <div className="builder-hero">
+          <div className="builder-hero-intro">
+            <p className="builder-hero-title">Create a view</p>
+            <p className="builder-hero-subtitle">Define a SELECT query that acts like a read-only table. Great for simplifying complex queries.</p>
+          </div>
+          <ViewBuilder base={base} onMigrationCreated={refreshAtlas} />
+        </div>
+      )}
+
+      {activeTab === "gate" && (
+        <div className="builder-hero">
+          <div className="builder-hero-intro">
+            <p className="builder-hero-title">Release Gate</p>
+            <p className="builder-hero-subtitle">Run all checks before deploying. Ensures RLS coverage, migration lint, and other validations pass.</p>
+          </div>
+          <ReleaseGatePanel base={base} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # Migration Studio Platform — Status & Roadmap to 100%
 
-> Last updated: 2026-02-20 (Phase 11 complete — full vision implemented)
+> Last updated: 2026-02-20 (catalog expansion + persona roadmap update)
 > This document is a living status report. Update the checkboxes and sections as work completes.
 
 ---
@@ -48,12 +48,12 @@ The "brownfield adoption" chain is fully implemented and tested.
 | Component | File | Status |
 |---|---|---|
 | SQL parser (WASM) | `sql-parser.ts` | ✅ Done |
-| DB introspect tool | `tools/introspect.ts` | ✅ Done |
-| Migration file parser | `tools/sql-parse.ts` | ✅ Done |
-| Confidence scorer | `tools/intent-sync.ts` | ✅ Done |
-| Intent graph builder | `tools/intent-init.ts` | ✅ Done |
+| DB introspect tool | `tools/modules/studio-introspect.tool.ts` | ✅ Done |
+| Migration file parser | `tools/modules/studio-sql-parse.tool.ts` | ✅ Done |
+| Confidence scorer | `tools/modules/studio-intent-sync.tool.ts` | ✅ Done |
+| Intent graph builder | `tools/modules/studio-intent-init.tool.ts` | ✅ Done |
 | Workflow engine | `engine/runner.ts` | ✅ Done |
-| adopt-backend workflow | `workflows/adopt-backend.ts` | ✅ Done |
+| adopt-backend workflow | `workflows/adopt-backend.workflow.ts` | ✅ Done |
 | `sbt studio-adopt` CLI | `index.ts` | ✅ Done |
 | HTTP adopt routes | `server.ts` | ✅ Done |
 | Dashboard Adoption page | `pages/Adoption.tsx` | ✅ Done (interactive — status badges, Exclude/Manage buttons) |
@@ -79,7 +79,7 @@ A visual Schema Builder page exists at `/schema-builder` in the dashboard. It ca
 | Live SQL preview (client-side) | `pages/SchemaBuilder.tsx` | ✅ Done |
 | Column editor (add/remove/change type) | `pages/SchemaBuilder.tsx` | ✅ Done (inline table) |
 | Scaffold HTTP routes | `server.ts` | ✅ All 13 routes wired |
-| Scaffold tools (backend) | `tools/generate-*.ts` | ✅ All 8 tools |
+| Scaffold tools (backend) | `tools/modules/studio-*.tool.ts` + `tools/core/studio-*.core.ts` | ✅ All 8 tools |
 | Function builder (form + body editor) | `pages/SchemaBuilder.tsx` | ✅ Done (Phase 11) |
 | RPC builder (public schema, PostgREST) | `pages/SchemaBuilder.tsx` | ✅ Done (Phase 11) |
 | View builder | `pages/SchemaBuilder.tsx` | ✅ Done (Phase 11) |
@@ -98,14 +98,14 @@ All scaffold tools are implemented. Each generates a migration SQL file and writ
 
 | Tool | File | Generates | Status |
 |---|---|---|---|
-| add-column | `tools/generate-add-column.ts` | `ALTER TABLE ... ADD COLUMN ...` | ✅ |
-| add-function | `tools/generate-add-function.ts` | `CREATE OR REPLACE FUNCTION ...` | ✅ |
-| create-rpc | `tools/generate-create-rpc.ts` | Same, forced `schema: public` | ✅ |
-| create-table | `tools/generate-create-table.ts` | `CREATE TABLE ... ENABLE ROW LEVEL SECURITY` | ✅ (Phase 6) |
-| add-rls-policy | `tools/generate-add-rls-policy.ts` | `CREATE POLICY ...` | ✅ (Phase 6) |
-| add-index | `tools/generate-add-index.ts` | `CREATE INDEX ...` | ✅ (Phase 6) |
-| add-constraint | `tools/generate-add-constraint.ts` | `ALTER TABLE ... ADD CONSTRAINT ...` | ✅ (Phase 6) |
-| create-view | `tools/generate-create-view.ts` | `CREATE OR REPLACE VIEW ...` | ✅ (Phase 11) |
+| add-column | `tools/core/studio-add-column.core.ts` | `ALTER TABLE ... ADD COLUMN ...` | ✅ |
+| add-function | `tools/core/studio-add-function.core.ts` | `CREATE OR REPLACE FUNCTION ...` | ✅ |
+| create-rpc | `tools/core/studio-create-rpc.core.ts` | Same, forced `schema: public` | ✅ |
+| create-table | `tools/core/studio-create-table.core.ts` | `CREATE TABLE ... ENABLE ROW LEVEL SECURITY` | ✅ (Phase 6) |
+| add-rls-policy | `tools/core/studio-add-rls-policy.core.ts` | `CREATE POLICY ...` | ✅ (Phase 6) |
+| add-index | `tools/core/studio-add-index.core.ts` | `CREATE INDEX ...` | ✅ (Phase 6) |
+| add-constraint | `tools/core/studio-add-constraint.core.ts` | `ALTER TABLE ... ADD CONSTRAINT ...` | ✅ (Phase 6) |
+| create-view | `tools/core/studio-create-view.core.ts` | `CREATE OR REPLACE VIEW ...` | ✅ (Phase 11) |
 
 **Note on intent graph dependency:** `add-column` requires the intent graph. All other scaffold tools work without it. `create-table` optionally writes a minimal `EntityNode` after creation for greenfield bootstrap.
 
@@ -115,6 +115,9 @@ All scaffold tools are implemented. Each generates a migration SQL file and writ
 |---|---|---|
 | `adopt-backend` | introspect → sql-parse → intent-sync (review) → intent-init (approve) | ✅ Done |
 | `greenfield-init` | init-graph (empty) → Schema Builder forms → generate-create-table × N | ✅ Done (Phase 9) |
+| `release-check` | rls-check → rpc-lint → migration-lint → release-gate | ✅ Cataloged |
+| `create-table` | generate-create-table → migration-lint | ✅ Cataloged (guided) |
+| `add-rls-policy` | generate-add-rls-policy → rls-check preview | ✅ Cataloged (guided) |
 
 ---
 
@@ -128,7 +131,7 @@ All five validation tools are implemented, tested, wired to HTTP routes, and exp
 | `studio.rls.report` | ✅ `writeRlsReportArtifact` | ✅ (same tool) | ✅ | ✅ | Done |
 | `studio.rpc.plan` | ✅ `writeRpcPlanArtifact` | ✅ `tools/rpc-lint.ts` | ✅ `studio-rpc-lint` | ✅ `POST /api/studio/rpc-lint` | Done |
 | `studio.migration.plan` | ✅ `writeMigrationPlanArtifact` | ✅ `tools/migration-plan.ts` | ✅ `studio-migration-plan` | ✅ `POST /api/studio/migration-plan` | Done |
-| `studio.migration.lint` | ✅ `writeMigrationLintArtifact` | ✅ `tools/migration-lint.ts` | ✅ `studio-lint` | ✅ `POST /api/studio/migration-lint` | Done |
+| `studio.migration.lint` | ✅ `writeMigrationLintArtifact` | ✅ `tools/core/studio-migration-lint.core.ts` | ✅ `studio-lint` (alias: `studio-migration-lint`) | ✅ `POST /api/studio/migration-lint` | Done |
 | `studio.release.gate` | ✅ `writeReleaseGateArtifact` | ✅ `tools/release-gate.ts` | ✅ `studio-release-gate` | ✅ `POST /api/studio/release-gate` | Done |
 
 **What each tool does:**
@@ -167,8 +170,8 @@ The core `sbt migrate` command and the migration studio's `POST /api/apply` rout
 |---|---|---|---|---|
 | `studio-introspect` | `studio.schema.snapshot` | ✅ | ✅ | ✅ |
 | `studio-sql-parse` | `studio.sql.ast` | ✅ | ✅ | ✅ |
-| `studio-intent-sync` | `studio.intent.sync-report` | ✅ | (via adopt) | ✅ |
-| `studio-intent-init` | `studio.intent.graph` | ✅ | (via adopt) | ✅ |
+| `studio-intent-sync` | `studio.intent.sync-report` | ✅ | (via adopt) | ✅ (`POST /api/studio/intent-sync`) |
+| `studio-intent-init` | `studio.intent.graph` | ✅ | (via adopt) | ✅ (`POST /api/studio/intent-init`) |
 | `studio-add-column` | migration file | ✅ | ✅ | ✅ |
 | `studio-add-function` | migration file | ✅ | ✅ | ✅ |
 | `studio-create-rpc` | migration file | ✅ | ✅ | ✅ |
@@ -180,7 +183,7 @@ The core `sbt migrate` command and the migration studio's `POST /api/apply` rout
 | `studio-rls-check` | `studio.rls.plan` + `studio.rls.report` | ✅ | ✅ | ✅ |
 | `studio-rpc-lint` | `studio.rpc.plan` | ✅ | ✅ | ✅ |
 | `studio-migration-plan` | `studio.migration.plan` | ✅ | ✅ | ✅ |
-| `studio-migration-lint` | `studio.migration.lint` | ✅ | ✅ | ✅ |
+| `studio-lint` | `studio.migration.lint` | ✅ | ✅ (`studio-migration-lint` alias) | ✅ |
 | `studio-release-gate` | `studio.release.gate` | ✅ | ✅ | ✅ |
 | `studio-greenfield-init` | `studio.intent.graph` (greenfield) | ✅ | ✅ | ✅ |
 | `studio-intent-patch` | `studio.intent.graph` (mutated) | ✅ | ✅ | ✅ |
@@ -192,9 +195,9 @@ The core `sbt migrate` command and the migration studio's `POST /api/apply` rout
 |---|---|---|
 | `adopt-backend` | introspect → sql-parse → intent-sync (review) → intent-init (approve) | ✅ |
 | `greenfield-init` | init-graph (empty) → Schema Builder forms → generate-create-table × N | ✅ (tool + UI) |
-| `create-table` | generate-create-table → migration-lint | ❌ |
-| `add-rls-policy` | generate-add-rls-policy → rls-check preview | ❌ |
-| `release-check` | rls-check → rpc-lint → migration-lint → release-gate | ❌ |
+| `create-table` | generate-create-table → migration-lint | ✅ (cataloged guided workflow) |
+| `add-rls-policy` | generate-add-rls-policy → rls-check preview | ✅ (cataloged guided workflow) |
+| `release-check` | rls-check → rpc-lint → migration-lint → release-gate | ✅ |
 
 ---
 
@@ -207,10 +210,10 @@ Layer 3: Generate     ███████████████████�
 Layer 4: Validate     ████████████████████ 100%  (5/5 validation tools, CLI + HTTP wired)
 Layer 5: Apply        ████████████████████ 100%  (apply + gate enforcement + snapshot verify + audit log)
 
-Overall platform:     100% — full vision implemented ✅
+Overall platform:     100% for original core capability layers; catalog richness now expanding ✅
 ```
 
-The infrastructure investment is high-quality and pays forward: every unbuilt tool has its artifact contract, writer, and Zod schema already defined. The engine, confidence scoring, and intent graph are done. The gap is execution — writing the remaining tool functions and the dashboard UI.
+The infrastructure investment is high-quality and pays forward. Core capability layers are complete; current work is about catalog ergonomics, persona coverage, and guided workflow breadth.
 
 ---
 
@@ -465,12 +468,49 @@ All 12 artifact contracts are fully producing.
 
 ## Key Architectural Constraint
 
-The platform has a **bootstrapping dependency** in its current form:
+The platform now supports both strict and loose paths:
 
-```
-adopt-backend (brownfield) ──► intent graph ──► scaffold tools
-```
+- strict (`managed`): intent-graph-backed, validation-gated
+- loose (`assisted`/`loose`): selected generators can run without full adoption state
 
-Scaffold tools require the intent graph to validate entity existence and managedStatus. This means greenfield users — who have no existing DB to introspect — cannot use any scaffold tools today. **Phase 6's `generate-create-table`** must break this dependency by working without a prior intent graph, optionally writing a minimal entity node after creation.
+Remaining constraint to improve: parameterized scaffold workflows (`create-table`, `add-rls-policy`) are cataloged as guided flows, but still rely on explicit user/tool input rather than fully automatic engine execution.
 
-The fix for the existing scaffold tools: make the intent graph check a **warning** (print "Entity not in intent graph — run studio-adopt to track it") rather than a hard error, and proceed anyway for `managed`/not-found cases.
+---
+
+## Persona-Oriented Expansion (Next)
+
+To make this a backend-building platform accessible across backgrounds, extend catalogs by audience and control mode.
+
+### Control Modes
+
+- `managed`: strict intent ownership + gating
+- `assisted`: recommendations + selective enforcement
+- `loose`: minimal constraints, generate/analyze only
+
+### Backend Dev Oriented Tools (Proposed)
+
+1. `studio-contract-check` — detect breaking schema/API contract changes
+2. `studio-perf-check` — index/query risk heuristics and lock-risk scoring
+3. `studio-data-backfill-plan` — staged data backfill plan for non-null/default migrations
+4. `studio-drift-check` — live DB vs intent/migration drift report
+5. `studio-rollback-plan` — conservative rollback strategy artifact
+
+### Business/Product Oriented Tools (Proposed)
+
+1. `studio-impact-summary` — plain-English summary of changes, risk, blast radius
+2. `studio-policy-plain-language` — translate RLS/policy intent to business language
+3. `studio-feature-to-schema` — convert feature brief into suggested entities/endpoints
+4. `studio-release-readiness-report` — non-technical go/no-go report
+5. `studio-kpi-surface-map` — map schema/API changes to affected metrics and owners
+
+### Backend Dev Oriented Workflows (Proposed)
+
+1. `safe-release`: migration-plan → lint → rls-check → rpc-lint → release-gate → apply
+2. `expand-contract`: additive-safe rollout before destructive follow-up
+3. `brownfield-hardening`: adopt → intent-patch → endpoint-map → release-check
+
+### Business/Product Oriented Workflows (Proposed)
+
+1. `feature-intake`: brief → proposed schema/API package → review artifact
+2. `change-approval`: impact-summary → risk thresholds → sign-off artifact
+3. `release-brief`: release-check output → stakeholder summary → publish artifact
