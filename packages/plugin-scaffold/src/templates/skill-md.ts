@@ -1,6 +1,6 @@
 export function generateSkillMd(name: string, external: boolean): string {
   const pkgName = `@sbtools/plugin-${name}`;
-  const cmdName = name.replace(/-/g, "-");
+  const cmdName = name;
   const loc = external ? `plugin-${name}/` : `supabase-tools/packages/plugin-${name}/`;
 
   return `# ${pkgName}
