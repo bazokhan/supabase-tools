@@ -384,7 +384,7 @@ Ordered from least to most effort. Check off as completed.
 ### New Features (High Effort)
 - [ ] Schema Builder feedback loop — after scaffold, auto-run sql-parse and show intent graph delta
 - [ ] Natural language → migration workflow — describe intent → generate SQL → validate → gate
-- [ ] MCP server package (`@sbtools/mcp-server`) — expose all catalog tools as MCP tool definitions
+- [x] MCP server package (`@sbtools/mcp-server`) — expose all catalog tools as MCP tool definitions
 
 ---
 

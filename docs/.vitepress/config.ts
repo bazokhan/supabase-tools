@@ -59,6 +59,7 @@ export default defineConfig({
           { text: "plugin-migration-studio", link: "/plugins/plugin-migration-studio" },
           { text: "↳ Studio Platform", link: "/plugins/plugin-migration-studio-platform" },
           { text: "↳ Studio Contributing", link: "/plugins/plugin-migration-studio-contributing" },
+          { text: "mcp-server", link: "/plugins/plugin-mcp-server" },
           { text: "plugin-scaffold", link: "/plugins/plugin-scaffold" },
           { text: "plugin-typegen", link: "/plugins/plugin-typegen" },
           { text: "docs (built-in)", link: "/plugins/plugin-docs-server" },

@@ -7,6 +7,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./tools/discovery": {
+      "types": "./dist/tools/discovery.d.ts",
+      "import": "./dist/tools/discovery.js"
+    },
+    "./catalog": {
+      "types": "./dist/catalog.d.ts",
+      "import": "./dist/catalog.js"
+    },
+    "./artifacts/constants": {
+      "types": "./dist/artifacts/constants.d.ts",
+      "import": "./dist/artifacts/constants.js"
     }
   },
   "main": "./dist/index.js",
