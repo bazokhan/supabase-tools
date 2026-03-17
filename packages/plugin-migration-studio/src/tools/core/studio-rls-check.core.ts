@@ -37,6 +37,32 @@ import type { SqlAstData } from "../../artifacts/writers.js";
 const CRUD_COMMANDS = ["SELECT", "INSERT", "UPDATE", "DELETE"] as const;
 type CrudCommand = (typeof CRUD_COMMANDS)[number];
 
+/** Common column names that reference the owning user's ID. */
+const USER_ID_COLUMN_NAMES = [
+  "user_id",
+  "owner_id",
+  "created_by",
+  "author_id",
+  "account_id",
+  "profile_id",
+  "member_id",
+];
+
+/**
+ * Infer a default USING/WITH CHECK expression from the entity's columns.
+ * If a known user-ownership column is present, returns `auth.uid() = <col>`.
+ * Otherwise returns `auth.uid() IS NOT NULL` (requires authentication).
+ */
+function inferAccessExpression(columns: { name: string; type: string }[]): string {
+  const ownerCol = columns.find((c) =>
+    USER_ID_COLUMN_NAMES.includes(c.name.toLowerCase())
+  );
+  if (ownerCol) {
+    return `auth.uid() = ${ownerCol.name}`;
+  }
+  return "auth.uid() IS NOT NULL";
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -78,7 +104,8 @@ function buildSuggestedPolicySql(
   schema: string,
   table: string,
   name: string,
-  command: CrudCommand
+  command: CrudCommand,
+  accessExpr: string
 ): string {
   const lines = [
     `CREATE POLICY "${name}"`,
@@ -89,10 +116,10 @@ function buildSuggestedPolicySql(
   ];
 
   if (command !== "INSERT") {
-    lines.push(`  USING (true -- TODO: replace with real access expression)`);
+    lines.push(`  USING (${accessExpr})`);
   }
   if (command === "INSERT" || command === "UPDATE") {
-    lines.push(`  WITH CHECK (true -- TODO: replace with real access expression)`);
+    lines.push(`  WITH CHECK (${accessExpr})`);
   }
 
   lines.push(";");
@@ -103,15 +130,14 @@ function suggestedPolicy(
   entityId: string,
   command: CrudCommand,
   schema: string,
-  table: string
+  table: string,
+  columns: { name: string; type: string }[]
 ): RlsPolicyEntry {
   const policyName = `${table}_${command.toLowerCase()}_authenticated`;
-  const usingSql =
-    command !== "INSERT" ? "true -- TODO: replace with real access expression" : "";
+  const accessExpr = inferAccessExpression(columns);
+  const usingSql = command !== "INSERT" ? accessExpr : "";
   const withCheckSql =
-    command === "INSERT" || command === "UPDATE"
-      ? "true -- TODO: replace with real access expression"
-      : undefined;
+    command === "INSERT" || command === "UPDATE" ? accessExpr : undefined;
 
   return {
     entityId,
@@ -121,8 +147,8 @@ function suggestedPolicy(
     usingSql,
     withCheckSql,
     permissive: true,
-    template: "placeholder",
-    generatedSql: buildSuggestedPolicySql(schema, table, policyName, command),
+    template: "inferred",
+    generatedSql: buildSuggestedPolicySql(schema, table, policyName, command, accessExpr),
   };
 }
 
@@ -194,7 +220,7 @@ export async function runRlsCheck(ctx: PluginContext): Promise<{
             : `Missing coverage for: ${missing.join(", ")}`,
       });
       for (const cmd of missing) {
-        planPolicies.push(suggestedPolicy(entity.id, cmd, schema, table));
+        planPolicies.push(suggestedPolicy(entity.id, cmd, schema, table, entity.columns));
       }
     }
   }

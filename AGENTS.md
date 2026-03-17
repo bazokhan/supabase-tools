@@ -223,6 +223,7 @@ interface PluginContext {
 | `POST /api/studio/introspect` | `{ entities, policies, infrastructure }` counts |
 | `POST /api/studio/sql-parse` | `{ files, totalStatements, totalOpaqueBlocks }` |
 | `GET /api/studio/intent-graph` | Full `IntentGraph` or `null` |
+| `GET /api/studio/llm-context` | Single-call orientation for AI agents: intent graph summary, artifact freshness, tool catalog, migration count |
 | `GET /api/studio/adopt/status` | `WorkflowRun` or `{ status: 'not_started' }` |
 | `POST /api/studio/adopt/start` | `WorkflowRun` after checkpoint/completion |
 | `POST /api/studio/adopt/resume` | `WorkflowRun` after next checkpoint/completion |

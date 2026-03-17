@@ -386,6 +386,66 @@ const handleStudioCatalog: RouteHandler = async (req, res) => {
   sendJson(res, 200, getCatalog(filters));
 };
 
+const handleLlmContext: RouteHandler = async (req, res, ctx) => {
+  const graph = readArtifactOrNull<{ entities?: unknown[]; policies?: unknown[]; functions?: unknown[]; mode?: string }>(
+    ctx,
+    STUDIO_ARTIFACTS.INTENT_GRAPH.id,
+    STUDIO_ARTIFACTS.INTENT_GRAPH.version
+  );
+
+  const releaseGate = readArtifactOrNull<{ status?: string; reasons?: unknown[] }>(
+    ctx,
+    STUDIO_ARTIFACTS.RELEASE_GATE.id,
+    STUDIO_ARTIFACTS.RELEASE_GATE.version
+  );
+
+  const migrationLint = readArtifactOrNull<{ flags?: unknown[] }>(
+    ctx,
+    STUDIO_ARTIFACTS.MIGRATION_LINT.id,
+    STUDIO_ARTIFACTS.MIGRATION_LINT.version
+  );
+
+  const migrations = scanMigrationFiles(ctx.paths.migrations);
+
+  const catalog = getCatalog({});
+
+  const intentGraphSummary = graph?.data
+    ? {
+        mode: (graph.data as { mode?: string }).mode ?? "unknown",
+        entityCount: (graph.data.entities ?? []).length,
+        managedCount: ((graph.data.entities ?? []) as { managedStatus?: string }[]).filter(
+          (e) => e.managedStatus === "managed"
+        ).length,
+        assistedCount: ((graph.data.entities ?? []) as { managedStatus?: string }[]).filter(
+          (e) => e.managedStatus === "assisted"
+        ).length,
+        opaqueCount: ((graph.data.entities ?? []) as { managedStatus?: string }[]).filter(
+          (e) => e.managedStatus === "opaque"
+        ).length,
+        policyCount: (graph.data.policies ?? []).length,
+        functionCount: (graph.data.functions ?? []).length,
+        freshAt: graph.generatedAt,
+      }
+    : null;
+
+  sendJson(res, 200, {
+    intentGraph: intentGraphSummary,
+    releaseGate: releaseGate?.data
+      ? { status: releaseGate.data.status, reasonCount: (releaseGate.data.reasons ?? []).length, freshAt: releaseGate.generatedAt }
+      : null,
+    migrationLint: migrationLint?.data
+      ? { flagCount: (migrationLint.data.flags ?? []).length, freshAt: migrationLint.generatedAt }
+      : null,
+    migrations: { totalCount: migrations.length },
+    catalog: {
+      toolCount: catalog.tools.length,
+      workflowCount: catalog.workflows.length,
+      tools: catalog.tools.map((t) => ({ id: t.id, whatItDoes: t.whatItDoes, whenToUse: t.whenToUse })),
+      workflows: catalog.workflows.map((w) => ({ id: w.id, description: w.description, steps: w.steps })),
+    },
+  });
+};
+
 const handleToolRoute: RouteHandler = async (req, res, ctx) => {
   const pathname = (req.url ?? "/").split("?")[0];
   const method = req.method ?? "GET";
@@ -446,6 +506,7 @@ export function createRequestHandler(ctx: PluginContext): (req: http.IncomingMes
     ["GET:/api/studio/intent-graph", handleStudioIntentGraph],
     ["GET:/api/studio/adopt/status", handleStudioAdoptStatus],
     ["GET:/api/studio/catalog", handleStudioCatalog],
+    ["GET:/api/studio/llm-context", handleLlmContext],
     ["POST:/api/studio/adopt/start", handleStudioAdoptStart],
     ["POST:/api/studio/adopt/resume", handleStudioAdoptResume],
   ]);

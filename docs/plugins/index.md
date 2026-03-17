@@ -17,7 +17,7 @@ Plugins extend supabase-tools with additional commands. Install a plugin via npm
 | [plugin-frontend-usage](/plugins/plugin-frontend-usage) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-frontend-usage.svg)](https://www.npmjs.com/package/@sbtools/plugin-frontend-usage) | Frontend Supabase SDK usage scanner |
 | [plugin-logs](/plugins/plugin-logs) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-logs.svg)](https://www.npmjs.com/package/@sbtools/plugin-logs) | Docker logs, pg_stat_statements |
 | [plugin-migration-audit](/plugins/plugin-migration-audit) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-audit.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-audit) | Migration file vs DB tracking — drift detection |
-| [plugin-migration-studio](/plugins/plugin-migration-studio) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-studio.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-studio) | Migration authoring UI — create, analyze, apply |
+| [plugin-migration-studio](/plugins/plugin-migration-studio) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-studio.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-studio) | **Flagship plugin.** 21 tools + 4 workflows; intent graph; release gate; HTTP tool surface for AI agents (port 3335) |
 | [plugin-scaffold](/plugins/plugin-scaffold) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-scaffold.svg)](https://www.npmjs.com/package/@sbtools/plugin-scaffold) | Scaffold new plugins |
 | [plugin-typegen](/plugins/plugin-typegen) | [![npm](https://img.shields.io/npm/v/@sbtools/plugin-typegen.svg)](https://www.npmjs.com/package/@sbtools/plugin-typegen) | TypeScript type generation |
 

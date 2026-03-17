@@ -11,6 +11,7 @@ import { createRequestHandler } from "./server.js";
 import { STUDIO_TOOLS } from "./tools/discovery.js";
 import { STUDIO_WORKFLOWS_BY_ID } from "./workflows/discovery.js";
 import { ADOPT_BACKEND_WORKFLOW_ID } from "./workflows/adopt-backend.workflow.js";
+import type { ReleaseGate } from "@sbtools/sdk";
 import { getCatalog, parseCatalogFilters } from "./catalog.js";
 
 const DEFAULT_PORT = 3335;
@@ -33,6 +34,17 @@ studio-adopt — Run brownfield adoption workflow with checkpoints
 
 Usage:
   sbt studio-adopt
+`;
+
+const STUDIO_RELEASE_CHECK_HELP = `
+studio-release-check — Run the release validation chain and print pass/fail
+
+Runs: rls-check → rpc-lint → migration-lint → release-gate (no checkpoints).
+Exits with code 0 on pass, 1 on fail.
+
+Usage:
+  sbt studio-release-check
+  sbt studio-release-check --json    Output raw gate result as JSON
 `;
 
 const STUDIO_CATALOG_HELP = `
@@ -239,6 +251,48 @@ async function studioAdoptCommand(_args: string[], ctx: PluginContext): Promise<
   }
 }
 
+async function studioReleaseCheckCommand(args: string[], ctx: PluginContext): Promise<void> {
+  const RELEASE_CHECK_WORKFLOW_ID = "release-check";
+  const workflow = STUDIO_WORKFLOWS_BY_ID.get(RELEASE_CHECK_WORKFLOW_ID);
+  if (!workflow) throw new Error(`Workflow not found: ${RELEASE_CHECK_WORKFLOW_ID}`);
+
+  ui.detail("Running release-check workflow...");
+  const registry = buildWorkflowRegistry(RELEASE_CHECK_WORKFLOW_ID);
+  const run = await startWorkflow(workflow.id, workflow.steps, ctx, registry);
+
+  if (run.status === "failed") {
+    const last = run.steps[run.steps.length - 1];
+    throw new Error(last?.error ?? "release-check workflow failed");
+  }
+
+  const gateEnv = readArtifactOrNull<ReleaseGate>(
+    ctx,
+    STUDIO_ARTIFACTS.RELEASE_GATE.id,
+    STUDIO_ARTIFACTS.RELEASE_GATE.version
+  );
+
+  if (args.includes("--json")) {
+    process.stdout.write(JSON.stringify(gateEnv?.data ?? { status: "fail", blocking: [], warnings: [] }, null, 2) + "\n");
+    if (gateEnv?.data?.status !== "pass") process.exit(1);
+    return;
+  }
+
+  const gate = gateEnv?.data;
+  if (!gate) throw new Error("Release gate artifact not found after workflow completed");
+
+  if (gate.status === "pass") {
+    ui.success("Release gate: PASS");
+    if (gate.warnings.length > 0) {
+      ui.detail(`  ${gate.warnings.length} warning(s):`);
+      for (const w of gate.warnings) ui.detail(`    ⚠ ${w.message}`);
+    }
+  } else {
+    ui.error("Release gate: FAIL");
+    for (const b of gate.blocking) ui.detail(`  ✗ ${b.message}`);
+    process.exit(1);
+  }
+}
+
 async function studioCatalogCommand(args: string[], _ctx: PluginContext): Promise<void> {
   const arg = (flag: string): string | undefined => {
     const i = args.indexOf(flag);
@@ -339,6 +393,11 @@ const plugin: SbtPlugin = {
       name: "studio-adopt",
       description: "Brownfield adoption workflow with checkpoints",
       run: withHelp(STUDIO_ADOPT_HELP, studioAdoptCommand),
+    },
+    {
+      name: "studio-release-check",
+      description: "Run release validation chain (rls-check → rpc-lint → migration-lint → release-gate). Exits 0 on pass, 1 on fail.",
+      run: withHelp(STUDIO_RELEASE_CHECK_HELP, studioReleaseCheckCommand),
     },
     {
       name: "studio-catalog",

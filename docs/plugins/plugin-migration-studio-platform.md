@@ -20,10 +20,14 @@ Works for both brownfield (existing Postgres/Supabase projects) and greenfield (
 
 **Brownfield (existing project):**
 ```bash
-sbt studio-adopt          # introspect DB + parse migrations → intent graph
-sbt studio-rls-check      # check RLS coverage
-sbt studio-release-gate   # gate: pass/fail
-sbt migration-studio      # open editor, apply
+sbt studio-adopt            # introspect DB + parse migrations → intent graph
+sbt studio-release-check    # one-shot: rls-check + rpc-lint + lint + release-gate (exits 0/1)
+sbt migration-studio        # open editor, apply
+```
+
+**CI / pre-push hook (no server needed):**
+```bash
+sbt studio-release-check --json | jq '.status'   # → "pass" or "fail"
 ```
 
 **Greenfield (new project):**
@@ -71,6 +75,7 @@ sbt migration-studio                  # apply
 | `studio-lint` | Lint migration files (destructive ops, naming, lock safety) → `studio.migration.lint` |
 | `studio-migration-lint` | Alias for `studio-lint` |
 | `studio-release-gate` | Aggregate all findings → pass/fail decision → `studio.release.gate` |
+| `studio-release-check` | **One-shot:** run full release-check workflow without a server. Exits 0 on pass, 1 on fail. `--json` for raw output. |
 
 ## Pipeline
 

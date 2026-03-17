@@ -1,107 +1,179 @@
 # supabase-tools
 
-Portable toolkit for local Supabase development without the Supabase CLI. Install via npm and run with `npx sbt`.
+Portable toolkit for local Supabase development. Install via npm, run with `npx sbt`. Designed to be used directly by developers and by AI agents (Claude, Cursor, Copilot) via its HTTP tool surface.
 
 ## Quick Start
 
 ```bash
-# Install core CLI
-npm install @sbtools/core
+npm install @sbtools/core @sbtools/plugin-migration-studio
 
-# Install plugins (example: ERD generation)
-npm install @sbtools/plugin-erd
+# Initialize config
+npx sbt init
 
-# Add to supabase-tools.config.json
-{
-  "plugins": [{ "path": "@sbtools/plugin-erd", "config": {} }]
-}
-
-# Start services
+# Start Supabase services
 npx sbt start
 
-# Generate ERD diagrams
-npx sbt generate-erd
+# Start the dashboard (port 3400) + migration studio (port 3335)
+npx sbt dashboard
 ```
 
-## Commands
-
-### Core
+## Core Commands
 
 | Command | Description |
-|---------|-------------|
-| `start` | Start Supabase stack |
+|---|---|
+| `start` | Start Supabase Docker stack |
 | `stop` | Stop Supabase stack |
 | `restart` | Restart Supabase stack |
 | `status` | Show service URLs, keys, connection info |
 | `migrate` | Apply SQL migrations from `supabase/migrations/` |
 | `snapshot` | Export DB objects to filesystem |
-| `watch` | Watch DB/files and keep artifacts fresh |
-| `dashboard` | Start modern dashboard UI (overview, migrations, depgraph, live logs, frontend usage) |
+| `watch` | Watch DB/files, keep artifacts fresh |
+| `dashboard` | Start dashboard UI on port 3400 |
 | `generate-atlas` | Generate Backend Atlas data (JSON) |
-| `atlas-html` | Generate Backend Atlas HTML visualization |
-| `docs` | Start documentation services (Swagger, ReDoc, Atlas, SchemaSpy) |
-| `init` | Generate `supabase-tools.config.json` with defaults |
+| `init` | Create `supabase-tools.config.json` |
 
-### Plugin Commands
+## Migration Studio
+
+The migration studio (plugin) runs a local HTTP server on port 3335 that exposes all tools via both CLI and HTTP. This makes it usable by AI agents as structured tool calls.
+
+```bash
+# Start studio server
+npx sbt migration-studio
+
+# Or call individual tools directly
+npx sbt studio-introspect        # snapshot live DB schema
+npx sbt studio-intent-init       # build intent graph
+npx sbt studio-release-gate      # pass/fail validation before apply
+```
+
+### Studio Tools (21 tools)
+
+**Understand your backend:**
+
+| Tool | Description |
+|---|---|
+| `studio-introspect` | Query live DB → typed schema snapshot |
+| `studio-sql-parse` | Parse migration files → SQL AST |
+| `studio-intent-sync` | Score confidence: DB vs SQL (0.0–1.0 per entity) |
+| `studio-intent-init` | Build intent graph with managed/assisted/opaque classification |
+
+**Generate migrations:**
+
+| Tool | Description |
+|---|---|
+| `studio-create-table` | CREATE TABLE migration |
+| `studio-add-column` | ADD COLUMN migration |
+| `studio-add-index` | CREATE INDEX migration |
+| `studio-add-constraint` | ALTER TABLE ADD CONSTRAINT |
+| `studio-add-rls-policy` | CREATE POLICY migration |
+| `studio-add-function` | CREATE FUNCTION migration |
+| `studio-create-rpc` | CREATE RPC (public schema) |
+| `studio-create-view` | CREATE OR REPLACE VIEW |
+
+**Validate before applying:**
+
+| Tool | Description |
+|---|---|
+| `studio-rls-check` | RLS coverage audit per entity |
+| `studio-migration-lint` | Risk flags, naming violations, lock-safety |
+| `studio-rpc-lint` | Function security audit (search_path, authz) |
+| `studio-migration-plan` | Ordered change plan with change-class annotations |
+| `studio-release-gate` | Aggregated pass/fail gate — run before `migrate` |
+
+**Graph & mapping:**
+
+| Tool | Description |
+|---|---|
+| `studio-intent-patch` | Mutate entity managed-status in the intent graph |
+| `studio-endpoint-map` | Map PostgREST endpoints from intent graph |
+| `studio-greenfield-init` | Initialize intent graph for a new project |
+
+### Studio Workflows
+
+| Workflow | Steps |
+|---|---|
+| `adopt-backend` | introspect → sql-parse → intent-sync → intent-init (with checkpoints) |
+| `release-check` | migration-plan → rls-check → rpc-lint → release-gate |
+| `create-table` | create-table → sql-parse |
+| `add-rls-policy` | add-rls-policy → rls-check |
+
+### HTTP API (port 3335)
+
+Every tool is also available over HTTP. LLMs can discover tools via:
+
+```
+GET  /api/studio/catalog              # filterable tool/workflow list
+POST /api/studio/introspect           # run any tool
+GET  /api/studio/intent-graph         # current intent graph
+POST /api/apply                       # apply pending migrations (respects release gate)
+```
+
+Filter the catalog by audience and control mode:
+```
+GET /api/studio/catalog?audience=backend-dev&mode=managed&type=tools
+```
+
+### Using with AI Agents
+
+The studio server is designed for programmatic use. An AI agent can:
+
+1. `GET /api/studio/catalog` — discover what's available
+2. `POST /api/studio/introspect` — understand the current DB state
+3. `POST /api/studio/intent-init` — build an intent graph
+4. `POST /api/studio/create-table` (or any scaffold tool) — generate migration SQL
+5. `POST /api/studio/release-gate` — validate before applying
+6. `POST /api/apply` — apply if gate passes
+
+## Plugin Commands
 
 | Command | Plugin | Description |
-|---------|--------|-------------|
+|---|---|---|
 | `generate-erd` | plugin-erd | Mermaid ERD diagrams per table |
 | `generate-types` | plugin-typegen | TypeScript types from DB schema |
 | `test` | plugin-db-test | pgTAP tests (live or `--mem` PGlite) |
 | `edge-functions` | plugin-deno-functions | List/document edge functions |
 | `depgraph` | plugin-depgraph | Dependency graph (HTML + Mermaid) |
-| `frontend-usage` | plugin-frontend-usage | Scan frontend for SDK usage |
+| `frontend-usage` | plugin-frontend-usage | Scan frontend for Supabase SDK usage |
 | `logs` | plugin-logs | Docker logs, pg_stat_statements |
 | `migration-audit` | plugin-migration-audit | Migration drift detection |
-| `migration-studio` | plugin-migration-studio | Migration authoring UI |
 | `scaffold-plugin` | plugin-scaffold | Scaffold new plugins |
 
-Full reference: [documentation](https://bazokhan.github.io/supabase-tools/plugins/).
+## All Plugins
 
-All commands: `npx sbt <command>`
+| Package | Description |
+|---|---|
+| `@sbtools/plugin-migration-studio` | Migration authoring, intent graph, release gate, HTTP tool surface |
+| `@sbtools/plugin-migration-audit` | Migration drift detection vs DB tracking table |
+| `@sbtools/plugin-depgraph` | TypeScript function/table dependency graph |
+| `@sbtools/plugin-erd` | Mermaid ERD diagrams |
+| `@sbtools/plugin-typegen` | TypeScript type generation from Supabase schema |
+| `@sbtools/plugin-db-test` | pgTAP test runner via PGlite |
+| `@sbtools/plugin-logs` | Docker log tailing + pg_stat_statements viewer |
+| `@sbtools/plugin-deno-functions` | Edge function documentation + OpenAPI spec |
+| `@sbtools/plugin-frontend-usage` | Frontend Supabase SDK usage scanner |
+| `@sbtools/plugin-scaffold` | Scaffold new plugin boilerplate |
+
+Full docs: [bazokhan.github.io/supabase-tools](https://bazokhan.github.io/supabase-tools/)
 
 ## Configuration
 
-Run `init` to create `supabase-tools.config.json` at project root. Override DB URL via `DATABASE_URL`, `SUPABASE_DB_URL`, or `POSTGRES_URL`. Set `api.url` for external Supabase instances.
+Run `npx sbt init` to create `supabase-tools.config.json`. Override DB URL via `DATABASE_URL`, `SUPABASE_DB_URL`, or `POSTGRES_URL`.
 
 ## Error Handling
 
-Structured errors with codes: `ConfigError`, `DatabaseError`, `SnapshotError`, `PluginError`, `SbtError`. Set `SBT_DEBUG=1` for stack traces.
+Structured errors: `ConfigError`, `DatabaseError`, `SnapshotError`, `PluginError`, `SbtError`. Set `SBT_DEBUG=1` for stack traces.
 
 ## Development
 
 ```bash
-npm run build           # Build SDK first, then all workspaces
-npm test                # Run all tests (199 tests across 9 suites)
-npm run lint:conventions  # Check project conventions (advisory warnings)
+npm run build    # sdk → ui-web → all packages
+npm test         # vitest across all packages
 ```
 
 ## Requirements
 
 - Node.js 18+
 - Docker (for `start`, `migrate`, and Docker-based plugins)
-
-## Documentation
-
-Full docs: [docs site](https://bazokhan.github.io/supabase-tools/) (or run `npm run docs:dev` for local dev).
-
-## Plugins
-
-| Plugin | npm | Description |
-|--------|-----|-------------|
-| plugin-db-test | `@sbtools/plugin-db-test` | pgTAP + PGlite test runner |
-| plugin-deno-functions | `@sbtools/plugin-deno-functions` | Edge function docs + OpenAPI |
-| plugin-depgraph | `@sbtools/plugin-depgraph` | Dependency graph visualization |
-| plugin-erd | `@sbtools/plugin-erd` | Mermaid ERD diagrams |
-| plugin-frontend-usage | `@sbtools/plugin-frontend-usage` | Frontend SDK usage scanner |
-| plugin-logs | `@sbtools/plugin-logs` | Docker logs, pg_stat_statements |
-| plugin-migration-audit | `@sbtools/plugin-migration-audit` | Migration drift detection |
-| plugin-migration-studio | `@sbtools/plugin-migration-studio` | Migration authoring UI |
-| plugin-scaffold | `@sbtools/plugin-scaffold` | Scaffold new plugins |
-| plugin-typegen | `@sbtools/plugin-typegen` | TypeScript type generation |
-
-> **Note:** `@sbtools/plugin-atlas-html` and `@sbtools/plugin-docs-server` have been merged into `@sbtools/core`. The `atlas-html` and `docs` commands are now built-in.
 
 ## License
 

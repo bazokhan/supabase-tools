@@ -1,44 +1,18 @@
 ---
-description: Schema-aware migration authoring UI — CodeMirror 6 editor, autocomplete, templates, live analysis.
+description: Flagship plugin — 21 tools, 4 workflows, intent graph, release gate, HTTP tool surface for AI agents.
 ---
 
 # @sbtools/plugin-migration-studio
 
 [![npm](https://img.shields.io/npm/v/@sbtools/plugin-migration-studio.svg)](https://www.npmjs.com/package/@sbtools/plugin-migration-studio)
 
-Schema-aware migration authoring UI. CodeMirror 6 SQL editor with PostgreSQL dialect, table/column autocomplete, migration templates, and live analysis. Apply via the core `sbt migrate` flow.
-
-## Features
-
-- **CodeMirror 6 editor** — Syntax highlighting, line numbers, bracket matching, search (Ctrl+F), undo/redo
-- **Modern dark studio theme** — Black-first visual styling aligned with dashboard look and readability
-- **Schema-aware autocomplete** — Tables, columns, functions, types (from DB → atlas-data → artifact)
-- **Live analysis** — Operations, risk flags, touched objects (debounced, updates as you type)
-- **Migration templates** — Create table with RLS, add column, function, trigger, policy, index, FK, enum
-- **Context sidebar** — Migrations list (from disk + `migration.analysis` status), schema tree; click to load or insert
-- **Save / Update** — Update overwrites a loaded pending migration; Save as new always creates a new file
-- **Dry run** — Validates SQL (same format as migrate); shows success or error before apply
-- **Wrap in transaction** — Wraps selected or full SQL in `BEGIN;` … `COMMIT;`
-- **Apply** — Requires confirmation, runs `sbt migrate`
-
-## Dashboard Integration
-
-The primary UI for Migration Studio is the **React dashboard page** (`/migration-studio`) served by `sbt dashboard`. It connects to the running `sbt migration-studio` server and provides the full editor experience inside the dashboard shell.
-
-The dashboard Migrations page also supports two quick-access modes:
-
-- **Embedded Studio** — inline inside the Migrations workflow
-- **Pop-out Studio** — dedicated Studio tab/window
-
-The dashboard stores the Studio URL so teams can point to non-default ports.
+The flagship plugin. Provides a complete **backend design platform** for Supabase projects across five layers: Understand → Design → Generate → Validate → Apply. Every tool is available via both CLI (`sbt studio-<tool>`) and HTTP (`POST /api/studio/<tool>`), making the platform directly usable by AI agents.
 
 ## Installation
 
 ```bash
 npm install @sbtools/plugin-migration-studio
 ```
-
-## Activation
 
 ```json
 {
@@ -48,94 +22,168 @@ npm install @sbtools/plugin-migration-studio
 }
 ```
 
-## Usage
+## Starting the Server
 
 ```bash
-sbt migration-studio
+sbt migration-studio            # port 3335 (default)
+sbt migration-studio --port N   # custom port
+sbt migration-studio --restart  # force-restart if port in use
 ```
 
-Starts the studio at `http://localhost:3335`. Use `--port N` to change the port. If the port is in use, the server automatically kills the existing process and restarts. Use `--restart` to force-kill before starting.
+## LLM / Agent Usage
 
-## API Endpoints (internal)
+AI agents can orient themselves in one call:
 
-The studio serves a local HTTP server on port 3335 with:
+```
+GET /api/studio/llm-context
+```
 
-**Editor routes:**
-- `GET /` — Editor page
-- `GET /api/events` — Server-Sent Events refresh channel
-- `GET /api/schema` — Schema introspection (DB → atlas-data → artifact)
-- `GET /api/templates` — Migration template list
-- `GET /api/migrations` — Migration files with status
-- `POST /api/analyze` — Analyze SQL (operations, risk flags)
-- `POST /api/save` — Save migration file (body: `{ sql, description?, filename? }`)
-- `POST /api/validate` — Dry run: validate SQL
-- `POST /api/apply` — Apply migrations; enforces release gate, writes `studio.apply.log`, returns `snapshotStale` flag
+Returns: intent graph summary, artifact freshness, full tool catalog with descriptions, migration count. Then the agent can call any tool:
 
-**Adoption / understanding routes:**
-- `POST /api/studio/introspect` — Introspect live DB → `studio.schema.snapshot`
-- `POST /api/studio/sql-parse` — Parse migration files → `studio.sql.ast`
-- `POST /api/studio/intent-sync` — Run confidence sync tool → `studio.intent.sync-report`
-- `POST /api/studio/intent-init` — Build intent graph from sync report → `studio.intent.graph`
-- `GET /api/studio/intent-graph` — Read current intent graph or `null`
-- `GET /api/studio/adopt/status` — Workflow run state
-- `POST /api/studio/adopt/start` / `/resume` — Run adoption workflow
-- `GET /api/studio/catalog` — Filterable catalog of discovered tools/workflows (`audience`, `mode`, `type`)
+```
+POST /api/studio/introspect      → snapshot the DB
+POST /api/studio/intent-init     → build intent graph
+POST /api/studio/create-table    → generate migration SQL
+POST /api/studio/release-gate    → validate before applying
+POST /api/apply                  → apply if gate passes
+```
 
-**Scaffold routes (generate migration files):**
-- `POST /api/studio/scaffold/create-table`
-- `POST /api/studio/scaffold/add-column`
-- `POST /api/studio/scaffold/add-rls-policy`
-- `POST /api/studio/scaffold/add-index`
-- `POST /api/studio/scaffold/add-constraint`
-- `POST /api/studio/scaffold/add-function`
-- `POST /api/studio/scaffold/create-rpc`
-- `POST /api/studio/scaffold/create-view`
-- `POST /api/studio/greenfield-init`
+Discover available tools and workflows:
 
-**Validation routes:**
-- `POST /api/studio/rls-check`
-- `POST /api/studio/rpc-lint`
-- `POST /api/studio/migration-plan`
-- `POST /api/studio/migration-lint`
-- `POST /api/studio/release-gate`
+```
+GET /api/studio/catalog?audience=backend-dev&mode=managed&type=tools
+```
 
-**Intent graph mutation:**
-- `POST /api/studio/intent-graph/entity` — Patch entity managed-status
-- `POST /api/studio/endpoint-map` — Derive PostgREST endpoint declarations
+## Tool Catalog (21 tools)
 
-## Configuration
+### Understand Layer
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| (none) | — | — | No config options yet |
+| CLI Command | HTTP Route | Produces Artifact |
+|---|---|---|
+| `studio-introspect` | `POST /api/studio/introspect` | `studio.schema.snapshot` |
+| `studio-sql-parse` | `POST /api/studio/sql-parse` | `studio.sql.ast` |
+| `studio-intent-sync` | `POST /api/studio/intent-sync` | `studio.intent.sync-report` |
+| `studio-intent-init` | `POST /api/studio/intent-init` | `studio.intent.graph` |
 
-## Contract
+### Generate Layer (Scaffold Tools)
 
-- **Produces:** `migration.studio.draft` (planned)
-- **Consumes:** `migration.analysis` (optional — enriches migrations list and schema fallback)
+| CLI Command | HTTP Route | What it generates |
+|---|---|---|
+| `studio-create-table` | `POST /api/studio/create-table` | `CREATE TABLE` migration |
+| `studio-add-column` | `POST /api/studio/add-column` | `ALTER TABLE ... ADD COLUMN` |
+| `studio-add-index` | `POST /api/studio/add-index` | `CREATE INDEX` |
+| `studio-add-constraint` | `POST /api/studio/add-constraint` | `ALTER TABLE ... ADD CONSTRAINT` |
+| `studio-add-rls-policy` | `POST /api/studio/add-rls-policy` | `CREATE POLICY` |
+| `studio-add-function` | `POST /api/studio/add-function` | `CREATE OR REPLACE FUNCTION` |
+| `studio-create-rpc` | `POST /api/studio/create-rpc` | RPC function (schema: public) |
+| `studio-create-view` | `POST /api/studio/create-view` | `CREATE OR REPLACE VIEW` |
 
-Apply path uses core migration execution; no duplicate engine.
+### Validate Layer
 
-## Refresh requirements (real-time updates)
+| CLI Command | HTTP Route | Produces Artifact |
+|---|---|---|
+| `studio-rls-check` / `studio-migration-lint` | `POST /api/studio/rls-check` | `studio.rls.plan` + `studio.rls.report` |
+| `studio-migration-lint` | `POST /api/studio/migration-lint` | `studio.migration.lint` |
+| `studio-rpc-lint` | `POST /api/studio/rpc-lint` | `studio.rpc.plan` |
+| `studio-migration-plan` | `POST /api/studio/migration-plan` | `studio.migration.plan` |
+| `studio-release-gate` | `POST /api/studio/release-gate` | `studio.release.gate` |
 
-| Feature | Requires | Command |
-|---------|----------|---------|
-| Migrations list with status | `migration.analysis` artifact | `sbt migration-audit` |
-| Schema from atlas cache | `docs/backend-atlas-data.json` | `sbt generate-atlas` |
-| Live refresh push | `.sbt/watch/last-event.json` + artifact changes | `sbt watch` |
+### Graph & Mapping
 
-Studio exposes `GET /api/events` (SSE). When watch updates arrive, Studio invalidates cache and refetches schema/migrations without full page reload.
+| CLI Command | HTTP Route | Description |
+|---|---|---|
+| `studio-intent-patch` | `POST /api/studio/intent-graph/entity` | Mutate entity managed-status |
+| `studio-endpoint-map` | `POST /api/studio/endpoint-map` | Derive PostgREST endpoints from intent graph |
+| `studio-greenfield-init` | `POST /api/studio/greenfield-init` | Init empty intent graph for new project |
 
-**Note:** `migration.analysis` is written only by `sbt migration-audit`, not by `sbt generate-atlas`. See [Package & Artifact Dependencies](../architecture/package-dependencies.md) for the full map.
+## Workflow Catalog (4 workflows)
 
-## Migration Studio Platform
+Workflows chain multiple tools with optional human checkpoints.
 
-The plugin ships a complete **backend design platform** covering all five layers — Understand → Design → Generate → Validate → Apply. See:
+| Workflow ID | Steps | Use Case |
+|---|---|---|
+| `adopt-backend` | introspect → sql-parse → intent-sync → intent-init | Brownfield project adoption (2 checkpoints) |
+| `release-check` | migration-plan → rls-check → rpc-lint → release-gate | Pre-release validation |
+| `create-table` | create-table → sql-parse | Table + immediate AST update |
+| `add-rls-policy` | add-rls-policy → rls-check | Policy + immediate coverage check |
 
-**[Migration Studio Platform →](./plugin-migration-studio-platform)**
+Run the brownfield adoption workflow:
 
-Adds: brownfield adoption workflow (`sbt studio-adopt`), visual Schema Builder dashboard page, scaffold commands for tables/columns/policies/indexes/constraints/functions/RPCs/views, validation tools (RLS check, migration lint, RPC lint, migration plan, release gate), interactive Adoption page, greenfield init, intent graph mutation, endpoint mapping, and apply-time audit log.
+```bash
+sbt studio-adopt
+```
 
-## Dependencies
+Browse all workflows: `GET /api/studio/catalog?type=workflows`
 
-Requires `pg` for database schema introspection (optional peer; studio degrades to atlas-data/artifact when DB unreachable).
+## Intent Graph
+
+The intent graph (`studio.intent.graph`) is the central artifact. It assigns every DB entity a `managedStatus`:
+
+| Status | Meaning |
+|---|---|
+| `managed` | Full confidence — schema matches SQL, safe to modify |
+| `assisted` | Partial match — LLM/human should review before modifying |
+| `opaque` | Unknown origin — do not modify without explicit human sign-off |
+| `excluded` | Intentionally excluded from tracking |
+
+Read the current graph: `GET /api/studio/intent-graph`
+
+Mutate an entity's status: `POST /api/studio/intent-graph/entity`
+
+## Release Gate
+
+The release gate (`studio-release-gate`) aggregates evidence from all validation tools into a single `{ status: 'pass' | 'fail', reasons: [] }` signal. `POST /api/apply` respects the gate — migrations are blocked if the gate has failed.
+
+This is the recommended final step before any migration apply, especially for LLM-driven pipelines.
+
+## Migration Studio UI
+
+The plugin also provides a **CodeMirror 6 SQL editor** UI accessible at `http://localhost:3335` (or via the dashboard at `/studio`). Features:
+
+- Syntax highlighting, autocomplete (tables/columns from DB schema)
+- SQL analysis and dry-run validation
+- Save/apply migration files
+- Schema sidebar and migration list
+
+## HTTP API Reference
+
+| Route | Description |
+|---|---|
+| `GET /api/health` | Health check |
+| `GET /api/events` | SSE — live cache invalidation events |
+| `GET /api/schema` | Live DB schema (tables, columns, policies, functions) |
+| `GET /api/templates` | Migration template list |
+| `GET /api/migrations` | Migration file list |
+| `POST /api/analyze` | SQL analysis (parse + classify operations) |
+| `POST /api/validate` | SQL dry-run against live schema |
+| `POST /api/save` | Save SQL to a migration file |
+| `POST /api/apply` | Apply pending migrations (enforces release gate) |
+| `GET /api/studio/llm-context` | Full project orientation for AI agents |
+| `GET /api/studio/intent-graph` | Current intent graph or null |
+| `GET /api/studio/catalog` | Filterable tool/workflow catalog |
+| `GET /api/studio/adopt/status` | Current adoption workflow run state |
+| `POST /api/studio/adopt/start` | Start adoption workflow |
+| `POST /api/studio/adopt/resume` | Resume from checkpoint |
+| `POST /api/studio/<tool>` | Run any discovered tool (21 total) |
+
+## Artifacts Produced
+
+| Artifact | Description |
+|---|---|
+| `studio.schema.snapshot` | Live DB schema as typed nodes |
+| `studio.sql.ast` | SQL AST from migration files |
+| `studio.intent.sync-report` | Confidence scores per entity (DB vs SQL) |
+| `studio.intent.graph` | Typed entity graph with managed/assisted/opaque status |
+| `studio.rls.plan` | Suggested RLS policies for uncovered entities |
+| `studio.rls.report` | RLS coverage analysis and gaps |
+| `studio.migration.lint` | Risk flags, naming violations, lock-safety |
+| `studio.rpc.plan` | Function security audit results |
+| `studio.migration.plan` | Ordered change plan with change-class annotations |
+| `studio.release.gate` | Aggregated pass/fail gate with blocking reasons |
+| `studio.apply.log` | Apply history with timestamps and output |
+| `studio.workflow.run` | Current workflow run state (for resuming) |
+
+## See Also
+
+- [Platform Architecture →](./plugin-migration-studio-platform) — 5-layer design and contributing guide
+- [CLI Reference →](../cli-reference) — Full command listing with flags

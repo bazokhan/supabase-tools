@@ -186,6 +186,7 @@ Requires DB for schema introspection (falls back to atlas-data/artifact when unr
 | `studio-lint` | Migration file lint (destructive ops, naming, lock safety) → `studio.migration.lint` |
 | `studio-migration-lint` | Alias for `studio-lint` |
 | `studio-release-gate` | Aggregate RLS/RPC/lint findings → pass/fail → `studio.release.gate` |
+| `studio-release-check` | One-shot: runs full release-check workflow (no server needed). Exits 0 on pass, 1 on fail. `--json` for raw output. |
 
 ### plugin-logs
 
