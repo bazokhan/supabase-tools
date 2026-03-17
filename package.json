@@ -11,7 +11,7 @@
     "sbt": "node packages/core/dist/cli.js",
     "dev": "tsx packages/core/src/cli.ts",
     "dashboard:dev": "npm run dev -w packages/ui-web",
-    "build": "npm run build -w packages/sdk && npm run build -w packages/ui-web && npm run build --workspaces && tsx scripts/copy-dashboard.ts",
+    "build": "npm run build -w packages/sdk && npm run build -w packages/ui-web && npm run build -w packages/plugin-migration-studio && npm run build --workspaces && tsx scripts/copy-dashboard.ts",
     "clean": "npm run clean --workspaces",
     "release": "npm run build && changeset publish",
     "test:scripts": "tsx testing-scripts/index.ts",
