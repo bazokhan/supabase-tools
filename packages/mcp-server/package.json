@@ -1,9 +1,11 @@
 {
   "name": "@sbtools/mcp-server",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MCP server exposing all Migration Studio tools to Claude, Cursor, and VS Code.",
   "type": "module",
-  "bin": { "sbtools-mcp": "./dist/index.js" },
+  "bin": {
+    "sbtools-mcp": "dist/index.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -12,7 +14,10 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -22,7 +27,9 @@
   "engines": {
     "node": ">=18"
   },
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "clean": "rimraf dist",
@@ -30,7 +37,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.0",
-    "@sbtools/plugin-migration-studio": "^0.9.0",
+    "@sbtools/plugin-migration-studio": "^0.10.0",
     "@sbtools/sdk": "^0.8.0",
     "zod": "^3.24.2"
   },

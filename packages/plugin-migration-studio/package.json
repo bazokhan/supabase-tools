@@ -1,6 +1,6 @@
 {
   "name": "@sbtools/plugin-migration-studio",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Migration authoring studio for supabase-tools — create and apply migrations from a browser UI.",
   "type": "module",
   "exports": {
