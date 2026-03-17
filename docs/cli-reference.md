@@ -187,6 +187,7 @@ Requires DB for schema introspection (falls back to atlas-data/artifact when unr
 | `studio-migration-lint` | Alias for `studio-lint` |
 | `studio-release-gate` | Aggregate RLS/RPC/lint findings → pass/fail → `studio.release.gate` |
 | `studio-release-check` | One-shot: runs full release-check workflow (no server needed). Exits 0 on pass, 1 on fail. `--json` for raw output. |
+| `mcp [--cwd <path>]` | Start the MCP stdio server — exposes all 21 studio tools + 3 resources to Claude Desktop, Cursor, and VS Code Copilot |
 
 ### plugin-logs
 

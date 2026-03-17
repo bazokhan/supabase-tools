@@ -32,7 +32,9 @@ sbt migration-studio --restart  # force-restart if port in use
 
 ## LLM / Agent Usage
 
-AI agents can orient themselves in one call:
+> **Using Claude Desktop, Cursor, or VS Code?** The [`@sbtools/mcp-server`](./plugin-mcp-server) package exposes every tool below as a first-class MCP tool — no HTTP needed.
+
+AI agents using the HTTP API can orient themselves in one call:
 
 ```
 GET /api/studio/llm-context

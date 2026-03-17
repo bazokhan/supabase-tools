@@ -362,6 +362,13 @@ function buildToolCommands(): import("@sbtools/sdk").SbtPluginCommand[] {
   return commands;
 }
 
+async function studioMcpCommand(args: string[], _ctx: PluginContext): Promise<void> {
+  const { fileURLToPath } = await import("node:url");
+  const { spawnSync } = await import("node:child_process");
+  const mcpPath = fileURLToPath(new URL("../../mcp-server/dist/index.js", import.meta.url));
+  spawnSync(process.execPath, [mcpPath, ...args], { stdio: "inherit" });
+}
+
 const plugin: SbtPlugin = {
   name: "@sbtools/plugin-migration-studio",
   version: loadPackageVersion(import.meta.url),
@@ -403,6 +410,11 @@ const plugin: SbtPlugin = {
       name: "studio-catalog",
       description: "List discovered tools/workflows with audience/mode filters",
       run: withHelp(STUDIO_CATALOG_HELP, studioCatalogCommand),
+    },
+    {
+      name: "mcp",
+      description: "Start the MCP server (stdio) — exposes all studio tools for Claude Desktop / Cursor",
+      run: studioMcpCommand,
     },
     ...buildToolCommands(),
   ],

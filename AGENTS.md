@@ -64,6 +64,7 @@ This repo uses `@changesets/cli`. Create changesets for any package whose public
 | `@sbtools/plugin-deno-functions` | Scan and document Edge Functions |
 | `@sbtools/plugin-frontend-usage` | Scan frontend code for Supabase SDK usage |
 | `@sbtools/plugin-scaffold` | Generate new plugin boilerplate |
+| `@sbtools/mcp-server` | MCP server; exposes all studio tools + 3 resources over stdio for AI agents |
 
 ### Key Files
 
